@@ -1,13 +1,13 @@
 {
-  "name": "nitro-starter-tmp",
+  "name": "nitro-starter",
   "private": true,
   "sideEffects": false,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "cloudcart nitro build",
-    "dev": "cloudcart nitro dev",
-    "preview": "cloudcart nitro preview",
+    "build": "react-router build",
+    "dev": "react-router dev",
+    "preview": "vite preview",
     "typecheck": "react-router typegen && tsc --noEmit"
   },
   "dependencies": {
@@ -21,7 +21,6 @@
   "devDependencies": {
     "@react-router/dev": "^7.12.0",
     "@react-router/fs-routes": "^7.12.0",
-    "@react-router/node": "^7.12.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "typescript": "^5.9.2",
