@@ -2,6 +2,7 @@ import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/collections._index';
 import {getContext} from '~/lib/context';
 import {getSeoMeta} from '@cloudcart/nitro';
+import type {Collection} from '@cloudcart/nitro';
 import {Image} from '@cloudcart/nitro-react';
 
 export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Nitro | Collections'});
@@ -16,12 +17,16 @@ export default function CollectionsIndex() {
   const {collections} = useLoaderData<typeof loader>();
   return (
     <div>
-      <h1>Collections</h1>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:'1.5rem'}}>
-        {collections.map((c) => (
-          <Link key={c.id} to={`/collections/${c.handle}`} style={{textDecoration:'none',color:'inherit'}}>
-            <Image data={c.image} alt={c.title} />
-            <h3>{c.title}</h3>
+      <h1 className="section-heading">Collections</h1>
+      <div className="collections-grid">
+        {collections.map((collection) => (
+          <Link key={collection.id} to={`/collections/${collection.handle}`} className="collection-card" prefetch="intent">
+            {collection.image ? (
+              <Image data={collection.image} alt={collection.title} />
+            ) : (
+              <div style={{aspectRatio: '3/1.5', background: 'var(--color-gray-100)', borderRadius: 12}} />
+            )}
+            <h3>{collection.title}</h3>
           </Link>
         ))}
       </div>

@@ -1,10 +1,13 @@
-import {useLoaderData, data, Link} from 'react-router';
+import {useLoaderData, data} from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import {getContext} from '~/lib/context';
 import {getSeoMeta} from '@cloudcart/nitro';
-import {Money, Image} from '@cloudcart/nitro-react';
+import {ProductCard} from '~/components/ProductCard';
 
-export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({title: d?.collection ? d.collection.title + ' | Nitro' : 'Collection | Nitro'});
+export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({
+  title: d?.collection ? `${d.collection.title} | Nitro` : 'Collection | Nitro',
+  description: d?.collection?.description,
+});
 
 export async function loader({params, context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);
@@ -17,15 +20,11 @@ export default function CollectionPage() {
   const {collection} = useLoaderData<typeof loader>();
   return (
     <div>
-      <h1>{collection.title}</h1>
-      <p>{collection.description}</p>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(250px,1fr))',gap:'1.5rem',marginTop:'1rem'}}>
-        {collection.products?.nodes.map((p) => (
-          <Link key={p.id} to={`/products/${p.handle}`} style={{textDecoration:'none',color:'inherit'}}>
-            <Image data={p.featuredImage} alt={p.title} />
-            <h3>{p.title}</h3>
-            <Money data={p.priceRange.minVariantPrice} />
-          </Link>
+      <h1 className="section-heading">{collection.title}</h1>
+      {collection.description && <p style={{color: 'var(--color-gray-500)', marginBottom: '1.5rem'}}>{collection.description}</p>}
+      <div className="products-grid">
+        {collection.products?.nodes.map((product) => (
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </div>

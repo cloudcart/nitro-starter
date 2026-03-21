@@ -4,7 +4,12 @@ import {getContext} from '~/lib/context';
 import {getSeoMeta} from '@cloudcart/nitro';
 import {Image, ProductPrice, AddToCartButton, RichText, VariantSelector, useOptimisticVariant} from '@cloudcart/nitro-react';
 
-export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({title: d?.product ? d.product.title + ' | Nitro' : 'Product | Nitro', description: d?.product?.description});
+export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({
+  title: d?.product ? `${d.product.title} | Nitro` : 'Product | Nitro',
+  description: d?.product?.description,
+  type: 'product',
+  ...(d?.product?.featuredImage ? {image: {url: d.product.featuredImage.url, width: d.product.featuredImage.width, height: d.product.featuredImage.height}} : {}),
+});
 
 export async function loader({params, context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);
@@ -20,28 +25,53 @@ export default function ProductPage() {
   const variant = selectedVariant ?? first;
 
   return (
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'2rem',alignItems:'start'}}>
-      <Image data={variant?.image ?? product.featuredImage} alt={product.title} />
-      <div>
+    <div className="product-page">
+      <div className="product-image">
+        <Image data={variant?.image ?? product.featuredImage} alt={product.title} loading="eager" />
+      </div>
+
+      <div className="product-info">
         <h1>{product.title}</h1>
-        {variant && <div style={{fontSize:'1.25rem',margin:'0.5rem 0'}}><ProductPrice price={variant.price} compareAtPrice={variant.compareAtPrice} /></div>}
+
+        {variant && (
+          <div className="product-price-display">
+            <ProductPrice price={variant.price} compareAtPrice={variant.compareAtPrice} />
+          </div>
+        )}
+
         <VariantSelector product={product}>
           {(options) => options.map(({name, values}) => (
-            <div key={name} style={{margin:'1rem 0'}}>
-              <strong>{name}</strong>
-              <div style={{display:'flex',gap:'0.5rem',marginTop:'0.5rem'}}>
+            <fieldset key={name} className="product-options">
+              <legend>{name}</legend>
+              <div className="option-values">
                 {values.map((o) => (
-                  <Link key={o.value} to={o.to} replace preventScrollReset prefetch="intent"
-                    style={{padding:'0.5rem 1rem',border:o.isActive?'2px solid #000':'1px solid #ccc',borderRadius:4,textDecoration:'none',color:'inherit',opacity:o.available?1:0.4}}>
+                  <Link
+                    key={o.value}
+                    to={o.to}
+                    replace
+                    preventScrollReset
+                    prefetch="intent"
+                    className={`option-value${o.isActive ? ' selected' : ''}${!o.available ? ' unavailable' : ''}`}
+                  >
                     {o.value}
                   </Link>
                 ))}
               </div>
-            </div>
+            </fieldset>
           ))}
         </VariantSelector>
-        {variant && <AddToCartButton merchandiseId={variant.id} disabled={!variant.availableForSale}>{variant.availableForSale ? 'Add to Cart' : 'Sold Out'}</AddToCartButton>}
-        <RichText data={product.descriptionHtml} />
+
+        {variant && (
+          <AddToCartButton
+            merchandiseId={variant.id}
+            disabled={!variant.availableForSale}
+            className="add-to-cart-btn"
+          >
+            {variant.availableForSale ? 'Add to Cart' : 'Sold Out'}
+          </AddToCartButton>
+        )}
+
+        <RichText data={product.descriptionHtml} className="product-description" />
       </div>
     </div>
   );

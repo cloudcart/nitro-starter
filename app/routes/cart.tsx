@@ -1,4 +1,4 @@
-import {useLoaderData, redirect} from 'react-router';
+import {useLoaderData, redirect, Link} from 'react-router';
 import type {Route} from './+types/cart';
 import {getContext} from '~/lib/context';
 import type {CartData} from '@cloudcart/nitro';
@@ -30,28 +30,50 @@ export async function action({request, context}: Route.ActionArgs) {
 export default function CartPage() {
   const {cart: loaderCart} = useLoaderData<typeof loader>();
   const cart = useOptimisticCart(loaderCart);
-  if (cart.totalQuantity === 0) return <div><h1>Cart</h1><p>Your cart is empty.</p></div>;
+
+  if (cart.totalQuantity === 0) {
+    return (
+      <div className="cart-page">
+        <h1 className="section-heading">Cart</h1>
+        <div className="cart-empty">
+          <p>Your cart is empty.</p>
+          <Link to="/products">Continue Shopping</Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h1>Cart</h1>
-      <ul style={{listStyle:'none',padding:0}}>
+    <div className="cart-page">
+      <h1 className="section-heading">Cart</h1>
+      <ul className="cart-lines">
         {cart.lines.nodes.map((line) => (
-          <li key={line.id} style={{display:'flex',gap:'1rem',padding:'1rem 0',borderBottom:'1px solid #eee',alignItems:'center'}}>
+          <li key={line.id} className="cart-line">
             <Image data={line.merchandise.image} alt={line.merchandise.title} width={80} height={80} />
-            <div style={{flex:1}}>
+            <div className="cart-line-details">
               <strong>{line.merchandise.product.title}</strong>
+              <div className="variant">{line.merchandise.title}</div>
               <div><Money data={line.cost.totalAmount} /></div>
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
-              <CartForm action="UPDATE_CART" inputs={{lineId: line.id, quantity: Math.max(0, line.quantity - 1)}}><button type="submit">-</button></CartForm>
+            <div className="cart-line-quantity">
+              <CartForm action="UPDATE_CART" inputs={{lineId: line.id, quantity: Math.max(0, line.quantity - 1)}}>
+                <button type="submit">-</button>
+              </CartForm>
               <span>{line.quantity}</span>
-              <CartForm action="UPDATE_CART" inputs={{lineId: line.id, quantity: line.quantity + 1}}><button type="submit">+</button></CartForm>
-              <CartForm action="REMOVE_FROM_CART" inputs={{lineId: line.id}}><button type="submit">x</button></CartForm>
+              <CartForm action="UPDATE_CART" inputs={{lineId: line.id, quantity: line.quantity + 1}}>
+                <button type="submit">+</button>
+              </CartForm>
+              <CartForm action="REMOVE_FROM_CART" inputs={{lineId: line.id}}>
+                <button type="submit">&times;</button>
+              </CartForm>
             </div>
           </li>
         ))}
       </ul>
-      <div style={{textAlign:'right',padding:'1rem 0',fontSize:'1.25rem'}}><strong>Total: <Money data={cart.cost.totalAmount} /></strong></div>
+      <div className="cart-summary">
+        <span className="total">Total: <Money data={cart.cost.totalAmount} /></span>
+        <button className="cart-checkout-btn">Checkout</button>
+      </div>
     </div>
   );
 }
