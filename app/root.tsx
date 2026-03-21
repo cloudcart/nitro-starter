@@ -4,6 +4,8 @@ import {getContext} from '~/lib/context';
 import {getSeoMeta} from '@cloudcart/nitro';
 import {Header} from '~/components/Header';
 import {Footer} from '~/components/Footer';
+import {AsideProvider, Aside} from '~/components/Aside';
+import {CartDrawer} from '~/components/CartDrawer';
 import appStyles from '~/styles/app.css?url';
 
 export const meta: MetaFunction = () => getSeoMeta({title: 'Nitro | Modern Commerce'});
@@ -25,7 +27,8 @@ export async function loader({context, request}: Route.LoaderArgs) {
     ctx.storefront.getMenu('main-menu'),
     ctx.storefront.getMenu('footer'),
   ]);
-  return {shop, headerMenu, footerMenu};
+
+  return {shop, headerMenu, footerMenu, cart: ctx.cart.get()};
 }
 
 export function Layout({children}: {children: React.ReactNode}) {
@@ -51,13 +54,18 @@ export default function App() {
   const shop = data?.shop ?? {name: 'Nitro', description: null};
 
   return (
-    <div className="page-layout">
-      <Header shop={shop} menu={data?.headerMenu ?? null} />
-      <main>
-        <Outlet />
-      </main>
-      <Footer shop={shop} menu={data?.footerMenu ?? null} />
-    </div>
+    <AsideProvider>
+      <Aside type="cart" heading="CART">
+        <CartDrawer cart={data?.cart ?? Promise.resolve(null)} />
+      </Aside>
+      <div className="page-layout">
+        <Header shop={shop} menu={data?.headerMenu ?? null} cart={data?.cart ?? Promise.resolve(null)} />
+        <main>
+          <Outlet />
+        </main>
+        <Footer shop={shop} menu={data?.footerMenu ?? null} />
+      </div>
+    </AsideProvider>
   );
 }
 

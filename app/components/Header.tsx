@@ -1,9 +1,12 @@
-import {NavLink, Link} from 'react-router';
-import type {Shop, Menu} from '@cloudcart/nitro';
+import {NavLink, Link, Await} from 'react-router';
+import {Suspense} from 'react';
+import type {Shop, Menu, CartData} from '@cloudcart/nitro';
+import {useAside} from './Aside';
 
 interface HeaderProps {
   shop: Shop;
   menu: Menu | null;
+  cart: Promise<CartData | null>;
 }
 
 const FALLBACK_MENU = [
@@ -12,8 +15,9 @@ const FALLBACK_MENU = [
   {title: 'Blog', url: '/blogs'},
 ];
 
-export function Header({shop, menu}: HeaderProps) {
+export function Header({shop, menu, cart}: HeaderProps) {
   const items = menu?.items ?? FALLBACK_MENU;
+  const {open} = useAside();
 
   return (
     <header className="header">
@@ -34,7 +38,18 @@ export function Header({shop, menu}: HeaderProps) {
 
       <div className="header-ctas">
         <NavLink to="/search">Search</NavLink>
-        <NavLink to="/cart" className="cart-badge">Cart</NavLink>
+        <button className="cart-toggle" onClick={() => open('cart')}>
+          Cart
+          <Suspense>
+            <Await resolve={cart}>
+              {(resolvedCart) =>
+                resolvedCart && resolvedCart.totalQuantity > 0 ? (
+                  <span className="cart-count">{resolvedCart.totalQuantity}</span>
+                ) : null
+              }
+            </Await>
+          </Suspense>
+        </button>
       </div>
     </header>
   );

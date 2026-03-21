@@ -2,7 +2,8 @@ import {useLoaderData, data, Link} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {getContext} from '~/lib/context';
 import {getSeoMeta} from '@cloudcart/nitro';
-import {Image, ProductPrice, AddToCartButton, RichText, VariantSelector, useOptimisticVariant} from '@cloudcart/nitro-react';
+import {Image, ProductPrice, RichText, VariantSelector, useOptimisticVariant} from '@cloudcart/nitro-react';
+import {AddToCartButton} from '~/components/AddToCartButton';
 
 export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({
   title: d?.product ? `${d.product.title} | Nitro` : 'Product | Nitro',
