@@ -28,15 +28,9 @@ export async function loader({params, context, request}: Route.LoaderArgs) {
   const product = await ctx.storefront.getProduct(params.handle);
   if (!product) throw data('Product not found', {status: 404});
 
-  // Get related products from the first collection
+  // Related products come directly from the API now
+  const relatedProducts = (product as any).relatedProducts?.nodes ?? [];
   const collections = (product as any).collections?.nodes ?? [];
-  let relatedProducts: any[] = [];
-  if (collections.length > 0) {
-    const collection = await ctx.storefront.getCollection(collections[0].handle);
-    relatedProducts = (collection?.products?.nodes ?? [])
-      .filter((p: any) => p.id !== product.id)
-      .slice(0, 4);
-  }
 
   return {product, relatedProducts, collections};
 }
@@ -47,8 +41,12 @@ export default function ProductPage() {
   const {selectedVariant} = useOptimisticVariant(product, first);
   const variant = selectedVariant ?? first;
 
+  const p = product as any;
   const hasMultiplePrices = product.priceRange.minVariantPrice.amount !== product.priceRange.maxVariantPrice.amount;
   const isOnSale = variant?.compareAtPrice && parseFloat(variant.compareAtPrice.amount) > parseFloat(variant.price.amount);
+  const labels: Array<{name: string; color?: string; textColor?: string}> = p.labels ?? [];
+  const properties: Array<{name: string; values: string[]}> = p.properties ?? [];
+  const files: Array<{id: string; name: string; filename: string; url: string; fileSize: number}> = p.files?.nodes ?? [];
 
   // Breadcrumb from collection
   const breadcrumbItems = [];
@@ -65,8 +63,19 @@ export default function ProductPage() {
         {/* Left: Image Gallery */}
         <div className="product-image">
           <div className="product-badges">
+            {p.isNew && <span className="badge badge-new">New</span>}
+            {p.isFeatured && <span className="badge badge-featured">Featured</span>}
             {isOnSale && <span className="badge badge-sale">Sale</span>}
             {!product.availableForSale && <span className="badge badge-soldout">Sold Out</span>}
+            {labels.filter((l: any) => !['New', 'Featured'].includes(l.name)).map((label: any) => (
+              <span
+                key={label.name}
+                className="badge badge-custom"
+                style={label.color ? {backgroundColor: label.color, color: label.textColor || '#fff'} : undefined}
+              >
+                {label.name}
+              </span>
+            ))}
           </div>
           <ProductImageGallery
             images={(product as any).images?.nodes ?? []}
@@ -160,6 +169,42 @@ export default function ProductPage() {
           {/* Description */}
           <RichText data={product.descriptionHtml} className="product-description" />
 
+          {/* Product Properties / Specifications */}
+          {properties.length > 0 && (
+            <div className="product-properties">
+              <h3 className="product-section-title">Specifications</h3>
+              <table className="properties-table">
+                <tbody>
+                  {properties.map((prop) => (
+                    <tr key={prop.name}>
+                      <td className="property-name">{prop.name}</td>
+                      <td className="property-value">{prop.values.join(', ')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Downloadable Files */}
+          {files.length > 0 && (
+            <div className="product-files">
+              <h3 className="product-section-title">Downloads</h3>
+              <ul className="files-list">
+                {files.map((file) => (
+                  <li key={file.id}>
+                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="file-link">
+                      {file.name || file.filename}
+                      {file.fileSize > 0 && (
+                        <span className="file-size">({formatFileSize(file.fileSize)})</span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Tags */}
           {(product as any).tags?.length > 0 && (
             <div className="product-tags">
@@ -201,4 +246,10 @@ export default function ProductPage() {
       )}
     </div>
   );
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
