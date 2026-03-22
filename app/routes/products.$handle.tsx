@@ -1,4 +1,4 @@
-import {useLoaderData, data, Link} from 'react-router';
+import {useLoaderData, data, Link, useNavigate} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {getContext} from '~/lib/context';
 import {getSeoMeta, generateProductJsonLd} from '@cloudcart/nitro';
@@ -131,26 +131,32 @@ export default function ProductPage() {
           {/* Variant Selector */}
           <VariantSelector product={product}>
             {(options) => options.map(({name, values}) => {
-              // Find option metadata (type, colors, swatches) from variant selectedOptions
               const optionMeta = getOptionMeta(product, name);
+              const optionType = optionMeta.type;
 
               return (
                 <fieldset key={name} className="product-options">
                   <legend>{name}</legend>
-                  <div className={`option-values ${optionMeta.type === 'color' ? 'option-values-swatches' : ''}`}>
-                    {values.map((o) => {
-                      const valueMeta = optionMeta.values[o.value];
-                      return (
-                        <OptionSwatch
-                          key={o.value}
-                          option={o}
-                          type={optionMeta.type}
-                          color={valueMeta?.color}
-                          swatchUrl={valueMeta?.swatchUrl}
-                        />
-                      );
-                    })}
-                  </div>
+
+                  {/* Select dropdown */}
+                  {optionType === 'select' ? (
+                    <OptionSelect name={name} values={values} />
+                  ) : (
+                    <div className={`option-values${optionType === 'color' ? ' option-values-swatches' : ''}`}>
+                      {values.map((o) => {
+                        const valueMeta = optionMeta.values[o.value];
+                        return (
+                          <OptionSwatch
+                            key={o.value}
+                            option={o}
+                            type={optionType}
+                            color={valueMeta?.color}
+                            swatchUrl={valueMeta?.swatchUrl}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
                 </fieldset>
               );
             })}
@@ -251,6 +257,33 @@ export default function ProductPage() {
         </section>
       )}
     </div>
+  );
+}
+
+/**
+ * Renders a <select> dropdown for select-type options.
+ */
+function OptionSelect({name, values}: {name: string; values: any[]}) {
+  const navigate = useNavigate();
+  const activeValue = values.find((v) => v.isActive);
+
+  return (
+    <select
+      className="filter-select"
+      value={activeValue?.value ?? ''}
+      onChange={(e) => {
+        const selected = values.find((v) => v.value === e.target.value);
+        if (selected) {
+          navigate(selected.to, {replace: true, preventScrollReset: true});
+        }
+      }}
+    >
+      {values.map((o) => (
+        <option key={o.value} value={o.value} disabled={!o.available}>
+          {o.value}{!o.available ? ' (Sold out)' : ''}
+        </option>
+      ))}
+    </select>
   );
 }
 
