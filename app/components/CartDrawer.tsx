@@ -64,8 +64,8 @@ function CartDrawerLine({line}: {line: CartLine}) {
 
   return (
     <li className="cart-drawer-line">
-      {line.merchandise.image && (
-        <Image data={line.merchandise.image} alt={line.merchandise.title} width={64} height={64} />
+      {(line.merchandise.image ?? line.merchandise.product.featuredImage) && (
+        <Image data={line.merchandise.image ?? line.merchandise.product.featuredImage} alt={line.merchandise.product.title} width={64} height={64} />
       )}
       <div className="cart-drawer-line-details">
         <strong>{line.merchandise.product.title}</strong>

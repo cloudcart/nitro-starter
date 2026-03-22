@@ -1,8 +1,8 @@
-import {useLoaderData, redirect, Link, data as routeData} from 'react-router';
+import {useLoaderData, redirect, Link, useFetcher, data as routeData} from 'react-router';
 import type {Route} from './+types/cart';
 import {getContext} from '~/lib/context';
-import type {CartData} from '@cloudcart/nitro';
-import {Money, Image, useOptimisticCart} from '@cloudcart/nitro-react';
+import type {CartData, CartLine} from '@cloudcart/nitro';
+import {Money, Image} from '@cloudcart/nitro-react';
 
 export const meta: Route.MetaFunction = () => [{title: 'Nitro | Cart'}];
 
@@ -37,7 +37,6 @@ export async function action({request, context}: Route.ActionArgs) {
     cart = await ctx.cart.get();
   }
 
-  // Commit session cookie if it changed (e.g., new cart ID stored)
   const headers = new Headers();
   if (ctx.session.isPending) {
     headers.set('Set-Cookie', await ctx.session.commit());
@@ -51,10 +50,9 @@ export async function action({request, context}: Route.ActionArgs) {
 }
 
 export default function CartPage() {
-  const {cart: loaderCart} = useLoaderData<typeof loader>();
-  const cart = useOptimisticCart(loaderCart);
+  const {cart} = useLoaderData<typeof loader>();
 
-  if (cart.totalQuantity === 0) {
+  if (!cart || cart.totalQuantity === 0) {
     return (
       <div className="cart-page">
         <h1 className="section-heading">Cart</h1>
@@ -71,26 +69,7 @@ export default function CartPage() {
       <h1 className="section-heading">Cart</h1>
       <ul className="cart-lines">
         {cart.lines.nodes.map((line) => (
-          <li key={line.id} className="cart-line">
-            <Image data={line.merchandise.image} alt={line.merchandise.title} width={80} height={80} />
-            <div className="cart-line-details">
-              <strong>{line.merchandise.product.title}</strong>
-              <div className="variant">{line.merchandise.title}</div>
-              <div><Money data={line.cost.totalAmount} /></div>
-            </div>
-            <div className="cart-line-quantity">
-              <CartForm action="UPDATE_CART" inputs={{lineId: line.id, quantity: Math.max(0, line.quantity - 1)}}>
-                <button type="submit">-</button>
-              </CartForm>
-              <span>{line.quantity}</span>
-              <CartForm action="UPDATE_CART" inputs={{lineId: line.id, quantity: line.quantity + 1}}>
-                <button type="submit">+</button>
-              </CartForm>
-              <CartForm action="REMOVE_FROM_CART" inputs={{lineId: line.id}}>
-                <button type="submit">&times;</button>
-              </CartForm>
-            </div>
-          </li>
+          <CartLineItem key={line.id} line={line} />
         ))}
       </ul>
       <div className="cart-summary">
@@ -98,5 +77,55 @@ export default function CartPage() {
         <button className="cart-checkout-btn">Checkout</button>
       </div>
     </div>
+  );
+}
+
+function CartLineItem({line}: {line: CartLine}) {
+  const updateFetcher = useFetcher();
+  const removeFetcher = useFetcher();
+
+  if (removeFetcher.state !== 'idle') return null;
+
+  const pendingQty = updateFetcher.formData
+    ? Number(updateFetcher.formData.get('quantity'))
+    : null;
+  const quantity = pendingQty ?? line.quantity;
+  if (quantity <= 0) return null;
+
+  const image = line.merchandise.image ?? line.merchandise.product.featuredImage;
+
+  return (
+    <li className="cart-line">
+      {image && <Image data={image} alt={line.merchandise.product.title} width={80} height={80} />}
+      <div className="cart-line-details">
+        <strong>{line.merchandise.product.title}</strong>
+        {line.merchandise.selectedOptions.length > 0 && (
+          <div className="variant">
+            {line.merchandise.selectedOptions.map((o) => `${o.name}: ${o.value}`).join(', ')}
+          </div>
+        )}
+        <div><Money data={line.cost.totalAmount} /></div>
+      </div>
+      <div className="cart-line-quantity">
+        <updateFetcher.Form method="post" action="/cart">
+          <input type="hidden" name="action" value="UPDATE_CART" />
+          <input type="hidden" name="lineId" value={line.id} />
+          <input type="hidden" name="quantity" value={Math.max(0, quantity - 1)} />
+          <button type="submit">-</button>
+        </updateFetcher.Form>
+        <span>{quantity}</span>
+        <updateFetcher.Form method="post" action="/cart">
+          <input type="hidden" name="action" value="UPDATE_CART" />
+          <input type="hidden" name="lineId" value={line.id} />
+          <input type="hidden" name="quantity" value={quantity + 1} />
+          <button type="submit">+</button>
+        </updateFetcher.Form>
+        <removeFetcher.Form method="post" action="/cart">
+          <input type="hidden" name="action" value="REMOVE_FROM_CART" />
+          <input type="hidden" name="lineId" value={line.id} />
+          <button type="submit">&times;</button>
+        </removeFetcher.Form>
+      </div>
+    </li>
   );
 }
