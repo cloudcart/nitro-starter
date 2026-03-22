@@ -1,8 +1,8 @@
-import {useLoaderData, redirect, Link} from 'react-router';
+import {useLoaderData, redirect, Link, data as routeData} from 'react-router';
 import type {Route} from './+types/cart';
 import {getContext} from '~/lib/context';
 import type {CartData} from '@cloudcart/nitro';
-import {Money, Image, CartForm, useOptimisticCart} from '@cloudcart/nitro-react';
+import {Money, Image, useOptimisticCart} from '@cloudcart/nitro-react';
 
 export const meta: Route.MetaFunction = () => [{title: 'Nitro | Cart'}];
 
@@ -17,14 +17,37 @@ export async function action({request, context}: Route.ActionArgs) {
   const fd = await request.formData();
   const act = String(fd.get('action'));
   let cart: CartData;
-  switch (act) {
-    case 'ADD_TO_CART': cart = await ctx.cart.addLines([{merchandiseId: String(fd.get('merchandiseId')), quantity: Number(fd.get('quantity') || 1)}]); break;
-    case 'UPDATE_CART': cart = await ctx.cart.updateLines([{id: String(fd.get('lineId')), quantity: Number(fd.get('quantity'))}]); break;
-    case 'REMOVE_FROM_CART': cart = await ctx.cart.removeLines([String(fd.get('lineId'))]); break;
-    default: cart = await ctx.cart.get();
+
+  try {
+    switch (act) {
+      case 'ADD_TO_CART':
+        cart = await ctx.cart.addLines([{merchandiseId: String(fd.get('merchandiseId')), quantity: Number(fd.get('quantity') || 1)}]);
+        break;
+      case 'UPDATE_CART':
+        cart = await ctx.cart.updateLines([{id: String(fd.get('lineId')), quantity: Number(fd.get('quantity'))}]);
+        break;
+      case 'REMOVE_FROM_CART':
+        cart = await ctx.cart.removeLines([String(fd.get('lineId'))]);
+        break;
+      default:
+        cart = await ctx.cart.get();
+    }
+  } catch (error) {
+    console.error('Cart action error:', error);
+    cart = await ctx.cart.get();
   }
-  if (fd.get('redirectTo')) return redirect(String(fd.get('redirectTo')), 303);
-  return {cart};
+
+  // Commit session cookie if it changed (e.g., new cart ID stored)
+  const headers = new Headers();
+  if (ctx.session.isPending) {
+    headers.set('Set-Cookie', await ctx.session.commit());
+  }
+
+  if (fd.get('redirectTo')) {
+    return redirect(String(fd.get('redirectTo')), {status: 303, headers});
+  }
+
+  return routeData({cart}, {headers});
 }
 
 export default function CartPage() {

@@ -11,8 +11,8 @@
     "typecheck": "react-router typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@cloudcart/nitro": "^0.4.1",
-    "@cloudcart/nitro-react": "^0.4.1",
+    "@cloudcart/nitro": "file:../cloudcart-nitro/packages/nitro",
+    "@cloudcart/nitro-react": "file:../cloudcart-nitro/packages/nitro-react",
     "isbot": "^5.1.22",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
