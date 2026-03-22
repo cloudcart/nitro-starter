@@ -48,8 +48,8 @@ function CartDrawerInner({cart}: {cart: CartData | null}) {
 }
 
 function CartDrawerLine({line}: {line: CartLine}) {
-  const updateFetcher = useFetcher();
-  const removeFetcher = useFetcher();
+  const updateFetcher = useFetcher({key: `update-${line.id}`});
+  const removeFetcher = useFetcher({key: `remove-${line.id}`});
 
   // Hide line if remove is pending
   if (removeFetcher.state !== 'idle') return null;

@@ -16,7 +16,10 @@ export async function loader({context, request}: Route.LoaderArgs) {
   const maxPrice = url.searchParams.get('maxPrice');
   const available = url.searchParams.get('available');
 
-  let products = await ctx.storefront.getProducts(50);
+  // Single API call — use the same data for display and filters
+  const allProducts = await ctx.storefront.getProducts(24);
+
+  let products = [...allProducts];
 
   // Filter
   if (available === 'true') {
@@ -31,7 +34,6 @@ export async function loader({context, request}: Route.LoaderArgs) {
 
   // Sort
   if (sort) {
-    products = [...products];
     switch (sort) {
       case 'price-asc':
         products.sort((a, b) => parseFloat(a.priceRange.minVariantPrice.amount) - parseFloat(b.priceRange.minVariantPrice.amount));
@@ -48,8 +50,7 @@ export async function loader({context, request}: Route.LoaderArgs) {
     }
   }
 
-  // Extract filter options
-  const allProducts = await ctx.storefront.getProducts(50);
+  // Extract filter options from loaded products (no extra API call)
   const optionMap = new Map<string, Set<string>>();
   for (const p of allProducts) {
     for (const opt of p.options) {

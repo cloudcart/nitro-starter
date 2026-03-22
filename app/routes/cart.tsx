@@ -81,8 +81,8 @@ export default function CartPage() {
 }
 
 function CartLineItem({line}: {line: CartLine}) {
-  const updateFetcher = useFetcher();
-  const removeFetcher = useFetcher();
+  const updateFetcher = useFetcher({key: `update-${line.id}`});
+  const removeFetcher = useFetcher({key: `remove-${line.id}`});
 
   if (removeFetcher.state !== 'idle') return null;
 
