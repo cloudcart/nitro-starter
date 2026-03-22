@@ -6,6 +6,7 @@ import {Image, ProductPrice, RichText, VariantSelector, useOptimisticVariant, Mo
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {ProductImageGallery} from '~/components/ProductImageGallery';
 import {Breadcrumbs} from '~/components/Breadcrumbs';
+import {OptionSwatch} from '~/components/OptionSwatch';
 
 export const meta: Route.MetaFunction = ({data: d}) => {
   const product = d?.product;
@@ -129,25 +130,30 @@ export default function ProductPage() {
 
           {/* Variant Selector */}
           <VariantSelector product={product}>
-            {(options) => options.map(({name, values}) => (
-              <fieldset key={name} className="product-options">
-                <legend>{name}</legend>
-                <div className="option-values">
-                  {values.map((o) => (
-                    <Link
-                      key={o.value}
-                      to={o.to}
-                      replace
-                      preventScrollReset
-                      prefetch="intent"
-                      className={`option-value${o.isActive ? ' selected' : ''}${!o.available ? ' unavailable' : ''}`}
-                    >
-                      {o.value}
-                    </Link>
-                  ))}
-                </div>
-              </fieldset>
-            ))}
+            {(options) => options.map(({name, values}) => {
+              // Find option metadata (type, colors, swatches) from variant selectedOptions
+              const optionMeta = getOptionMeta(product, name);
+
+              return (
+                <fieldset key={name} className="product-options">
+                  <legend>{name}</legend>
+                  <div className={`option-values ${optionMeta.type === 'color' ? 'option-values-swatches' : ''}`}>
+                    {values.map((o) => {
+                      const valueMeta = optionMeta.values[o.value];
+                      return (
+                        <OptionSwatch
+                          key={o.value}
+                          option={o}
+                          type={optionMeta.type}
+                          color={valueMeta?.color}
+                          swatchUrl={valueMeta?.swatchUrl}
+                        />
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              );
+            })}
           </VariantSelector>
 
           {/* Add to Cart */}
@@ -246,6 +252,34 @@ export default function ProductPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Extract option type, color, and swatch metadata from variant selectedOptions.
+ * Scans all variants to find type/color/swatchUrl for each option value.
+ */
+function getOptionMeta(product: any, optionName: string): {
+  type?: string;
+  values: Record<string, {color?: string; swatchUrl?: string}>;
+} {
+  const values: Record<string, {color?: string; swatchUrl?: string}> = {};
+  let type: string | undefined;
+
+  for (const variant of product.variants.nodes) {
+    for (const so of variant.selectedOptions) {
+      if (so.name === optionName) {
+        if (so.type && !type) type = so.type;
+        if (!values[so.value]) {
+          values[so.value] = {
+            color: so.color || undefined,
+            swatchUrl: so.swatchUrl || undefined,
+          };
+        }
+      }
+    }
+  }
+
+  return {type, values};
 }
 
 function formatFileSize(bytes: number): string {

@@ -504,6 +504,80 @@ button {
   text-decoration: line-through;
 }
 
+/* ── Color Swatches ── */
+
+.option-values-swatches {
+  gap: 0.6rem;
+}
+
+.option-swatch-color {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  padding: 3px;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.option-swatch-color:hover {
+  border-color: var(--color-gray-400);
+  text-decoration: none;
+}
+
+.option-swatch-color.selected {
+  border-color: var(--color-dark);
+}
+
+.option-swatch-color.unavailable {
+  opacity: 0.3;
+}
+
+.swatch-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* ── Image Swatches ── */
+
+.option-swatch-image {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 2px;
+  text-decoration: none;
+  transition: border-color 0.15s;
+  overflow: hidden;
+}
+
+.option-swatch-image:hover {
+  border-color: var(--color-gray-400);
+  text-decoration: none;
+}
+
+.option-swatch-image.selected {
+  border-color: var(--color-dark);
+}
+
+.option-swatch-image.unavailable {
+  opacity: 0.3;
+}
+
+.swatch-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
 .add-to-cart-btn {
   display: inline-flex;
   align-items: center;
