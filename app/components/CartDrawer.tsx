@@ -62,6 +62,8 @@ function CartDrawerLine({line}: {line: CartLine}) {
 
   if (quantity <= 0) return null;
 
+  const lineError = updateFetcher.data?.errors?.[0]?.message;
+
   return (
     <li className="cart-drawer-line">
       {(line.merchandise.image ?? line.merchandise.product.featuredImage) && (
@@ -75,6 +77,7 @@ function CartDrawerLine({line}: {line: CartLine}) {
           </div>
         )}
         <div className="cart-drawer-price"><Money data={line.cost.totalAmount} /></div>
+        {lineError && <div className="cart-line-error">{lineError}</div>}
       </div>
       <div className="cart-drawer-line-actions">
         <div className="cart-drawer-qty">

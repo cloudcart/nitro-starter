@@ -1,4 +1,4 @@
-import {useLoaderData, redirect, Link, useFetcher, data as routeData} from 'react-router';
+import {useLoaderData, redirect, Link, useFetcher, useFetchers, data as routeData} from 'react-router';
 import type {Route} from './+types/cart';
 import {getContext} from '~/lib/context';
 import type {CartData, CartLine} from '@cloudcart/nitro';
@@ -17,24 +17,35 @@ export async function action({request, context}: Route.ActionArgs) {
   const fd = await request.formData();
   const act = String(fd.get('action'));
   let cart: CartData;
+  let errors: Array<{message: string}> = [];
 
   try {
     switch (act) {
-      case 'ADD_TO_CART':
-        cart = await ctx.cart.addLines([{merchandiseId: String(fd.get('merchandiseId')), quantity: Number(fd.get('quantity') || 1)}]);
+      case 'ADD_TO_CART': {
+        const result = await ctx.cart.addLines([{merchandiseId: String(fd.get('merchandiseId')), quantity: Number(fd.get('quantity') || 1)}]);
+        cart = result.cart;
+        errors = result.userErrors;
         break;
-      case 'UPDATE_CART':
-        cart = await ctx.cart.updateLines([{id: String(fd.get('lineId')), quantity: Number(fd.get('quantity'))}]);
+      }
+      case 'UPDATE_CART': {
+        const result = await ctx.cart.updateLines([{id: String(fd.get('lineId')), quantity: Number(fd.get('quantity'))}]);
+        cart = result.cart;
+        errors = result.userErrors;
         break;
-      case 'REMOVE_FROM_CART':
-        cart = await ctx.cart.removeLines([String(fd.get('lineId'))]);
+      }
+      case 'REMOVE_FROM_CART': {
+        const result = await ctx.cart.removeLines([String(fd.get('lineId'))]);
+        cart = result.cart;
+        errors = result.userErrors;
         break;
+      }
       default:
         cart = await ctx.cart.get();
     }
   } catch (error) {
     console.error('Cart action error:', error);
     cart = await ctx.cart.get();
+    errors = [{message: error instanceof Error ? error.message : 'An error occurred'}];
   }
 
   const headers = new Headers();
@@ -46,16 +57,23 @@ export async function action({request, context}: Route.ActionArgs) {
     return redirect(String(fd.get('redirectTo')), {status: 303, headers});
   }
 
-  return routeData({cart}, {headers});
+  return routeData({cart, errors}, {headers});
 }
 
 export default function CartPage() {
   const {cart} = useLoaderData<typeof loader>();
 
+  // Show errors from any cart fetcher
+  const fetchers = useFetchers();
+  const cartErrors = fetchers
+    .filter((f) => f.formAction === '/cart' && f.data?.errors?.length)
+    .flatMap((f) => f.data.errors as Array<{message: string}>);
+
   if (!cart || cart.totalQuantity === 0) {
     return (
       <div className="cart-page">
         <h1 className="section-heading">Cart</h1>
+        {cartErrors.length > 0 && <CartErrors errors={cartErrors} />}
         <div className="cart-empty">
           <p>Your cart is empty.</p>
           <Link to="/products">Continue Shopping</Link>
@@ -67,6 +85,7 @@ export default function CartPage() {
   return (
     <div className="cart-page">
       <h1 className="section-heading">Cart</h1>
+      {cartErrors.length > 0 && <CartErrors errors={cartErrors} />}
       <ul className="cart-lines">
         {cart.lines.nodes.map((line) => (
           <CartLineItem key={line.id} line={line} />
@@ -76,6 +95,16 @@ export default function CartPage() {
         <span className="total">Total: <Money data={cart.cost.totalAmount} /></span>
         <button className="cart-checkout-btn">Checkout</button>
       </div>
+    </div>
+  );
+}
+
+function CartErrors({errors}: {errors: Array<{message: string}>}) {
+  return (
+    <div className="cart-errors">
+      {errors.map((error, i) => (
+        <p key={i}>{error.message}</p>
+      ))}
     </div>
   );
 }
@@ -92,6 +121,9 @@ function CartLineItem({line}: {line: CartLine}) {
   const quantity = pendingQty ?? line.quantity;
   if (quantity <= 0) return null;
 
+  // Show error for this specific line
+  const lineError = updateFetcher.data?.errors?.[0]?.message;
+
   const image = line.merchandise.image ?? line.merchandise.product.featuredImage;
 
   return (
@@ -105,6 +137,7 @@ function CartLineItem({line}: {line: CartLine}) {
           </div>
         )}
         <div><Money data={line.cost.totalAmount} /></div>
+        {lineError && <div className="cart-line-error">{lineError}</div>}
       </div>
       <div className="cart-line-quantity">
         <updateFetcher.Form method="post" action="/cart">
