@@ -514,26 +514,28 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  min-height: 30px;
-  max-width: 30px;
-  max-height: 30px;
-  border: 1px solid transparent;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  max-width: 28px;
+  max-height: 28px;
+  border: none;
   border-radius: 50%;
   padding: 0;
   text-decoration: none;
-  transition: border-color 0.15s;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.15s;
 }
 
 .option-swatch-color:hover {
-  border-color: var(--color-gray-400);
+  outline-color: var(--color-gray-300);
   text-decoration: none;
 }
 
 .option-swatch-color.selected {
-  border-color: var(--color-dark);
+  outline-color: var(--color-dark);
 }
 
 .option-swatch-color.unavailable {
@@ -541,10 +543,10 @@ button {
 }
 
 .swatch-circle {
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  min-height: 22px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
   border-radius: 50%;
   display: block;
   border: 1px solid rgba(0, 0, 0, 0.08);
