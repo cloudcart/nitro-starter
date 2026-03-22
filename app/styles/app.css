@@ -403,12 +403,24 @@ button {
 .product-page {
   display: grid;
   gap: 2rem;
+  align-items: start;
 }
 
 @media (min-width: 768px) {
   .product-page {
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
+  }
+}
+
+.product-image {
+  align-self: start;
+}
+
+@media (min-width: 768px) {
+  .product-image {
+    position: sticky;
+    top: calc(var(--header-height) + 1.5rem);
   }
 }
 
@@ -422,13 +434,6 @@ button {
 
 .product-info {
   align-self: start;
-}
-
-@media (min-width: 768px) {
-  .product-info {
-    position: sticky;
-    top: calc(var(--header-height) + 2rem);
-  }
 }
 
 .product-info h1 {
