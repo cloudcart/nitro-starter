@@ -49,7 +49,6 @@ export default function ProductPage() {
 
   const hasMultiplePrices = product.priceRange.minVariantPrice.amount !== product.priceRange.maxVariantPrice.amount;
   const isOnSale = variant?.compareAtPrice && parseFloat(variant.compareAtPrice.amount) > parseFloat(variant.price.amount);
-  const isNew = product.publishedAt && (Date.now() - new Date(product.publishedAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
 
   // Breadcrumb from collection
   const breadcrumbItems = [];
@@ -67,7 +66,6 @@ export default function ProductPage() {
         <div className="product-image">
           <div className="product-badges">
             {isOnSale && <span className="badge badge-sale">Sale</span>}
-            {isNew && <span className="badge badge-new">New</span>}
             {!product.availableForSale && <span className="badge badge-soldout">Sold Out</span>}
           </div>
           <ProductImageGallery
