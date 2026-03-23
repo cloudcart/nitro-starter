@@ -53,7 +53,7 @@ function FeaturedCollection({collection}: {collection: Collection | null}) {
 
   return (
     <Link to={`/collections/${collection.handle}`} className="hero" prefetch="intent">
-      {collection.image ? (
+      {collection.image?.url ? (
         <Image data={collection.image} alt={collection.title} loading="eager" />
       ) : (
         <div style={{aspectRatio: '16/7', background: 'linear-gradient(135deg, #6366f1, #ec4899)', borderRadius: 12}} />

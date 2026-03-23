@@ -1,30 +1,14 @@
 import {useSearchParams, useNavigate} from 'react-router';
 
-interface FilterOption {
-  label: string;
-  value: string;
-  count?: number;
-}
-
-interface ProductFiltersProps {
-  availableFilters?: {
-    vendors?: string[];
-    tags?: string[];
-    options?: {name: string; values: string[]}[];
-  };
-  maxPrice?: number;
-}
-
-export function ProductFilters({availableFilters, maxPrice = 500}: ProductFiltersProps) {
+export function ProductFilters() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const currentSort = searchParams.get('sort') ?? '';
-  const currentVendor = searchParams.get('vendor') ?? '';
-  const currentTag = searchParams.get('tag') ?? '';
   const currentMinPrice = searchParams.get('minPrice') ?? '';
   const currentMaxPrice = searchParams.get('maxPrice') ?? '';
   const currentAvailable = searchParams.get('available') ?? '';
+  const currentVendor = searchParams.get('vendor') ?? '';
 
   function updateFilter(key: string, value: string) {
     const params = new URLSearchParams(searchParams);
@@ -43,7 +27,7 @@ export function ProductFilters({availableFilters, maxPrice = 500}: ProductFilter
     navigate('?', {preventScrollReset: true});
   }
 
-  const hasActiveFilters = currentVendor || currentTag || currentMinPrice || currentMaxPrice || currentAvailable;
+  const hasActiveFilters = currentVendor || currentMinPrice || currentMaxPrice || currentAvailable;
 
   return (
     <div className="product-filters">
@@ -82,81 +66,28 @@ export function ProductFilters({availableFilters, maxPrice = 500}: ProductFilter
         <label className="filter-label">Price</label>
         <div className="filter-price-range">
           <input
+            key={`min-${currentMinPrice}`}
             type="number"
             className="filter-price-input"
             placeholder="Min"
-            value={currentMinPrice}
-            onChange={(e) => updateFilter('minPrice', e.target.value)}
+            defaultValue={currentMinPrice}
+            onBlur={(e) => updateFilter('minPrice', e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && updateFilter('minPrice', (e.target as HTMLInputElement).value)}
             min={0}
           />
           <span className="filter-price-sep">—</span>
           <input
+            key={`max-${currentMaxPrice}`}
             type="number"
             className="filter-price-input"
             placeholder="Max"
-            value={currentMaxPrice}
-            onChange={(e) => updateFilter('maxPrice', e.target.value)}
+            defaultValue={currentMaxPrice}
+            onBlur={(e) => updateFilter('maxPrice', e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && updateFilter('maxPrice', (e.target as HTMLInputElement).value)}
             min={0}
           />
         </div>
       </div>
-
-      {/* Vendor */}
-      {availableFilters?.vendors && availableFilters.vendors.length > 0 && (
-        <div className="filter-group">
-          <label className="filter-label">Brand</label>
-          <select
-            className="filter-select"
-            value={currentVendor}
-            onChange={(e) => updateFilter('vendor', e.target.value)}
-          >
-            <option value="">All brands</option>
-            {availableFilters.vendors.map((v) => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Tags */}
-      {availableFilters?.tags && availableFilters.tags.length > 0 && (
-        <div className="filter-group">
-          <label className="filter-label">Category</label>
-          <div className="filter-tags">
-            {availableFilters.tags.map((tag) => (
-              <button
-                key={tag}
-                className={`filter-tag ${currentTag === tag ? 'active' : ''}`}
-                onClick={() => updateFilter('tag', currentTag === tag ? '' : tag)}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Variant Options */}
-      {availableFilters?.options?.map((option) => (
-        <div key={option.name} className="filter-group">
-          <label className="filter-label">{option.name}</label>
-          <div className="filter-tags">
-            {option.values.map((value) => {
-              const paramKey = `option_${option.name}`;
-              const isActive = searchParams.get(paramKey) === value;
-              return (
-                <button
-                  key={value}
-                  className={`filter-tag ${isActive ? 'active' : ''}`}
-                  onClick={() => updateFilter(paramKey, isActive ? '' : value)}
-                >
-                  {value}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
 
       {/* Clear All */}
       {hasActiveFilters && (

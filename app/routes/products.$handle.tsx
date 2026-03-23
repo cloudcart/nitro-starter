@@ -329,7 +329,7 @@ function RelatedProducts({products}: {products: any[]}) {
         {products.map((p: any) => (
           <Link key={p.id} to={`/products/${p.handle}`} className="product-card" prefetch="intent">
             <div className="product-card-image">
-              {p.featuredImage && <Image data={p.featuredImage} alt={p.title} />}
+              {p.featuredImage?.url ? <Image data={p.featuredImage} alt={p.title} /> : <img src="/noimage.svg" alt={p.title} />}
               {p.availableForSale === false && (
                 <span className="badge badge-soldout">Sold Out</span>
               )}

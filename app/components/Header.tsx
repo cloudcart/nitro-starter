@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 const FALLBACK_MENU = [
-  {title: 'Collections', url: '/collections'},
+  {title: 'Categories', url: '/collections'},
   {title: 'Products', url: '/products'},
   {title: 'Blog', url: '/blogs'},
 ];

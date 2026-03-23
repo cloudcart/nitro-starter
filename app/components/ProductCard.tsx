@@ -9,11 +9,15 @@ export function ProductCard({product, loading}: {product: Product; loading?: 'ea
   return (
     <Link to={`/products/${product.handle}`} className="product-card" prefetch="intent">
       <div className="product-card-image">
-        <Image
-          data={product.featuredImage}
-          alt={product.title}
-          loading={loading}
-        />
+        {product.featuredImage?.url ? (
+          <Image
+            data={product.featuredImage}
+            alt={product.title}
+            loading={loading}
+          />
+        ) : (
+          <img src="/noimage.svg" alt={product.title} loading={loading} />
+        )}
         {product.availableForSale === false && (
           <span className="badge badge-soldout">Sold Out</span>
         )}

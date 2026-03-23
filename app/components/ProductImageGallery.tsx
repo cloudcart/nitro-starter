@@ -6,7 +6,7 @@ export function ProductImageGallery({images, featuredImage}: {
   images: ImageType[];
   featuredImage: ImageType | null;
 }) {
-  const allImages = images.length > 0 ? images : featuredImage ? [featuredImage] : [];
+  const allImages = images.filter((img) => img?.url).length > 0 ? images.filter((img) => img?.url) : featuredImage?.url ? [featuredImage] : [];
   const [selectedIndex, setSelectedIndex] = useState(0);
   const selectedImage = allImages[selectedIndex] ?? null;
 
@@ -18,7 +18,7 @@ export function ProductImageGallery({images, featuredImage}: {
     }
   }, [allImages.length]);
 
-  if (!selectedImage) return <div className="product-image-placeholder" />;
+  if (!selectedImage) return <img src="/noimage.svg" alt="" className="product-image-placeholder" />;
 
   return (
     <div className="product-gallery" onKeyDown={allImages.length > 1 ? handleKeyDown : undefined}>
