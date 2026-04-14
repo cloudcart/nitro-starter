@@ -30,7 +30,22 @@ export const meta: Route.MetaFunction = ({data: d}) => {
 
 export async function loader({params, context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);
-  const product = await ctx.storefront.getProduct(params.handle);
+  let product;
+  try {
+    product = await ctx.storefront.getProduct(params.handle);
+  } catch (err: any) {
+    // TEMP: expose GQL error in response for debugging
+    throw new Response(
+      '<!DOCTYPE html><html><body><h1>GraphQL Error</h1><pre>' +
+      JSON.stringify({
+        message: err?.message,
+        status: err?.status,
+        graphqlErrors: err?.graphqlErrors,
+      }, null, 2).replace(/</g, '&lt;') +
+      '</pre></body></html>',
+      {status: 500, headers: {'Content-Type': 'text/html; charset=utf-8'}},
+    );
+  }
   if (!product) throw data('Product not found', {status: 404});
 
   return {
