@@ -3,22 +3,13 @@ import type {VariantOption} from '@cloudcart/nitro-react';
 
 interface OptionSwatchProps {
   option: VariantOption;
-  /** The option type from the API: color, image, select, radio, 2d, numeric_alpha */
   type?: string;
-  /** Hex color for color-type options */
   color?: string | null;
-  /** Swatch image URL for image-type options */
   swatchUrl?: string | null;
 }
 
-/**
- * Renders a single option value based on its type.
- * - color → colored circle
- * - image → swatch thumbnail
- * - default → text pill
- */
 export function OptionSwatch({option, type, color, swatchUrl}: OptionSwatchProps) {
-  const baseClass = `option-value${option.isActive ? ' selected' : ''}${!option.available ? ' unavailable' : ''}`;
+  const unavailable = !option.available;
 
   if (type === 'color' && color) {
     return (
@@ -27,12 +18,14 @@ export function OptionSwatch({option, type, color, swatchUrl}: OptionSwatchProps
         replace
         preventScrollReset
         prefetch="intent"
-        className={`option-swatch-color ${baseClass}`}
+        className={`flex items-center justify-center size-8 border-none rounded-full p-0 no-underline outline-2 outline-offset-2 transition-[outline-color] duration-150 hover:outline-gray-300 hover:no-underline ${
+          option.isActive ? 'outline-dark' : 'outline-transparent'
+        }${unavailable ? ' opacity-25 pointer-events-none' : ''}`}
         title={option.value}
         aria-label={option.value}
       >
         <span
-          className="swatch-circle"
+          className="size-8 rounded-full block border border-black/10"
           style={{backgroundColor: color}}
         />
       </Link>
@@ -46,23 +39,29 @@ export function OptionSwatch({option, type, color, swatchUrl}: OptionSwatchProps
         replace
         preventScrollReset
         prefetch="intent"
-        className={`option-swatch-image ${baseClass}`}
+        className={`inline-flex size-12 border-2 rounded-lg p-0.5 no-underline transition-[border-color] duration-150 overflow-hidden hover:border-gray-400 hover:no-underline ${
+          option.isActive ? 'border-dark' : 'border-transparent'
+        }${unavailable ? ' opacity-25 pointer-events-none' : ''}`}
         title={option.value}
         aria-label={option.value}
       >
-        <img src={swatchUrl} alt={option.value} className="swatch-img" />
+        <img src={swatchUrl} alt={option.value} className="w-full h-full object-cover rounded-md" />
       </Link>
     );
   }
 
-  // Default: text pill (for select, radio, numeric_alpha, 2d, or no type)
+  // Default: text pill
   return (
     <Link
       to={option.to}
       replace
       preventScrollReset
       prefetch="intent"
-      className={baseClass}
+      className={`inline-flex items-center justify-center py-2 px-[1.125rem] border-[1.5px] rounded-lg text-[0.85rem] font-medium no-underline transition-[border-color,background,color] duration-150 min-w-12 hover:border-dark hover:no-underline ${
+        option.isActive
+          ? 'border-dark bg-dark text-light'
+          : 'border-gray-200 bg-light text-dark'
+      }${unavailable ? ' opacity-35 line-through pointer-events-none' : ''}`}
     >
       {option.value}
     </Link>

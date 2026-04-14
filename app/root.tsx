@@ -2,17 +2,12 @@ import {Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData, use
 import type {Route} from './+types/root';
 import {getContext} from '~/lib/context';
 import {getSeoMeta} from '@cloudcart/nitro';
-import {Header} from '~/components/Header';
-import {Footer} from '~/components/Footer';
 import {AsideProvider, Aside} from '~/components/Aside';
 import {CartDrawer} from '~/components/CartDrawer';
-import appStyles from '~/styles/app.css?url';
+import {PageLayout} from '~/components/PageLayout';
+import '~/app.css';
 
 export const meta: MetaFunction = () => getSeoMeta({title: 'Nitro | Modern Commerce'});
-
-export const links: Route.LinksFunction = () => {
-  return [{rel: 'stylesheet', href: appStyles}];
-};
 
 export const shouldRevalidate: Route.ShouldRevalidateFunction = ({formMethod, currentUrl, nextUrl}) => {
   if (formMethod && formMethod !== 'GET') return true;
@@ -52,19 +47,21 @@ export function Layout({children}: {children: React.ReactNode}) {
 export default function App() {
   const data = useRouteLoaderData<typeof loader>('root');
   const shop = data?.shop ?? {name: 'Nitro', description: null};
+  const cart = data?.cart ?? Promise.resolve(null);
 
   return (
     <AsideProvider>
       <Aside type="cart" heading="CART">
-        <CartDrawer cart={data?.cart ?? Promise.resolve(null)} />
+        <CartDrawer cart={cart} />
       </Aside>
-      <div className="page-layout">
-        <Header shop={shop} menu={data?.headerMenu ?? null} cart={data?.cart ?? Promise.resolve(null)} />
-        <main>
-          <Outlet />
-        </main>
-        <Footer shop={shop} menu={data?.footerMenu ?? null} />
-      </div>
+      <PageLayout
+        shop={shop}
+        headerMenu={data?.headerMenu ?? null}
+        footerMenu={data?.footerMenu ?? null}
+        cart={cart}
+      >
+        <Outlet />
+      </PageLayout>
     </AsideProvider>
   );
 }
@@ -75,12 +72,12 @@ export function ErrorBoundary() {
   if (isRouteErrorResponse(error)) { msg = error.data?.message ?? error.statusText; status = error.status; }
   else if (error instanceof Error) { msg = error.message; }
   return (
-    <div className="page-layout">
-      <main>
-        <div className="not-found">
-          <h1>{status}</h1>
-          <p>{msg}</p>
-          <a href="/">Go Home</a>
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-8 md:px-8 md:py-10">
+        <div className="text-center py-16">
+          <h1 className="text-8xl font-extrabold text-gray-200 leading-none">{status}</h1>
+          <p className="text-gray-500 mt-2">{msg}</p>
+          <a href="/" className="text-brand font-semibold mt-4 inline-block">Go Home</a>
         </div>
       </main>
     </div>

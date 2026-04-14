@@ -1,12 +1,14 @@
-import {useLoaderData, data, Link, useNavigate} from 'react-router';
+import {useLoaderData, data, Link} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {getContext} from '~/lib/context';
 import {getSeoMeta, generateProductJsonLd} from '@cloudcart/nitro';
-import {Image, ProductPrice, RichText, VariantSelector, useOptimisticVariant, Money} from '@cloudcart/nitro-react';
-import {AddToCartButton} from '~/components/AddToCartButton';
+import {Image, RichText, useOptimisticVariant, Money} from '@cloudcart/nitro-react';
+import {ArrowDownTrayIcon} from '@heroicons/react/24/outline';
+import {ProductForm} from '~/components/ProductForm';
 import {ProductImageGallery} from '~/components/ProductImageGallery';
 import {Breadcrumbs} from '~/components/Breadcrumbs';
-import {OptionSwatch} from '~/components/OptionSwatch';
+import {StarRating} from '~/components/StarRating';
+import {ReviewList} from '~/components/ReviewList';
 
 export const meta: Route.MetaFunction = ({data: d}) => {
   const product = d?.product;
@@ -33,34 +35,43 @@ export async function loader({params, context, request}: Route.LoaderArgs) {
 
   return {
     product,
-    relatedProducts: (product as any).relatedProducts?.nodes ?? [],
+    linkedProducts: (product as any).linkedProducts?.nodes ?? [],
     collections: (product as any).collections?.nodes ?? [],
   };
 }
 
 export default function ProductPage() {
-  const {product, relatedProducts, collections} = useLoaderData<typeof loader>();
+  const {product, linkedProducts, collections} = useLoaderData<typeof loader>();
   const firstVariant = product.variants.nodes[0];
   const {selectedVariant} = useOptimisticVariant(product, firstVariant);
   const variant = selectedVariant ?? firstVariant;
 
   return (
-    <div className="product-page-wrapper">
+    <div className="max-w-7xl">
       <ProductBreadcrumbs product={product} collections={collections} />
 
-      <div className="product-page">
+      <div className="grid gap-8 md:grid-cols-2 md:gap-12 lg:grid-cols-[7fr_5fr] lg:gap-16">
         <ProductMedia product={product} variant={variant} />
         <ProductDetails product={product} variant={variant} />
       </div>
 
-      {relatedProducts.length > 0 && (
-        <RelatedProducts products={relatedProducts} />
+      {/* Reviews */}
+      {(product as any).reviewSummary && (
+        <ReviewList
+          reviews={(product as any).reviews?.nodes ?? []}
+          summary={(product as any).reviewSummary}
+          totalCount={(product as any).reviews?.totalCount ?? (product as any).reviewSummary?.totalCount ?? 0}
+        />
+      )}
+
+      {linkedProducts.length > 0 && (
+        <LinkedProducts products={linkedProducts} />
       )}
     </div>
   );
 }
 
-/* ─── Product Media (Left Column) ────────────────────────────────────── */
+/* --- Product Media (Left Column) --- */
 
 function ProductMedia({product, variant}: {product: any; variant: any}) {
   const isOnSale = variant?.compareAtPrice &&
@@ -68,19 +79,19 @@ function ProductMedia({product, variant}: {product: any; variant: any}) {
   const labels: Array<{name: string; color?: string; textColor?: string}> = product.labels ?? [];
 
   return (
-    <div className="product-media">
-      <div className="product-media-sticky">
-        <div className="product-badges">
-          {product.isNew && <span className="badge badge-new">New</span>}
-          {product.isFeatured && <span className="badge badge-featured">Featured</span>}
-          {isOnSale && <span className="badge badge-sale">Sale</span>}
-          {product.availableForSale === false && <span className="badge badge-soldout">Sold Out</span>}
+    <div className="relative">
+      <div className="relative md:sticky md:top-[calc(4rem+1.5rem)]">
+        <div className="absolute top-3 left-3 z-[2] flex flex-wrap gap-1.5">
+          {product.isNew && <span className="py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-brand text-white">New</span>}
+          {product.isFeatured && <span className="py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-amber-500 text-white">Featured</span>}
+          {isOnSale && <span className="py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-red-600 text-white">Sale</span>}
+          {product.availableForSale === false && <span className="py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-gray-600 text-white">Sold Out</span>}
           {labels
             .filter((l) => !['New', 'Featured'].includes(l.name))
             .map((label) => (
               <span
                 key={label.name}
-                className="badge badge-custom"
+                className="py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-gray-600 text-white"
                 style={label.color ? {backgroundColor: label.color, color: label.textColor || '#fff'} : undefined}
               >
                 {label.name}
@@ -96,118 +107,52 @@ function ProductMedia({product, variant}: {product: any; variant: any}) {
   );
 }
 
-/* ─── Product Details (Right Column) ─────────────────────────────────── */
+/* --- Product Details (Right Column) --- */
 
 function ProductDetails({product, variant}: {product: any; variant: any}) {
-  const hasMultiplePrices =
-    product.priceRange.minVariantPrice.amount !== product.priceRange.maxVariantPrice.amount;
-  const isOnSale = variant?.compareAtPrice &&
-    parseFloat(variant.compareAtPrice.amount) > parseFloat(variant.price.amount);
-
   const properties: Array<{name: string; values: string[]}> = product.properties ?? [];
   const files: Array<{id: string; name: string; filename: string; url: string; fileSize: number}> =
     product.files?.nodes ?? [];
 
   return (
-    <div className="product-details">
+    <div className="self-start">
       {/* Vendor */}
       {product.vendor && (
-        <Link to={`/products?vendor=${product.vendor}`} className="product-vendor">
+        <Link to={`/products?vendor=${product.vendor}`} className="inline-block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 hover:text-brand hover:no-underline">
           {product.vendor}
         </Link>
       )}
 
-      <h1 className="product-title">{product.title}</h1>
+      <h1 className="text-[1.75rem] md:text-[2rem] font-bold tracking-tight leading-tight">{product.title}</h1>
 
-      {/* Price */}
-      <div className="product-price-display" aria-live="polite">
-        {variant ? (
-          <>
-            <ProductPrice price={variant.price} compareAtPrice={variant.compareAtPrice} />
-            {isOnSale && variant.compareAtPrice && (
-              <span className="product-savings">
-                Save {Math.round((1 - parseFloat(variant.price.amount) / parseFloat(variant.compareAtPrice.amount)) * 100)}%
-              </span>
-            )}
-          </>
-        ) : hasMultiplePrices ? (
-          <span>From <Money data={product.priceRange.minVariantPrice} /></span>
-        ) : (
-          <Money data={product.priceRange.minVariantPrice} />
-        )}
-      </div>
-
-      {/* Stock */}
-      {variant && <StockIndicator variant={variant} />}
-
-      {/* Variant Selector */}
-      <VariantSelector product={product}>
-        {(options) =>
-          options.map(({name, values}) => {
-            const optionMeta = getOptionMeta(product, name);
-            const optionType = optionMeta.type;
-            const activeValue = values.find((v) => v.isActive);
-
-            return (
-              <fieldset key={name} className="product-options">
-                <legend>
-                  {name}
-                  {activeValue && <span className="option-active-value">: {activeValue.value}</span>}
-                </legend>
-
-                {optionType === 'select' ? (
-                  <OptionSelect name={name} values={values} />
-                ) : (
-                  <div className={`option-values${optionType === 'color' ? ' option-values-swatches' : ''}`}>
-                    {values.map((o) => {
-                      const valueMeta = optionMeta.values[o.value];
-                      return (
-                        <OptionSwatch
-                          key={o.value}
-                          option={o}
-                          type={optionType}
-                          color={valueMeta?.color}
-                          swatchUrl={valueMeta?.swatchUrl}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </fieldset>
-            );
-          })
-        }
-      </VariantSelector>
-
-      {/* Add to Cart */}
-      {variant && (
-        <AddToCartButton
-          merchandiseId={variant.id}
-          disabled={!variant.availableForSale}
-          className="add-to-cart-btn"
-        >
-          {variant.availableForSale ? 'Add to Cart' : 'Sold Out'}
-        </AddToCartButton>
+      {/* Rating */}
+      {product.reviewSummary && product.reviewSummary.totalCount > 0 && (
+        <div className="mt-2">
+          <StarRating rating={product.reviewSummary.averageRating} count={product.reviewSummary.totalCount} size="md" />
+        </div>
       )}
+
+      {/* Product Form: Price + Variants + Add to Cart */}
+      <ProductForm product={product} selectedVariant={variant} />
 
       {/* SKU */}
       {variant?.sku && (
-        <div className="product-sku">SKU: {variant.sku}</div>
+        <div className="mt-4 text-xs text-gray-400 tracking-wide">SKU: {variant.sku}</div>
       )}
 
       {/* Description */}
-      <RichText data={product.descriptionHtml} className="product-description" />
+      <RichText data={product.descriptionHtml} className="prose prose-sm prose-gray mt-8 pt-6 border-t border-gray-100 max-w-none" />
 
       {/* Specifications */}
       {properties.length > 0 && (
-        <div className="product-section">
-          <h3 className="product-section-title">Specifications</h3>
-          <table className="properties-table">
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <h3 className="text-[0.85rem] font-bold uppercase tracking-wider mb-3 text-dark">Specifications</h3>
+          <table className="w-full border-collapse">
             <tbody>
               {properties.map((prop) => (
                 <tr key={prop.name}>
-                  <td className="property-name">{prop.name}</td>
-                  <td className="property-value">{prop.values.join(', ')}</td>
+                  <td className="py-2.5 text-[0.85rem] border-b border-gray-100 text-gray-500 w-[40%] font-medium">{prop.name}</td>
+                  <td className="py-2.5 text-[0.85rem] border-b border-gray-100 text-dark">{prop.values.join(', ')}</td>
                 </tr>
               ))}
             </tbody>
@@ -217,16 +162,16 @@ function ProductDetails({product, variant}: {product: any; variant: any}) {
 
       {/* Downloads */}
       {files.length > 0 && (
-        <div className="product-section">
-          <h3 className="product-section-title">Downloads</h3>
-          <ul className="files-list">
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <h3 className="text-[0.85rem] font-bold uppercase tracking-wider mb-3 text-dark">Downloads</h3>
+          <ul className="list-none flex flex-col gap-2">
             {files.map((file) => (
               <li key={file.id}>
-                <a href={file.url} target="_blank" rel="noopener noreferrer" className="file-link">
+                <a href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 py-2.5 px-3.5 bg-gray-50 border border-gray-200 rounded-lg text-[0.85rem] text-dark transition-all duration-150 hover:bg-gray-100 hover:border-gray-400 hover:no-underline">
                   <DownloadIcon />
                   {file.name || file.filename}
                   {file.fileSize > 0 && (
-                    <span className="file-size">{formatFileSize(file.fileSize)}</span>
+                    <span className="text-gray-400 text-xs ml-auto">{formatFileSize(file.fileSize)}</span>
                   )}
                 </a>
               </li>
@@ -237,9 +182,9 @@ function ProductDetails({product, variant}: {product: any; variant: any}) {
 
       {/* Tags */}
       {product.tags?.length > 0 && (
-        <div className="product-tags">
+        <div className="flex flex-wrap gap-1.5 mt-6">
           {product.tags.map((tag: string) => (
-            <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}`} className="product-tag">
+            <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}`} className="py-1 px-2.5 bg-gray-100 rounded-full text-xs text-gray-600 transition-all duration-150 hover:bg-gray-200 hover:text-dark hover:no-underline">
               {tag}
             </Link>
           ))}
@@ -248,8 +193,8 @@ function ProductDetails({product, variant}: {product: any; variant: any}) {
 
       {/* Shipping Info */}
       {variant?.weight && (
-        <div className="product-shipping-info">
-          <span className="shipping-detail">
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <span className="text-xs text-gray-500">
             Weight: {variant.weight} {(variant.weightUnit ?? 'kg').toLowerCase()}
           </span>
         </div>
@@ -258,87 +203,26 @@ function ProductDetails({product, variant}: {product: any; variant: any}) {
   );
 }
 
-/* ─── Stock Indicator ────────────────────────────────────────────────── */
+/* --- Related Products --- */
 
-function StockIndicator({variant}: {variant: any}) {
-  if (!variant.availableForSale) {
-    return (
-      <div className="product-stock">
-        <span className="stock-out">Out of stock</span>
-      </div>
-    );
-  }
-
-  if (variant.currentlyNotInStock) {
-    return (
-      <div className="product-stock">
-        <span className="stock-preorder">Available for pre-order</span>
-      </div>
-    );
-  }
-
-  if (variant.quantityAvailable != null && variant.quantityAvailable > 0 && variant.quantityAvailable <= 5) {
-    return (
-      <div className="product-stock">
-        <span className="stock-low">Only {variant.quantityAvailable} left!</span>
-      </div>
-    );
-  }
-
+function LinkedProducts({products}: {products: any[]}) {
   return (
-    <div className="product-stock">
-      <span className="stock-in">In stock</span>
-    </div>
-  );
-}
-
-/* ─── Option Select Dropdown ─────────────────────────────────────────── */
-
-function OptionSelect({name, values}: {name: string; values: any[]}) {
-  const navigate = useNavigate();
-  const activeValue = values.find((v) => v.isActive);
-
-  return (
-    <select
-      className="option-select"
-      value={activeValue?.value ?? ''}
-      aria-label={name}
-      onChange={(e) => {
-        const selected = values.find((v) => v.value === e.target.value);
-        if (selected) {
-          navigate(selected.to, {replace: true, preventScrollReset: true});
-        }
-      }}
-    >
-      {values.map((o) => (
-        <option key={o.value} value={o.value} disabled={!o.available}>
-          {o.value}{!o.available ? ' (Sold out)' : ''}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-/* ─── Related Products ───────────────────────────────────────────────── */
-
-function RelatedProducts({products}: {products: any[]}) {
-  return (
-    <section className="related-products">
-      <h2 className="section-heading">You may also like</h2>
-      <div className="products-grid">
+    <section className="mt-16 pt-8 border-t border-gray-200">
+      <h2 className="text-2xl font-bold tracking-tight mb-5">You may also like</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
         {products.map((p: any) => (
-          <Link key={p.id} to={`/products/${p.handle}`} className="product-card" prefetch="intent">
-            <div className="product-card-image">
-              {p.featuredImage?.url ? <Image data={p.featuredImage} alt={p.title} /> : <img src="/noimage.svg" alt={p.title} />}
+          <Link key={p.id} to={`/products/${p.handle}`} className="block text-inherit transition-transform duration-150 hover:no-underline hover:-translate-y-0.5" prefetch="intent">
+            <div className="relative overflow-hidden rounded-[10px]">
+              {p.featuredImage?.url ? <Image data={p.featuredImage} alt={p.title} className="aspect-square object-cover w-full rounded-[10px] bg-gray-100" /> : <img src="/noimage.svg" alt={p.title} className="aspect-square object-cover w-full rounded-[10px] bg-gray-100" />}
               {p.availableForSale === false && (
-                <span className="badge badge-soldout">Sold Out</span>
+                <span className="absolute top-2 right-2 py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-gray-600 text-white">Sold Out</span>
               )}
               {p.labels?.length > 0 && (
-                <div className="product-card-badges">
+                <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                   {p.labels.map((label: any) => (
                     <span
                       key={label.name}
-                      className="badge badge-custom"
+                      className="py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-gray-600 text-white"
                       style={label.color ? {backgroundColor: label.color, color: label.textColor || '#fff'} : undefined}
                     >
                       {label.name}
@@ -347,8 +231,8 @@ function RelatedProducts({products}: {products: any[]}) {
                 </div>
               )}
             </div>
-            <h4>{p.title}</h4>
-            <span className="price"><Money data={p.priceRange.minVariantPrice} /></span>
+            <h4 className="text-sm font-semibold mt-3 leading-tight">{p.title}</h4>
+            <span className="text-[0.85rem] text-gray-500 mt-1 block"><Money data={p.priceRange.minVariantPrice} /></span>
           </Link>
         ))}
       </div>
@@ -356,7 +240,7 @@ function RelatedProducts({products}: {products: any[]}) {
   );
 }
 
-/* ─── Breadcrumbs ────────────────────────────────────────────────────── */
+/* --- Breadcrumbs --- */
 
 function ProductBreadcrumbs({product, collections}: {product: any; collections: any[]}) {
   const items = [];
@@ -367,30 +251,7 @@ function ProductBreadcrumbs({product, collections}: {product: any; collections: 
   return <Breadcrumbs items={items} />;
 }
 
-/* ─── Helpers ────────────────────────────────────────────────────────── */
-
-/**
- * Extract option type, color, and swatch metadata from variant selectedOptions.
- */
-function getOptionMeta(product: any, optionName: string) {
-  const values: Record<string, {color?: string; swatchUrl?: string}> = {};
-  let type: string | undefined;
-
-  for (const variant of product.variants.nodes) {
-    for (const so of variant.selectedOptions) {
-      if (so.name !== optionName) continue;
-      if (so.type && !type) type = so.type;
-      if (!values[so.value]) {
-        values[so.value] = {
-          color: so.color || undefined,
-          swatchUrl: so.swatchUrl || undefined,
-        };
-      }
-    }
-  }
-
-  return {type, values};
-}
+/* --- Helpers --- */
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -399,9 +260,5 @@ function formatFileSize(bytes: number): string {
 }
 
 function DownloadIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 2v8m0 0L5 7m3 3l3-3M3 13h10" />
-    </svg>
-  );
+  return <ArrowDownTrayIcon className="size-4 shrink-0 text-gray-400" />;
 }

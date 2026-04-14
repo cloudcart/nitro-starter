@@ -2,6 +2,7 @@ import {NavLink, Link, Await} from 'react-router';
 import {Suspense} from 'react';
 import type {Shop, Menu, CartData} from '@cloudcart/nitro';
 import {useAside} from './Aside';
+import {MagnifyingGlassIcon, ShoppingBagIcon} from '@heroicons/react/24/outline';
 
 interface HeaderProps {
   shop: Shop;
@@ -20,15 +21,17 @@ export function Header({shop, menu, cart}: HeaderProps) {
   const {open} = useAside();
 
   return (
-    <header className="header">
-      <Link to="/" className="header-logo">{shop.name}</Link>
+    <header className="flex items-center bg-light border-b border-gray-200 h-16 px-6 md:px-8 sticky top-0 z-10">
+      <Link to="/" className="text-xl font-extrabold tracking-tight text-dark hover:no-underline">{shop.name}</Link>
 
-      <nav className="header-menu-desktop">
+      <nav className="hidden md:flex gap-6 ml-10">
         {items.map((item) => (
           <NavLink
             key={item.title}
             to={item.url}
-            className={({isActive}) => isActive ? 'active' : ''}
+            className={({isActive}) =>
+              `text-sm font-medium transition-colors duration-150 hover:text-dark hover:no-underline ${isActive ? 'text-dark font-semibold' : 'text-gray-600'}`
+            }
             prefetch="intent"
           >
             {item.title}
@@ -36,15 +39,21 @@ export function Header({shop, menu, cart}: HeaderProps) {
         ))}
       </nav>
 
-      <div className="header-ctas">
-        <NavLink to="/search">Search</NavLink>
-        <button className="cart-toggle" onClick={() => open('cart')}>
-          Cart
+      <div className="flex items-center gap-3 ml-auto">
+        <NavLink to="/search" className="text-gray-500 hover:text-dark transition-colors duration-150 p-1" aria-label="Search">
+          <MagnifyingGlassIcon className="size-5" />
+        </NavLink>
+        <button
+          className="text-gray-500 hover:text-dark transition-colors duration-150 p-1 relative"
+          onClick={() => open('cart')}
+          aria-label="Open cart"
+        >
+          <ShoppingBagIcon className="size-5" />
           <Suspense>
             <Await resolve={cart}>
               {(resolvedCart) =>
                 resolvedCart && resolvedCart.totalQuantity > 0 ? (
-                  <span className="cart-count">{resolvedCart.totalQuantity}</span>
+                  <span className="absolute -top-1 -right-1.5 bg-brand text-white rounded-full size-[18px] text-[0.6rem] font-bold flex items-center justify-center">{resolvedCart.totalQuantity}</span>
                 ) : null
               }
             </Await>

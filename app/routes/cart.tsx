@@ -1,8 +1,9 @@
-import {useLoaderData, redirect, Link, useFetcher, useFetchers, data as routeData} from 'react-router';
+import {useLoaderData, redirect, useFetchers, data as routeData} from 'react-router';
 import type {Route} from './+types/cart';
 import {getContext} from '~/lib/context';
-import type {CartData, CartLine} from '@cloudcart/nitro';
-import {Money, Image} from '@cloudcart/nitro-react';
+import type {CartData} from '@cloudcart/nitro';
+import {CartMain} from '~/components/CartMain';
+import {CartSummary} from '~/components/CartSummary';
 
 export const meta: Route.MetaFunction = () => [{title: 'Nitro | Cart'}];
 
@@ -63,102 +64,29 @@ export async function action({request, context}: Route.ActionArgs) {
 export default function CartPage() {
   const {cart} = useLoaderData<typeof loader>();
 
-  // Show errors from any cart fetcher
   const fetchers = useFetchers();
   const cartErrors = fetchers
     .filter((f) => f.formAction === '/cart' && f.data?.errors?.length)
     .flatMap((f) => f.data.errors as Array<{message: string}>);
 
-  if (!cart || cart.totalQuantity === 0) {
-    return (
-      <div className="cart-page">
-        <h1 className="section-heading">Cart</h1>
-        {cartErrors.length > 0 && <CartErrors errors={cartErrors} />}
-        <div className="cart-empty">
-          <p>Your cart is empty.</p>
-          <Link to="/products">Continue Shopping</Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="cart-page">
-      <h1 className="section-heading">Cart</h1>
+    <div className="max-w-3xl">
+      <h1 className="text-2xl font-bold tracking-tight mb-5">Cart</h1>
       {cartErrors.length > 0 && <CartErrors errors={cartErrors} />}
-      <ul className="cart-lines">
-        {cart.lines.nodes.map((line) => (
-          <CartLineItem key={line.id} line={line} />
-        ))}
-      </ul>
-      <div className="cart-summary">
-        <span className="total">Total: <Money data={cart.cost.totalAmount} /></span>
-        <button className="cart-checkout-btn">Checkout</button>
-      </div>
+      <CartMain cart={cart} layout="page" />
+      {cart && cart.totalQuantity > 0 && (
+        <CartSummary cart={cart} layout="page" />
+      )}
     </div>
   );
 }
 
 function CartErrors({errors}: {errors: Array<{message: string}>}) {
   return (
-    <div className="cart-errors">
+    <div className="bg-red-50 border border-red-200 rounded-lg py-3 px-4 mb-4 text-red-600 text-[0.85rem]">
       {errors.map((error, i) => (
         <p key={i}>{error.message}</p>
       ))}
     </div>
-  );
-}
-
-function CartLineItem({line}: {line: CartLine}) {
-  const updateFetcher = useFetcher({key: `update-${line.id}`});
-  const removeFetcher = useFetcher({key: `remove-${line.id}`});
-
-  if (removeFetcher.state !== 'idle') return null;
-
-  const pendingQty = updateFetcher.formData
-    ? Number(updateFetcher.formData.get('quantity'))
-    : null;
-  const quantity = pendingQty ?? line.quantity;
-  if (quantity <= 0) return null;
-
-  // Show error for this specific line
-  const lineError = updateFetcher.data?.errors?.[0]?.message;
-
-  const image = line.merchandise.image ?? line.merchandise.product.featuredImage;
-
-  return (
-    <li className="cart-line">
-      {image && <Image data={image} alt={line.merchandise.product.title} width={80} height={80} />}
-      <div className="cart-line-details">
-        <strong>{line.merchandise.product.title}</strong>
-        {line.merchandise.selectedOptions.length > 0 && (
-          <div className="variant">
-            {line.merchandise.selectedOptions.map((o) => `${o.name}: ${o.value}`).join(', ')}
-          </div>
-        )}
-        <div><Money data={line.cost.totalAmount} /></div>
-        {lineError && <div className="cart-line-error">{lineError}</div>}
-      </div>
-      <div className="cart-line-quantity">
-        <updateFetcher.Form method="post" action="/cart">
-          <input type="hidden" name="action" value="UPDATE_CART" />
-          <input type="hidden" name="lineId" value={line.id} />
-          <input type="hidden" name="quantity" value={Math.max(0, quantity - 1)} />
-          <button type="submit">-</button>
-        </updateFetcher.Form>
-        <span>{quantity}</span>
-        <updateFetcher.Form method="post" action="/cart">
-          <input type="hidden" name="action" value="UPDATE_CART" />
-          <input type="hidden" name="lineId" value={line.id} />
-          <input type="hidden" name="quantity" value={quantity + 1} />
-          <button type="submit">+</button>
-        </updateFetcher.Form>
-        <removeFetcher.Form method="post" action="/cart">
-          <input type="hidden" name="action" value="REMOVE_FROM_CART" />
-          <input type="hidden" name="lineId" value={line.id} />
-          <button type="submit">&times;</button>
-        </removeFetcher.Form>
-      </div>
-    </li>
   );
 }

@@ -18,21 +18,21 @@ export function ProductImageGallery({images, featuredImage}: {
     }
   }, [allImages.length]);
 
-  if (!selectedImage) return <img src="/noimage.svg" alt="" className="product-image-placeholder" />;
+  if (!selectedImage) return <img src="/noimage.svg" alt="" className="w-full aspect-square object-contain bg-gray-100 rounded-xl" />;
 
   return (
-    <div className="product-gallery" onKeyDown={allImages.length > 1 ? handleKeyDown : undefined}>
-      <div className="product-gallery-main">
+    <div onKeyDown={allImages.length > 1 ? handleKeyDown : undefined}>
+      <div className="[&_img]:w-full [&_img]:rounded-xl [&_img]:aspect-square [&_img]:object-cover [&_img]:bg-gray-100">
         <Image data={selectedImage} alt={selectedImage.altText ?? ''} loading="eager" />
       </div>
       {allImages.length > 1 && (
-        <div className="product-gallery-thumbs" role="listbox" aria-label="Product images">
+        <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-none" role="listbox" aria-label="Product images">
           {allImages.map((img, i) => (
             <button
               key={img.id ?? i}
               role="option"
               aria-selected={i === selectedIndex}
-              className={`product-gallery-thumb${i === selectedIndex ? ' active' : ''}`}
+              className={`shrink-0 size-16 border-2 rounded-lg overflow-hidden cursor-pointer bg-transparent p-0 transition-[border-color] duration-150 [&_img]:w-full [&_img]:h-full [&_img]:object-cover [&_img]:rounded-md ${i === selectedIndex ? 'border-dark' : 'border-transparent hover:border-gray-400'}`}
               onClick={() => setSelectedIndex(i)}
               aria-label={img.altText || `Product image ${i + 1}`}
             >

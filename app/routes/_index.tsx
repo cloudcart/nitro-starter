@@ -31,11 +31,11 @@ export default function Homepage() {
     <div>
       <FeaturedCollection collection={featuredCollection} />
       <section>
-        <h2 className="section-heading">Recommended Products</h2>
+        <h2 className="text-2xl font-bold tracking-tight mb-5">Recommended Products</h2>
         <Suspense fallback={<div>Loading...</div>}>
           <Await resolve={recommendedProducts}>
             {(products) => (
-              <div className="products-grid">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
                 {products.map((product, i) => (
                   <ProductCard key={product.id} product={product} loading={i < 2 ? 'eager' : 'lazy'} />
                 ))}
@@ -52,14 +52,14 @@ function FeaturedCollection({collection}: {collection: Collection | null}) {
   if (!collection) return null;
 
   return (
-    <Link to={`/collections/${collection.handle}`} className="hero" prefetch="intent">
+    <Link to={`/collections/${collection.handle}`} className="relative block rounded-xl overflow-hidden mb-12 hover:no-underline" prefetch="intent">
       {collection.image?.url ? (
-        <Image data={collection.image} alt={collection.title} loading="eager" />
+        <Image data={collection.image} alt={collection.title} loading="eager" className="w-full aspect-[16/7] object-cover rounded-xl" />
       ) : (
-        <div style={{aspectRatio: '16/7', background: 'linear-gradient(135deg, #6366f1, #ec4899)', borderRadius: 12}} />
+        <div className="aspect-[16/7] bg-gradient-to-br from-brand to-pink-500 rounded-xl" />
       )}
-      <div className="hero-overlay">
-        <h1>{collection.title}</h1>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8 rounded-xl">
+        <h1 className="text-white text-3xl md:text-5xl font-extrabold tracking-tight">{collection.title}</h1>
       </div>
     </Link>
   );
