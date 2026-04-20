@@ -28,6 +28,10 @@
     -webkit-font-smoothing: antialiased;
     color: var(--color-dark);
     line-height: 1.6;
+    /* Always reserve space for the vertical scrollbar so layout doesn't
+       jump by ~17px when moving between short pages (orders, profile) and
+       tall pages (wishlist, collections). */
+    scrollbar-gutter: stable;
   }
 
   body {

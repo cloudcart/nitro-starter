@@ -2,7 +2,7 @@ import {NavLink, Link, Await} from 'react-router';
 import {Suspense} from 'react';
 import type {Shop, Menu, CartData} from '@cloudcart/nitro';
 import {useAside} from './Aside';
-import {MagnifyingGlassIcon, ShoppingBagIcon} from '@heroicons/react/24/outline';
+import {MagnifyingGlassIcon, ShoppingBagIcon, UserIcon} from '@heroicons/react/24/outline';
 
 interface HeaderProps {
   shop: Shop;
@@ -42,6 +42,9 @@ export function Header({shop, menu, cart}: HeaderProps) {
       <div className="flex items-center gap-3 ml-auto">
         <NavLink to="/search" className="text-gray-500 hover:text-dark transition-colors duration-150 p-1" aria-label="Search">
           <MagnifyingGlassIcon className="size-5" />
+        </NavLink>
+        <NavLink to="/account" className="text-gray-500 hover:text-dark transition-colors duration-150 p-1" aria-label="Account">
+          <UserIcon className="size-5" />
         </NavLink>
         <button
           className="text-gray-500 hover:text-dark transition-colors duration-150 p-1 relative"

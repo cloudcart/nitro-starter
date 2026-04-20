@@ -18,7 +18,7 @@ export default function ArticlePage() {
   return (
     <div>
       <h1>{article.title}</h1>
-      <p>By {article.author.name} · {new Date(article.publishedAt).toLocaleDateString()}</p>
+      <p>{article.authorV2 && <>By {article.authorV2.name} · </>}{new Date(article.publishedAt).toLocaleDateString()}</p>
       {article.image && <Image data={article.image} alt={article.title} />}
       <RichText data={article.contentHtml} />
     </div>

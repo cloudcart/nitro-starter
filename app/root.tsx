@@ -17,13 +17,16 @@ export const shouldRevalidate: Route.ShouldRevalidateFunction = ({formMethod, cu
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);
-  const [shop, headerMenu, footerMenu] = await Promise.all([
+  const [shop, headerMenu, footerMenu, wishlistIds] = await Promise.all([
     ctx.storefront.getShop(),
     ctx.storefront.getMenu('main-menu'),
     ctx.storefront.getMenu('footer'),
+    ctx.customerAccount.isLoggedIn()
+      ? ctx.customerAccount.getWishlistIds().catch(() => [])
+      : Promise.resolve([]),
   ]);
 
-  return {shop, headerMenu, footerMenu, cart: ctx.cart.get()};
+  return {shop, headerMenu, footerMenu, cart: ctx.cart.get(), wishlistIds};
 }
 
 export function Layout({children}: {children: React.ReactNode}) {

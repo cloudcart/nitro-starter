@@ -34,7 +34,7 @@ export default function BlogPage() {
                   <h3 className="text-base font-semibold mt-3">{article.title}</h3>
                   {article.excerpt && <p className="text-[0.85rem] text-gray-500 mt-1">{article.excerpt}</p>}
                   <p className="text-xs text-gray-400 mt-2">
-                    By {article.author.name} &middot; {new Date(article.publishedAt).toLocaleDateString()}
+                    {article.authorV2 && <>By {article.authorV2.name} &middot; </>}{new Date(article.publishedAt).toLocaleDateString()}
                   </p>
                 </Link>
               ))}

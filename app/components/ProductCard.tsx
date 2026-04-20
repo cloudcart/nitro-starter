@@ -2,6 +2,7 @@ import {Link} from 'react-router';
 import type {Product} from '@cloudcart/nitro';
 import {Image, Money} from '@cloudcart/nitro-react';
 import {StarRating} from './StarRating';
+import {WishlistButton} from './WishlistButton';
 
 export function ProductCard({product, loading}: {product: Product; loading?: 'eager' | 'lazy'}) {
   const p = product as any;
@@ -9,7 +10,7 @@ export function ProductCard({product, loading}: {product: Product; loading?: 'ea
   const reviewSummary = p.reviewSummary;
 
   return (
-    <Link to={`/products/${product.handle}`} className="block text-inherit transition-transform duration-150 hover:no-underline hover:-translate-y-0.5" prefetch="intent">
+    <Link to={`/products/${product.handle}`} className="group block text-inherit transition-transform duration-150 hover:no-underline hover:-translate-y-0.5" prefetch="intent">
       <div className="relative overflow-hidden rounded-[10px]">
         {product.featuredImage?.url ? (
           <Image
@@ -24,6 +25,9 @@ export function ProductCard({product, loading}: {product: Product; loading?: 'ea
         {product.availableForSale === false && (
           <span className="absolute top-2 right-2 py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-gray-600 text-white">Sold Out</span>
         )}
+        <div className="absolute bottom-2 right-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+          <WishlistButton productId={product.id} size="md" />
+        </div>
         {labels.length > 0 && (
           <div className="absolute top-2 left-2 flex flex-wrap gap-1">
             {labels.map((label) => (

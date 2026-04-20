@@ -8,6 +8,7 @@ import {ProductForm} from '~/components/ProductForm';
 import {ProductImageGallery} from '~/components/ProductImageGallery';
 import {Breadcrumbs} from '~/components/Breadcrumbs';
 import {StarRating} from '~/components/StarRating';
+import {WishlistButton} from '~/components/WishlistButton';
 import {ReviewList} from '~/components/ReviewList';
 
 export const meta: Route.MetaFunction = ({data: d}) => {
@@ -30,22 +31,7 @@ export const meta: Route.MetaFunction = ({data: d}) => {
 
 export async function loader({params, context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);
-  let product;
-  try {
-    product = await ctx.storefront.getProduct(params.handle);
-  } catch (err: any) {
-    // TEMP: expose GQL error in response for debugging
-    throw new Response(
-      '<!DOCTYPE html><html><body><h1>GraphQL Error</h1><pre>' +
-      JSON.stringify({
-        message: err?.message,
-        status: err?.status,
-        graphqlErrors: err?.graphqlErrors,
-      }, null, 2).replace(/</g, '&lt;') +
-      '</pre></body></html>',
-      {status: 500, headers: {'Content-Type': 'text/html; charset=utf-8'}},
-    );
-  }
+  const product = await ctx.storefront.getProduct(params.handle);
   if (!product) throw data('Product not found', {status: 404});
 
   return {
@@ -96,6 +82,9 @@ function ProductMedia({product, variant}: {product: any; variant: any}) {
   return (
     <div className="relative">
       <div className="relative md:sticky md:top-[calc(4rem+1.5rem)]">
+        <div className="absolute top-3 right-3 z-[2]">
+          <WishlistButton productId={product.id} size="lg" />
+        </div>
         <div className="absolute top-3 left-3 z-[2] flex flex-wrap gap-1.5">
           {product.isNew && <span className="py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-brand text-white">New</span>}
           {product.isFeatured && <span className="py-1 px-2.5 rounded text-[0.65rem] font-bold uppercase tracking-wider leading-none bg-amber-500 text-white">Featured</span>}
