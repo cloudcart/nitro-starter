@@ -42,8 +42,12 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
         <Link to="/cart" className="flex items-center justify-center gap-2 py-3 bg-dark text-light rounded-lg font-semibold text-sm no-underline hover:bg-gray-900 hover:no-underline transition-colors duration-150" onClick={close}>
           Continue to Checkout <ArrowRightIcon className="size-4" />
         </Link>
+      ) : cart.checkoutUrl && cart.totalQuantity > 0 ? (
+        <a href={cart.checkoutUrl} className="inline-flex py-3 px-8 bg-brand text-white no-underline rounded-lg font-semibold text-sm hover:bg-brand-dark transition-colors duration-150">
+          Checkout
+        </a>
       ) : (
-        <button className="inline-flex py-3 px-8 bg-brand text-white border-none rounded-lg font-semibold text-sm hover:bg-brand-dark transition-colors duration-150">Checkout</button>
+        <button disabled className="inline-flex py-3 px-8 bg-brand/50 text-white border-none rounded-lg font-semibold text-sm cursor-not-allowed">Checkout</button>
       )}
     </div>
   );
