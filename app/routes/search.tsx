@@ -2,14 +2,14 @@ import {useLoaderData, useNavigate, useNavigation, useSearchParams} from 'react-
 import {useEffect, useRef, useState, useCallback} from 'react';
 import type {Route} from './+types/search';
 import {getContext} from '~/lib/context';
-import {getSeoMeta, getPaginationVariables} from '@cloudcart/nitro';
+import {getSeoMeta, getPaginationVariables} from '@cloudcart/nitrogen';
 import {ProductCard} from '~/components/ProductCard';
 import {ProductFilters} from '~/components/ProductFilters';
 import {Pagination} from '~/components/Pagination';
 import {MagnifyingGlassIcon, XMarkIcon} from '@heroicons/react/24/outline';
 import {buildFiltersFromParams, buildSortFromParams} from '~/lib/filters';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Search | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Search | Nitrogen'});
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

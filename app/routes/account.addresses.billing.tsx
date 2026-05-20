@@ -1,11 +1,11 @@
 import {data, useActionData, useOutletContext} from 'react-router';
 import type {Route} from './+types/account.addresses.billing';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
-import type {Customer} from '@cloudcart/nitro';
+import {getSeoMeta} from '@cloudcart/nitrogen';
+import type {Customer} from '@cloudcart/nitrogen';
 import {AddressListSection, readAddressFromForm} from '~/components/AddressForm';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Billing addresses | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Billing addresses | Nitrogen'});
 
 type ActionResponse = {error: string | null; message?: string};
 

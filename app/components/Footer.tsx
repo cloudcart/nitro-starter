@@ -1,5 +1,5 @@
 import {NavLink} from 'react-router';
-import type {Shop, Menu} from '@cloudcart/nitro';
+import type {Shop, Menu} from '@cloudcart/nitrogen';
 
 interface FooterProps {
   shop: Shop;
@@ -26,7 +26,7 @@ export function Footer({shop, menu}: FooterProps) {
           ))}
         </nav>
         <p className="text-xs text-gray-500">
-          &copy; {new Date().getFullYear()} {shop.name}. Powered by Nitro.
+          &copy; {new Date().getFullYear()} {shop.name}. Powered by Nitrogen.
         </p>
       </div>
     </footer>

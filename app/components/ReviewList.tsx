@@ -1,4 +1,4 @@
-import type {ProductReviewSummary, ProductReviewNode} from '@cloudcart/nitro';
+import type {ProductReviewSummary, ProductReviewNode} from '@cloudcart/nitrogen';
 import {StarRating} from './StarRating';
 import {StarIcon} from '@heroicons/react/20/solid';
 
@@ -98,7 +98,7 @@ function ReviewItem({review}: {review: ProductReviewNode}) {
           <p className="text-sm text-gray-600 mt-1 leading-relaxed">{review.comment}</p>
 
           {/* Replies */}
-          {review.answers.length > 0 && (
+          {review.answers?.length ? (
             <div className="mt-4 pl-4 border-l-2 border-gray-100 flex flex-col gap-3">
               {review.answers.map((reply) => (
                 <div key={reply.id}>
@@ -113,7 +113,7 @@ function ReviewItem({review}: {review: ProductReviewNode}) {
                 </div>
               ))}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

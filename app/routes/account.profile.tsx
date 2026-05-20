@@ -1,11 +1,11 @@
 import {Form, data, useActionData, useNavigation, useOutletContext} from 'react-router';
 import type {Route} from './+types/account.profile';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
-import type {Customer} from '@cloudcart/nitro';
+import {getSeoMeta} from '@cloudcart/nitrogen';
+import type {Customer} from '@cloudcart/nitrogen';
 import {CheckIcon, XMarkIcon} from '@heroicons/react/24/outline';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Profile | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Profile | Nitrogen'});
 
 type ActionResponse = {error: string | null; saved: boolean};
 

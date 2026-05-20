@@ -1,11 +1,11 @@
 import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/collections._index';
 import {getContext} from '~/lib/context';
-import {getSeoMeta, getPaginationVariables} from '@cloudcart/nitro';
-import {Image} from '@cloudcart/nitro-react';
+import {getSeoMeta, getPaginationVariables} from '@cloudcart/nitrogen';
+import {Image} from '@cloudcart/nitrogen-react';
 import {Pagination} from '~/components/Pagination';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Categories | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Categories | Nitrogen'});
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

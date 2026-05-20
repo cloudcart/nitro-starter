@@ -1,10 +1,10 @@
 import {useLoaderData, data} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
-import {RichText} from '@cloudcart/nitro-react';
+import {getSeoMeta} from '@cloudcart/nitrogen';
+import {RichText} from '@cloudcart/nitrogen-react';
 
-export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({title: d?.page ? d.page.title + ' | Nitro' : 'Page | Nitro'});
+export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({title: d?.page ? d.page.title + ' | Nitrogen' : 'Page | Nitrogen'});
 
 export async function loader({params, context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

@@ -1,6 +1,6 @@
 import {Link} from 'react-router';
-import type {Product} from '@cloudcart/nitro';
-import {Image, Money} from '@cloudcart/nitro-react';
+import type {Product} from '@cloudcart/nitrogen';
+import {Image, Money} from '@cloudcart/nitrogen-react';
 import {StarRating} from './StarRating';
 import {WishlistButton} from './WishlistButton';
 

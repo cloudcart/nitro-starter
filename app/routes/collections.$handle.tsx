@@ -1,8 +1,8 @@
 import {useLoaderData, data, Link} from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import {getContext} from '~/lib/context';
-import {getSeoMeta, getPaginationVariables} from '@cloudcart/nitro';
-import {Image} from '@cloudcart/nitro-react';
+import {getSeoMeta, getPaginationVariables} from '@cloudcart/nitrogen';
+import {Image} from '@cloudcart/nitrogen-react';
 import {ProductCard} from '~/components/ProductCard';
 import {ProductFilters} from '~/components/ProductFilters';
 import {Breadcrumbs} from '~/components/Breadcrumbs';
@@ -12,7 +12,7 @@ import {buildFiltersFromParams, buildSortFromParams} from '~/lib/filters';
 export const meta: Route.MetaFunction = ({data: d}) => {
   const col = d?.collection as any;
   return getSeoMeta({
-    title: col?.seo?.title || (col ? `${col.title} | Nitro` : 'Category | Nitro'),
+    title: col?.seo?.title || (col ? `${col.title} | Nitrogen` : 'Category | Nitrogen'),
     description: col?.seo?.description || col?.description,
   });
 };

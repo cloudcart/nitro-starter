@@ -2,12 +2,12 @@ import {useLoaderData, Link, Await} from 'react-router';
 import {Suspense} from 'react';
 import type {Route} from './+types/_index';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
-import type {Collection, Product} from '@cloudcart/nitro';
-import {Image} from '@cloudcart/nitro-react';
+import {getSeoMeta} from '@cloudcart/nitrogen';
+import type {Collection, Product} from '@cloudcart/nitrogen';
+import {Image} from '@cloudcart/nitrogen-react';
 import {ProductCard} from '~/components/ProductCard';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Nitro | Home', description: 'Modern headless commerce'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Nitrogen | Home', description: 'Modern headless commerce'});
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

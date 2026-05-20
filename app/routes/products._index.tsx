@@ -1,13 +1,13 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/products._index';
 import {getContext} from '~/lib/context';
-import {getSeoMeta, getPaginationVariables} from '@cloudcart/nitro';
+import {getSeoMeta, getPaginationVariables} from '@cloudcart/nitrogen';
 import {ProductCard} from '~/components/ProductCard';
 import {ProductFilters} from '~/components/ProductFilters';
 import {Pagination} from '~/components/Pagination';
 import {buildFiltersFromParams, buildSortFromParams} from '~/lib/filters';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'All Products | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'All Products | Nitrogen'});
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

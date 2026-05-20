@@ -1,10 +1,10 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/account.payments';
 import {getContext} from '~/lib/context';
-import {getSeoMeta, extractId} from '@cloudcart/nitro';
+import {getSeoMeta, extractId} from '@cloudcart/nitrogen';
 import {CreditCardIcon} from '@heroicons/react/24/outline';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Payments | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Payments | Nitrogen'});
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

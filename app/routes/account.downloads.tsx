@@ -1,10 +1,10 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/account.downloads';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
+import {getSeoMeta} from '@cloudcart/nitrogen';
 import {ArrowDownTrayIcon, DocumentIcon, ChevronRightIcon} from '@heroicons/react/24/outline';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Downloads | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Downloads | Nitrogen'});
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

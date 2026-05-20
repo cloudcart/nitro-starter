@@ -1,12 +1,12 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/account.wishlist';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
-import type {Product} from '@cloudcart/nitro';
+import {getSeoMeta} from '@cloudcart/nitrogen';
+import type {Product} from '@cloudcart/nitrogen';
 import {HeartIcon} from '@heroicons/react/24/outline';
 import {ProductCard} from '~/components/ProductCard';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Wishlist | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Wishlist | Nitrogen'});
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

@@ -1,10 +1,10 @@
 import {useLoaderData, data} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle.$articleHandle';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
-import {Image, RichText} from '@cloudcart/nitro-react';
+import {getSeoMeta} from '@cloudcart/nitrogen';
+import {Image, RichText} from '@cloudcart/nitrogen-react';
 
-export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({title: d?.article ? d.article.title + ' | Nitro' : 'Article | Nitro'});
+export const meta: Route.MetaFunction = ({data: d}) => getSeoMeta({title: d?.article ? d.article.title + ' | Nitrogen' : 'Article | Nitrogen'});
 
 export async function loader({params, context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

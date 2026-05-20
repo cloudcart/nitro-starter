@@ -1,4 +1,4 @@
-import type {CartData} from '@cloudcart/nitro';
+import type {CartData} from '@cloudcart/nitrogen';
 import {CartLineItem} from './CartLineItem';
 import {useAside} from './Aside';
 import {ShoppingBagIcon} from '@heroicons/react/24/outline';

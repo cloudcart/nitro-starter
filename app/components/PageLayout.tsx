@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import type {Shop, Menu, CartData} from '@cloudcart/nitro';
+import type {Shop, Menu, CartData} from '@cloudcart/nitrogen';
 import {Header} from './Header';
 import {Footer} from './Footer';
 

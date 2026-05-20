@@ -1,5 +1,5 @@
 import {createRequestHandler} from 'react-router';
-import {createNitroContext} from '@cloudcart/nitro';
+import {createNitrogenContext} from '@cloudcart/nitrogen';
 
 const handler = createRequestHandler(
   // @ts-expect-error — virtual module provided by React Router at build time
@@ -27,10 +27,10 @@ export default {
       }
     }
 
-    const context = await createNitroContext({
+    const context = await createNitrogenContext({
       request,
       env: {
-        SESSION_SECRET: env.SESSION_SECRET ?? 'nitro-dev-secret',
+        SESSION_SECRET: env.SESSION_SECRET ?? 'nitrogen-dev-secret',
         PUBLIC_STORE_DOMAIN: env.PUBLIC_STORE_DOMAIN,
         PUBLIC_STOREFRONT_API_TOKEN: env.PUBLIC_STOREFRONT_API_TOKEN,
         PRIVATE_STOREFRONT_API_TOKEN: env.PRIVATE_STOREFRONT_API_TOKEN,

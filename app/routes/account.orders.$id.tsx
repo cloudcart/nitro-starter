@@ -1,9 +1,9 @@
 import {Link, useLoaderData, redirect} from 'react-router';
 import type {Route} from './+types/account.orders.$id';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
-import type {MailingAddress} from '@cloudcart/nitro';
-import {Money, Image} from '@cloudcart/nitro-react';
+import {getSeoMeta} from '@cloudcart/nitrogen';
+import type {MailingAddress} from '@cloudcart/nitrogen';
+import {Money, Image} from '@cloudcart/nitrogen-react';
 import {ArrowLeftIcon, TruckIcon, MapPinIcon, BuildingOfficeIcon, CreditCardIcon, ChatBubbleLeftIcon, TagIcon, DocumentTextIcon, CalendarIcon} from '@heroicons/react/24/outline';
 
 export const meta: Route.MetaFunction = ({data}) =>

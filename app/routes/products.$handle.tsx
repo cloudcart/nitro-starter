@@ -1,8 +1,8 @@
 import {useLoaderData, data, Link} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {getContext} from '~/lib/context';
-import {getSeoMeta, generateProductJsonLd} from '@cloudcart/nitro';
-import {Image, RichText, useOptimisticVariant, Money} from '@cloudcart/nitro-react';
+import {getSeoMeta, generateProductJsonLd} from '@cloudcart/nitrogen';
+import {Image, RichText, useOptimisticVariant, Money} from '@cloudcart/nitrogen-react';
 import {ArrowDownTrayIcon} from '@heroicons/react/24/outline';
 import {ProductForm} from '~/components/ProductForm';
 import {ProductImageGallery} from '~/components/ProductImageGallery';
@@ -13,12 +13,12 @@ import {ReviewList} from '~/components/ReviewList';
 
 export const meta: Route.MetaFunction = ({data: d}) => {
   const product = d?.product;
-  if (!product) return getSeoMeta({title: 'Product | Nitro'});
+  if (!product) return getSeoMeta({title: 'Product | Nitrogen'});
 
   const url = `/products/${product.handle}`;
   return [
     ...getSeoMeta({
-      title: product.seo?.title || `${product.title} | Nitro`,
+      title: product.seo?.title || `${product.title} | Nitrogen`,
       description: product.seo?.description || product.description,
       type: 'product',
       ...(product.featuredImage

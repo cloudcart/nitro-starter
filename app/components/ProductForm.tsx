@@ -1,5 +1,5 @@
 import {Link, useNavigate} from 'react-router';
-import {VariantSelector, ProductPrice, Money} from '@cloudcart/nitro-react';
+import {VariantSelector, ProductPrice, Money} from '@cloudcart/nitrogen-react';
 import {AddToCartButton} from './AddToCartButton';
 import {OptionSwatch} from './OptionSwatch';
 

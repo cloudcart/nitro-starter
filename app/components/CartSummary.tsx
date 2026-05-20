@@ -1,6 +1,6 @@
 import {Link, useFetcher} from 'react-router';
-import type {CartData} from '@cloudcart/nitro';
-import {Money} from '@cloudcart/nitro-react';
+import type {CartData} from '@cloudcart/nitrogen';
+import {Money} from '@cloudcart/nitrogen-react';
 import {useAside} from './Aside';
 import {ArrowRightIcon} from '@heroicons/react/24/outline';
 

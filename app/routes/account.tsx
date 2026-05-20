@@ -1,10 +1,10 @@
 import {Outlet, useLoaderData} from 'react-router';
 import type {Route} from './+types/account';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
+import {getSeoMeta} from '@cloudcart/nitrogen';
 import {AccountSidebar} from '~/components/AccountSidebar';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Account | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Account | Nitrogen'});
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

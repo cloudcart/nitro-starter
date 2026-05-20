@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react';
 import {Form, useNavigation} from 'react-router';
-import type {MailingAddress, MailingAddressInput} from '@cloudcart/nitro';
+import type {MailingAddress, MailingAddressInput} from '@cloudcart/nitrogen';
 import {PlusIcon, PencilIcon, TrashIcon, XMarkIcon, MapPinIcon, CheckIcon} from '@heroicons/react/24/outline';
 
 export function readAddressFromForm(form: FormData): MailingAddressInput {

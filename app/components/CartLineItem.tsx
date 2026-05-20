@@ -1,6 +1,6 @@
 import {Link, useFetcher} from 'react-router';
-import type {CartLine} from '@cloudcart/nitro';
-import {Money, Image} from '@cloudcart/nitro-react';
+import type {CartLine} from '@cloudcart/nitrogen';
+import {Money, Image} from '@cloudcart/nitrogen-react';
 import {PlusIcon, MinusIcon, TrashIcon} from '@heroicons/react/24/outline';
 
 interface CartLineItemProps {

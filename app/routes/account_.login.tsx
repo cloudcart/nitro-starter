@@ -1,9 +1,9 @@
 import {Form, Link, redirect, useActionData, useNavigation, useSearchParams} from 'react-router';
 import type {Route} from './+types/account_.login';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
+import {getSeoMeta} from '@cloudcart/nitrogen';
 
-export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Sign in | Nitro'});
+export const meta: Route.MetaFunction = () => getSeoMeta({title: 'Sign in | Nitrogen'});
 
 type ActionData =
   | {stage: 'email'; error?: string}

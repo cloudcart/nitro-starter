@@ -1,6 +1,6 @@
 import {useState, useCallback} from 'react';
-import type {Image as ImageType} from '@cloudcart/nitro';
-import {Image} from '@cloudcart/nitro-react';
+import type {Image as ImageType} from '@cloudcart/nitrogen';
+import {Image} from '@cloudcart/nitrogen-react';
 
 export function ProductImageGallery({images, featuredImage}: {
   images: ImageType[];

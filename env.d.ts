@@ -9,8 +9,8 @@ declare module "react-router" {
       PUBLIC_STOREFRONT_API_TOKEN?: string;
       PRIVATE_STOREFRONT_API_TOKEN?: string;
     };
-    storefront: import("@cloudcart/nitro").StorefrontClient;
-    cart: import("@cloudcart/nitro").CartHandler;
-    session: import("@cloudcart/nitro").AppSession;
+    storefront: import("@cloudcart/nitrogen").StorefrontClient;
+    cart: import("@cloudcart/nitrogen").CartHandler;
+    session: import("@cloudcart/nitrogen").AppSession;
   }
 }

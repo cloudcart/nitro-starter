@@ -1,6 +1,6 @@
 import {NavLink, Link, Await} from 'react-router';
 import {Suspense} from 'react';
-import type {Shop, Menu, CartData} from '@cloudcart/nitro';
+import type {Shop, Menu, CartData} from '@cloudcart/nitrogen';
 import {useAside} from './Aside';
 import {MagnifyingGlassIcon, ShoppingBagIcon, UserIcon} from '@heroicons/react/24/outline';
 

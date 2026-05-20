@@ -1,6 +1,6 @@
 import {Await} from 'react-router';
 import {Suspense} from 'react';
-import type {CartData} from '@cloudcart/nitro';
+import type {CartData} from '@cloudcart/nitrogen';
 import {CartMain} from './CartMain';
 import {CartSummary} from './CartSummary';
 

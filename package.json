@@ -1,5 +1,5 @@
 {
-  "name": "nitro-starter",
+  "name": "nitrogen-starter",
   "private": true,
   "sideEffects": false,
   "version": "0.0.0",
@@ -11,8 +11,8 @@
     "typecheck": "react-router typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@cloudcart/nitro": "file:../cloudcart-nitro/packages/nitro/cloudcart-nitro-0.8.0.tgz",
-    "@cloudcart/nitro-react": "^0.7.1",
+    "@cloudcart/nitrogen": "^1.0.0",
+    "@cloudcart/nitrogen-react": "^1.0.0",
     "@heroicons/react": "^2.2.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.19",

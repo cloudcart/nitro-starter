@@ -1,13 +1,13 @@
 import {Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData, useRouteError, isRouteErrorResponse, type MetaFunction} from 'react-router';
 import type {Route} from './+types/root';
 import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitro';
+import {getSeoMeta} from '@cloudcart/nitrogen';
 import {AsideProvider, Aside} from '~/components/Aside';
 import {CartDrawer} from '~/components/CartDrawer';
 import {PageLayout} from '~/components/PageLayout';
 import '~/app.css';
 
-export const meta: MetaFunction = () => getSeoMeta({title: 'Nitro | Modern Commerce'});
+export const meta: MetaFunction = () => getSeoMeta({title: 'Nitrogen | Modern Commerce'});
 
 export const shouldRevalidate: Route.ShouldRevalidateFunction = ({formMethod, currentUrl, nextUrl}) => {
   if (formMethod && formMethod !== 'GET') return true;
@@ -49,7 +49,7 @@ export function Layout({children}: {children: React.ReactNode}) {
 
 export default function App() {
   const data = useRouteLoaderData<typeof loader>('root');
-  const shop = data?.shop ?? {name: 'Nitro', description: null};
+  const shop = data?.shop ?? {name: 'Nitrogen', description: null};
   const cart = data?.cart ?? Promise.resolve(null);
 
   return (

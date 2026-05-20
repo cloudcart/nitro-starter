@@ -1,4 +1,4 @@
-import {generateRobots} from '@cloudcart/nitro';
+import {generateRobots} from '@cloudcart/nitrogen';
 
 export function loader() {
   return new Response(generateRobots({

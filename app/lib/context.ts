@@ -1,2 +1,2 @@
-export type {NitroContext} from '@cloudcart/nitro';
-export {getContext, createNitroContext} from '@cloudcart/nitro';
+export type {NitrogenContext} from '@cloudcart/nitrogen';
+export {getContext, createNitrogenContext} from '@cloudcart/nitrogen';

@@ -1,6 +1,6 @@
 import type {Route} from './+types/[sitemap.xml]';
 import {getContext} from '~/lib/context';
-import {generateSitemap} from '@cloudcart/nitro';
+import {generateSitemap} from '@cloudcart/nitrogen';
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const ctx = await getContext(context, request);

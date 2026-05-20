@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {useSearchParams, useNavigate} from 'react-router';
-import type {Filter, FilterValue} from '@cloudcart/nitro';
+import type {Filter, FilterValue} from '@cloudcart/nitrogen';
 import {filterInputToParam, isFilterActive} from '~/lib/filters';
 import {ChevronDownIcon} from '@heroicons/react/20/solid';
 
