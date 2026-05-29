@@ -9,24 +9,10 @@ const handler = createRequestHandler(
 
 export default {
   async fetch(request: Request, env: Record<string, any>) {
-    const url = new URL(request.url);
-
-    // Serve static assets from KV — try every request, fall through to SSR if not found
-    if (env.ASSETS) {
-      const key = `${env.WORKER_NAME}${url.pathname}`;
-      const {value, metadata} = await env.ASSETS.getWithMetadata(key, {type: 'arrayBuffer'});
-      if (value) {
-        return new Response(value, {
-          headers: {
-            'Content-Type': (metadata as any)?.contentType || 'application/octet-stream',
-            'Cache-Control': url.pathname.startsWith('/assets/')
-              ? 'public, max-age=31536000, immutable'
-              : 'public, max-age=3600',
-          },
-        });
-      }
-    }
-
+    // Static assets (build/client) are attached to this Worker and served
+    // directly by Cloudflare's edge before this handler runs, so here we only
+    // handle SSR. (See the Nova deploy pipeline — assets are uploaded via the
+    // Workers-for-Platforms assets-upload-session, not read from KV.)
     const context = await createNitrogenContext({
       request,
       env: {
