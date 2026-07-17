@@ -18,6 +18,11 @@ export default {
       env: {
         SESSION_SECRET: env.SESSION_SECRET ?? 'nitrogen-dev-secret',
         PUBLIC_STORE_DOMAIN: env.PUBLIC_STORE_DOMAIN,
+        // When a custom domain is routed to this storefront, the Storefront
+        // API is reached directly at the origin so the edge worker never
+        // fetches its own domain (which would loop). Set by the platform on
+        // "Route to this storefront"; falls back to PUBLIC_STORE_DOMAIN.
+        PUBLIC_API_ORIGIN: env.PUBLIC_API_ORIGIN,
         PUBLIC_STOREFRONT_API_TOKEN: env.PUBLIC_STOREFRONT_API_TOKEN,
         PRIVATE_STOREFRONT_API_TOKEN: env.PRIVATE_STOREFRONT_API_TOKEN,
       },
