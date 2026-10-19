@@ -223,7 +223,9 @@ function CardPictures({
                 // The title is in the same link: the picture adds nothing for a screen reader (B-211).
                 alt=""
                 data={image}
-                loading={index === 0 ? loading : 'lazy'}
+                // Past the first, a picture is here only once it is wanted, one ahead of the one shown: fetched now,
+                // not when it is scrolled into view, so the arrow shows it loaded (B-492).
+                loading={index === 0 ? loading : 'eager'}
                 sizes={sizes}
                 className="size-full object-contain"
               />
