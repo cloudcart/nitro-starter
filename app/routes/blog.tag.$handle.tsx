@@ -8,6 +8,10 @@ import {ListingHeader} from '~/components/ListingHeader';
 import {ARTICLE_ITEM_FRAGMENT, blogCrumbs} from '~/lib/blog';
 import {missingResource} from '~/lib/missing';
 import {ButtonLink} from '~/components/ui/Button';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 // A page that throws is titled by the root's `meta`.
 export const meta: Route.MetaFunction = ({data, location, matches}) => {

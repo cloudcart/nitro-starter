@@ -8,6 +8,10 @@ import {ListingHeader} from '~/components/ListingHeader';
 import {ButtonLink, buttonClass} from '~/components/ui/Button';
 import {EmptyState} from '~/components/ui/EmptyState';
 import {vendorPath} from '~/lib/urls';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 export const meta: Route.MetaFunction = ({location, matches}) => {
   const t = metaTranslator(matches);

@@ -1,5 +1,9 @@
 import type {Route} from './+types/tier-pieces';
 import {inBackground} from '~/lib/background';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 /** Its answer depends on its address alone: an action elsewhere on the page (an add to the cart) does not reload it. */
 export function shouldRevalidate() {

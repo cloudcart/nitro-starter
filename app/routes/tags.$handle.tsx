@@ -12,6 +12,10 @@ import {ListingDescription} from '~/components/ListingDescription';
 import {listedProducts} from '~/lib/analytics';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
 import {missingResource} from '~/lib/missing';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 export const meta: Route.MetaFunction = ({data, location, matches}) => {
   // A page that throws is titled by the root's `meta`.

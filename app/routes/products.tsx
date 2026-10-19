@@ -9,6 +9,10 @@ import {LISTING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT, ReviewDisplayProvider} from '~/components/ReviewDisplay';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
 import {missingResource} from '~/lib/missing';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 // Not indexed, as on the store's own pages: every product is already reached through its categories.
 export const meta: Route.MetaFunction = ({matches}) => privateMeta(metaTranslator(matches)('listing.allProducts'));

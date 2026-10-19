@@ -12,6 +12,10 @@ import {HOME_PRODUCT_GRIDS} from '~/lib/home';
 import type {RootLoader} from '~/root';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT, ReviewDisplayProvider} from '~/components/ReviewDisplay';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const shop = rootData(matches)?.header.shop;

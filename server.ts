@@ -1,12 +1,20 @@
 import * as serverBuild from 'virtual:react-router/server-build';
-import {createRequestHandler, storefrontRedirect, type ExecutionContext} from '@cloudcart/nitrogen';
+import {
+  AppSession,
+  createPageCache,
+  createRequestHandler,
+  hasSignedInCustomer,
+  storefrontRedirect,
+  type ExecutionContext,
+} from '@cloudcart/nitrogen';
 import {createNitrogenRouterContext} from '~/lib/context';
 
 /**
- * The storefront's worker. Every request goes through here — in development
- * too, where Nitrogen's Vite plugin runs this same file.
+ * The storefront's app. Every request reaches it through the page cache's
+ * gateway below — in development too, where Nitrogen's Vite plugin runs this
+ * same file.
  */
-export default {
+const app = {
   async fetch(request: Request, env: Env, executionContext: ExecutionContext): Promise<Response> {
     try {
       const nitrogenContext = await createNitrogenRouterContext(request, env, executionContext);
@@ -45,3 +53,27 @@ export default {
     }
   },
 };
+
+/**
+ * Pages the same for every visitor — the routes whose `handle` has
+ * `pageCache: true` — are served whole from Cloudflare's cache, rendered
+ * without the visitor's cookies; their cart and forms come from `/visitor` in
+ * the browser. A signed-in customer's pages are always rendered for them: their
+ * customer group has its own prices and collections.
+ */
+const pageCache = createPageCache(app, {
+  build: serverBuild,
+  async isPersonal(request, env: Env) {
+    try {
+      return hasSignedInCustomer(await AppSession.init(request, [env.SESSION_SECRET]));
+    } catch {
+      // A session that cannot be read (no `SESSION_SECRET`): the app answers it, with the error, uncached.
+      return true;
+    }
+  },
+});
+
+/** The entrypoint Cloudflare caches; the platform turns its cache on when it uploads the storefront. */
+export const NitrogenPageCache = pageCache.entrypoint;
+
+export default pageCache.gateway;

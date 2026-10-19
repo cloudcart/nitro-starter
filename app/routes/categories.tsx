@@ -9,6 +9,10 @@ import {ListingHeader} from '~/components/ListingHeader';
 import {ButtonLink, buttonClass} from '~/components/ui/Button';
 import {EmptyState} from '~/components/ui/EmptyState';
 import {collectionPath} from '~/lib/urls';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 /**
  * A category's picture width in the page, for the browser to pick its size (B-393): two columns, three from 990 px, with

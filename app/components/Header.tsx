@@ -19,11 +19,12 @@ import {SEARCH_ENDPOINT} from '~/lib/search';
 import {storefrontLink} from '~/lib/urls';
 import {AccountIcon, CartIcon, MenuIcon, SearchIcon} from '~/components/ui/icons';
 import {CountBadge} from '~/components/ui/Badge';
+import type {Streamed} from '~/lib/visitor';
 
 interface HeaderProps {
   header: HeaderQuery;
-  cart: Promise<CartApiQueryFragment | null>;
-  isLoggedIn: Promise<boolean>;
+  cart: Streamed<CartApiQueryFragment | null>;
+  isLoggedIn: Streamed<boolean>;
   publicStoreDomain: string;
 }
 

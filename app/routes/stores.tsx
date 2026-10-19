@@ -6,6 +6,10 @@ import {ListingHeader} from '~/components/ListingHeader';
 import {storePath, telHref} from '~/lib/urls';
 import {EmptyState} from '~/components/ui/EmptyState';
 import {ButtonLink} from '~/components/ui/Button';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 export const meta: Route.MetaFunction = ({matches}) => {
   const t = metaTranslator(matches);

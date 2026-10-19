@@ -15,8 +15,8 @@ import {
   getConsentFromCookieHeader,
   getCookieConsent,
   getMarketingPixels,
+  isSharedPage,
   shopAnalyticsFrom,
-  getSubscribeForms,
   TranslationsProvider,
   useTranslation,
   useNonce,
@@ -24,10 +24,13 @@ import {
 import {
   GoogleConsentMode,
   PrivacyBanner,
+  PrivacyBannerScript,
   SubscribePopups,
   type SubscribePopupsProps,
   useFrameFocusVisible,
   useValidityMessages,
+  useVisitorData,
+  VisitorDataScript,
 } from '@cloudcart/nitrogen-react';
 // animate.css, where the form builder's opening and closing animations come from; loaded when a form opens.
 import animationsStylesheet from 'animate.css/animate.min.css?url';
@@ -35,7 +38,6 @@ import type {Route} from './+types/root';
 import {PageLayout} from '~/components/PageLayout';
 import {RouteErrorBoundary} from '~/components/RouteError';
 import {POLICY_CONSENT_REQUEST_FRAGMENT, PolicyConsentRequest} from '~/components/PolicyConsentRequest';
-import {FOOTER_SUBSCRIBE_FORM_ID} from '~/lib/footer';
 import {STORE_CONTACT_FRAGMENT} from '~/components/StoreContact';
 import {PRIVACY_BANNER_CLASSES} from '~/lib/privacy-banner';
 import {SUBSCRIBE_POPUP_CLASSES, subscribeFormLabels} from '~/lib/subscribe-forms';
@@ -48,6 +50,8 @@ import appStyles from '~/styles/app.css?url';
 import fontCyrillic from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-cyrillic-wght-normal.woff2?url';
 import fontLatin from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url';
 import {ifSignedIn} from '~/lib/customer';
+import {VISITOR_PATH, type VisitorData} from '~/lib/visitor';
+import {loadVisitorData, noVisitorData} from '~/lib/visitor.server';
 import {validityMessage} from '~/lib/validity';
 
 export type RootLoader = typeof loader;
@@ -89,6 +93,8 @@ export async function loader(args: Route.LoaderArgs) {
   return {
     ...deferredData,
     ...criticalData,
+    // A page cached for every visitor (`server.ts`): the visitor's own parts come from `/visitor` in the browser.
+    visitorFromBrowser: isSharedPage(args.request),
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     // The analytics' shop — its id, language and currency — from the header's answer: nothing asked again (B-453).
     shop: shopAnalyticsFrom(criticalData.header),
@@ -123,12 +129,12 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
 }
 
 /**
- * What can arrive after the first byte: the footer, the cart, whether the
- * visitor is signed in, their wishlist, the store's subscribe forms and its
- * marketing pixels. None of it may throw — the page must render without it.
+ * What can arrive after the first byte: the footer, the visitor's own data (`loadVisitorData`), a signed-in
+ * customer's wishlist and the policies they are asked to accept, and the store's marketing pixels. None of it may
+ * throw — the page must render without it.
  */
 function loadDeferredData({context, request}: Route.LoaderArgs) {
-  const {storefront, customerAccount, cart} = context;
+  const {storefront, customerAccount} = context;
 
   const footer = storefront
     .query(FOOTER_QUERY, {
@@ -152,37 +158,17 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
   // The policies the store asks them to accept after signing in (`<PolicyConsentRequest>`).
   const policyConsentRequest = signedInCustomer.then((customer) => customer?.policyConsentRequest ?? null);
 
-  // The store's pop-up subscribe forms (`<SubscribePopups>`) and the footer's embedded one (`<SubscribeForm>`), for
-  // the visitor in the request's analytics cookie, in one call.
-  const subscribeForms = getSubscribeForms({
-    storefront,
-    customerAccount,
-    request,
-    embeddedFormId: FOOTER_SUBSCRIBE_FORM_ID,
-  }).catch((error: unknown) => {
-    console.error(error);
-    return [];
-  });
-
   // The merchant's marketing pixels (Google, Meta, TikTok), from the cookie banner's own call (`getCookieConsent`).
   const pixels = getMarketingPixels({storefront}).catch((error: unknown) => {
     console.error(error);
     return null;
   });
 
-  // The cart is read on every request and never cached: a failed call shows no cart, not a failed page (B-385).
-  const cartData = cart.get().catch((error: unknown) => {
-    console.error(error);
-    return null;
-  });
-
   return {
-    cart: cartData,
-    isLoggedIn: customerAccount.isLoggedIn(),
+    ...(isSharedPage(request) ? noVisitorData() : loadVisitorData({context, request})),
     footer,
     wishlist,
     policyConsentRequest,
-    subscribeForms,
     pixels,
     // For the pixels to match their events to the signed-in customer: a hash, never the e-mail.
     customerEmailHash: customerAccount.getEmailHash() ?? null,
@@ -219,6 +205,10 @@ export function Layout({children}: {children?: React.ReactNode}) {
         {/* Google Consent Mode v2 from the visitor's cookie choice, before any tag loads. The merchant's Google tags are
             pixels the provider runs after consent (`pixels`); never add a vendor's script here (B-398). */}
         <GoogleConsentMode consent={data?.cookieConsent ?? null} />
+        {/* A page cached for every visitor: the visitor's own data is asked for at once, and the cookie bar the
+            server rendered is hidden before it paints for a visitor who has already chosen. */}
+        {data?.visitorFromBrowser && <VisitorDataScript url={VISITOR_PATH} />}
+        {data?.visitorFromBrowser && <PrivacyBannerScript consent={data.cookieConsent} />}
         <link rel="preload" href={fontLatin} as="font" type="font/woff2" crossOrigin="anonymous" />
         {CYRILLIC_LANGUAGES.has(lang) && (
           <link rel="preload" href={fontCyrillic} as="font" type="font/woff2" crossOrigin="anonymous" />
@@ -254,7 +244,12 @@ export default function App() {
  * Everything around a page: the store's language, analytics, the header and footer, the cookie banner, the
  * pop-ups and the policy consent request. Pages and the error page share it.
  */
-function AppShell({data, children}: {data: Awaited<ReturnType<RootLoader>>; children: React.ReactNode}) {
+function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>; children: React.ReactNode}) {
+  // On a page cached for every visitor, their own data over the page's; asked again after a form (the root's data
+  // is loaded again then).
+  const visitor = useVisitorData<VisitorData>(VISITOR_PATH, {enabled: root.visitorFromBrowser, refreshKey: root});
+  const data = visitor ? {...root, ...visitor} : root;
+
   return (
     <TranslationsProvider translations={data.translations}>
       <Analytics.Provider

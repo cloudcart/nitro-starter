@@ -3,6 +3,10 @@ import {RELATED_PAGE_MAX, RELATED_PRODUCTS_FRAGMENT} from '~/components/ProductE
 import {integerOf} from '~/lib/action';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {inBackground} from '~/lib/background';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 /** Its answer depends on its address alone: an action elsewhere on the page (an add to the cart) does not reload it. */
 export function shouldRevalidate() {

@@ -6,6 +6,10 @@ import {Breadcrumbs} from '~/components/Breadcrumbs';
 import {pagePath} from '~/lib/urls';
 import {PageContent} from '~/components/PageContent';
 import {missingResource} from '~/lib/missing';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   // A page that throws is titled by the root's `meta`.

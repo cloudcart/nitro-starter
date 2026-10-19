@@ -7,6 +7,10 @@ import {collectionCrumbs, CollectionView} from '~/components/CollectionView';
 import {loadCollection} from '~/lib/collection';
 import {collectionPath} from '~/lib/urls';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 export const meta: Route.MetaFunction = ({data, location, matches}) => {
   // A page that throws is titled by the root's `meta`.

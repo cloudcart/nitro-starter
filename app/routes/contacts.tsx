@@ -9,6 +9,10 @@ import {STORE_CONTACT_FRAGMENT, StoreContact} from '~/components/StoreContact';
 import {FORM_USER_ERROR_FRAGMENT, POLICY_FRAGMENT} from '~/lib/fragments';
 import {RouteErrorBoundary} from '~/components/RouteError';
 import {API_ERROR, formFields, payloadOf} from '~/lib/action';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 /** An action's error shows inside the store's layout, translated (B-201). */
 export const ErrorBoundary = RouteErrorBoundary;

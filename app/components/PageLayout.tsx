@@ -10,12 +10,13 @@ import {Dialog} from '~/components/Dialog';
 import {Header, HeaderMenu} from '~/components/Header';
 import {PredictiveSearch} from '~/components/PredictiveSearch';
 import {NavigationProgress, PageTransition} from '~/components/PageTransition';
+import type {Streamed} from '~/lib/visitor';
 
 interface PageLayoutProps {
-  cart: Promise<CartApiQueryFragment | null>;
+  cart: Streamed<CartApiQueryFragment | null>;
   footer: Promise<FooterQuery | null>;
   header: HeaderQuery;
-  isLoggedIn: Promise<boolean>;
+  isLoggedIn: Streamed<boolean>;
   publicStoreDomain: string;
   hasCookieConsent: boolean;
   subscribeForms: Promise<SubscribeFormData[] | null> | SubscribeFormData[] | null;

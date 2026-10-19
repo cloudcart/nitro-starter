@@ -3,6 +3,10 @@ import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT} from '~/components/ReviewDisplay';
 import {inBackground} from '~/lib/background';
 import {MENU_PRODUCTS} from '~/components/MegaMenu';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 /** A category's or a smart collection's global id, as a menu item's `resourceId` carries it. */
 const COLLECTION_ID = /^gid:\/\/cloudcart\/Collection\/(sc_)?\d+$/;

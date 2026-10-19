@@ -6,6 +6,10 @@ import {ArticleList, blogCategoryLinks} from '~/components/ArticleItem';
 import {ListingHeader} from '~/components/ListingHeader';
 import {ARTICLE_ITEM_FRAGMENT} from '~/lib/blog';
 import {ButtonLink} from '~/components/ui/Button';
+import {SHARED_PAGE} from '~/lib/page-cache';
+
+/** The same page for every visitor: served from the page cache (`server.ts`). */
+export const handle = SHARED_PAGE;
 
 export const meta: Route.MetaFunction = ({location, matches}) => {
   const t = metaTranslator(matches);
