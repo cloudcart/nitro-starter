@@ -1,16 +1,10 @@
 /// <reference types="vite/client" />
 /// <reference types="react-router" />
+/// <reference types="@cloudcart/nitrogen/react-router-types" />
 
-declare module "react-router" {
-  interface AppLoadContext {
-    env: {
-      SESSION_SECRET: string;
-      PUBLIC_STORE_DOMAIN?: string;
-      PUBLIC_STOREFRONT_API_TOKEN?: string;
-      PRIVATE_STOREFRONT_API_TOKEN?: string;
-    };
-    storefront: import("@cloudcart/nitrogen").StorefrontClient;
-    cart: import("@cloudcart/nitrogen").CartHandler;
-    session: import("@cloudcart/nitrogen").AppSession;
-  }
-}
+// Add the storefront's own environment variables to `Env` here, e.g.
+// declare global {
+//   interface Env {
+//     MY_API_KEY: string;
+//   }
+// }

@@ -1,153 +1,222 @@
-import type {ProductFilter, Filter} from '@cloudcart/nitrogen';
+import type {ProductFilter, ProductSortKeys} from '@cloudcart/nitrogen/storefront-api-types';
+
+/*
+ * Listing filters and sorting, kept in readable URL parameters:
+ *
+ *   vendor=nike&vendor=adidas          {productVendor: "nike"}, {productVendor: "adidas"}
+ *   option_Color=Red                   {variantOption: {name: "Color", value: "Red"}}
+ *   prop_material=cotton               {productMetafield: {namespace: "material", key: "material", value: "cotton"}}
+ *   brand_1=2                          {brandModel: {brandId: "1", modelId: "2"}}
+ *   category=123                       {category: {id: "123"}}
+ *   onSale=true, isNew=true, isFeatured=true, available=true
+ *   minPrice=10&maxPrice=50            {price: {min: 10, max: 50}}
+ *   filter={JSON}                      any other facet value's `input`, as is
+ *
+ * A facet value's `input` (from `ProductConnection.filters`) is turned into
+ * one of these parameters, and the parameters back into `ProductFilter`s.
+ */
+
+/** URL parameters that are not filters. */
+const NON_FILTER_PARAMS = ['sort', 'cursor', 'direction', 'query', 'q'];
 
 /**
- * Convert URL search params to ProductFilter[] for the Storefront API.
- *
- * Supports multiple values per facet (multi-select).
- * URL param conventions:
- *   available=true           → {available: true}
- *   minPrice=10&maxPrice=50  → {price: {min: 10, max: 50}}
- *   vendor=nike&vendor=adidas → {productVendor: "nike"}, {productVendor: "adidas"}
- *   tag=sale&tag=new         → {tag: "sale"}, {tag: "new"}
- *   option_Color=Red&option_Color=Blue → multiple variantOption filters
- *   onSale=true              → {onSale: true}
- *   isNew=true               → {isNew: true}
- *   isFeatured=true          → {isFeatured: true}
- *   prop_material=cotton     → {productMetafield: {namespace: "material", key: "material", value: "cotton"}}
- *   brand_1=2                → {brandModel: {brandId: "1", modelId: "2"}}
- *   category=123             → {category: {id: "123"}}
- *   filter={JSON}            → parsed from facet FilterValue.input
+ * Each `ProductFilter` field and the JSON type of its value. Typed against the schema's input, so a field the API adds
+ * fails the typecheck until it is listed here.
  */
-export function buildFiltersFromParams(searchParams: URLSearchParams): ProductFilter[] {
+const FILTER_FIELDS = {
+  available: 'boolean',
+  variantOption: 'object',
+  productVendor: 'string',
+  price: 'object',
+  tag: 'string',
+  onSale: 'boolean',
+  isNew: 'boolean',
+  isFeatured: 'boolean',
+  productMetafield: 'object',
+  brandModel: 'object',
+  category: 'object',
+} as const satisfies Record<keyof ProductFilter, 'boolean' | 'string' | 'object'>;
+
+/**
+ * A raw `filter` parameter as a `ProductFilter`, or null when it is not one: an object whose every field is the
+ * input's, with a value of its type. Anything else would make the API refuse the whole query (B-413).
+ */
+function rawFilter(value: string): ProductFilter | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+  const entries = Object.entries(parsed);
+  const valid =
+    entries.length > 0 &&
+    entries.every(([field, fieldValue]) => {
+      const type = FILTER_FIELDS[field as keyof ProductFilter] as string | undefined;
+      return type === 'object'
+        ? typeof fieldValue === 'object' && fieldValue !== null && !Array.isArray(fieldValue)
+        : type !== undefined && typeof fieldValue === type;
+    });
+  return valid ? (parsed as ProductFilter) : null;
+}
+
+/** The `ProductFilter`s for the products query, from the page's URL. */
+export function getFiltersFromParams(searchParams: URLSearchParams): ProductFilter[] {
   const filters: ProductFilter[] = [];
 
-  if (searchParams.get('available') === 'true') {
-    filters.push({available: true});
+  if (searchParams.get('available') === 'true') filters.push({available: true});
+  if (searchParams.get('onSale') === 'true') filters.push({onSale: true});
+  if (searchParams.get('isNew') === 'true') filters.push({isNew: true});
+  if (searchParams.get('isFeatured') === 'true') filters.push({isFeatured: true});
+
+  const min = parseFloat(searchParams.get('minPrice') ?? '');
+  const max = parseFloat(searchParams.get('maxPrice') ?? '');
+  if (!Number.isNaN(min) || !Number.isNaN(max)) {
+    filters.push({price: {...(!Number.isNaN(min) && {min}), ...(!Number.isNaN(max) && {max})}});
   }
 
-  const minPrice = searchParams.get('minPrice');
-  const maxPrice = searchParams.get('maxPrice');
-  if (minPrice || maxPrice) {
-    filters.push({
-      price: {
-        ...(minPrice ? {min: parseFloat(minPrice)} : {}),
-        ...(maxPrice ? {max: parseFloat(maxPrice)} : {}),
-      },
-    });
-  }
-
-  // Multi-select: vendor
   for (const vendor of searchParams.getAll('vendor')) {
     if (vendor) filters.push({productVendor: vendor});
   }
-
-  // Multi-select: tag
   for (const tag of searchParams.getAll('tag')) {
     if (tag) filters.push({tag});
   }
-
-  if (searchParams.get('onSale') === 'true') {
-    filters.push({onSale: true});
-  }
-
-  if (searchParams.get('isNew') === 'true') {
-    filters.push({isNew: true});
-  }
-
-  if (searchParams.get('isFeatured') === 'true') {
-    filters.push({isFeatured: true});
-  }
-
-  // Multi-select: category
-  for (const category of searchParams.getAll('category')) {
-    if (category) filters.push({category: {id: category}});
+  for (const id of searchParams.getAll('category')) {
+    if (id) filters.push({category: {id}});
   }
 
   for (const [key, value] of searchParams) {
     if (!value) continue;
 
-    // Multi-select: variant option filters: option_Color=Red&option_Color=Blue
     if (key.startsWith('option_')) {
-      filters.push({variantOption: {name: key.slice(7), value}});
-    }
-
-    // Multi-select: category property filters: prop_material=cotton&prop_material=wood
-    if (key.startsWith('prop_')) {
-      const handle = key.slice(5);
-      filters.push({productMetafield: {namespace: handle, key: handle, value}});
-    }
-
-    // Brand model filters: brand_1=2 (brandId=1, modelId=2)
-    if (key.startsWith('brand_')) {
-      filters.push({brandModel: {brandId: key.slice(6), modelId: value}});
-    }
-
-    // Raw JSON filter from facet input: filter={"productVendor":"nike"}
-    if (key === 'filter') {
-      try {
-        const parsed = JSON.parse(value) as ProductFilter;
-        filters.push(parsed);
-      } catch {
-        // ignore invalid JSON
-      }
+      filters.push({variantOption: {name: key.slice('option_'.length), value}});
+    } else if (key.startsWith('prop_')) {
+      const property = key.slice('prop_'.length);
+      filters.push({productMetafield: {namespace: property, key: property, value}});
+    } else if (key.startsWith('brand_')) {
+      filters.push({brandModel: {brandId: key.slice('brand_'.length), modelId: value}});
+    } else if (key === 'filter') {
+      // Not a filter: ignored.
+      const filter = rawFilter(value);
+      if (filter) filters.push(filter);
     }
   }
 
   return filters;
 }
 
-/**
- * Convert a Filter facet value's input JSON into a URL search param.
- * This is the reverse of buildFiltersFromParams — takes the JSON from
- * FilterValue.input and produces the URL param key=value.
- */
+/** The URL parameter for a facet value's `input`. Null for price, which has its own two parameters. */
 export function filterInputToParam(input: string): {key: string; value: string} | null {
+  let filter: ProductFilter;
   try {
-    const parsed = JSON.parse(input) as ProductFilter;
-
-    if (parsed.productVendor) return {key: 'vendor', value: parsed.productVendor};
-    if (parsed.variantOption) return {key: `option_${parsed.variantOption.name}`, value: parsed.variantOption.value};
-    if (parsed.productMetafield) return {key: `prop_${parsed.productMetafield.key}`, value: parsed.productMetafield.value};
-    if (parsed.brandModel) return {key: `brand_${parsed.brandModel.brandId}`, value: parsed.brandModel.modelId ?? ''};
-    if (parsed.onSale) return {key: 'onSale', value: 'true'};
-    if (parsed.isNew) return {key: 'isNew', value: 'true'};
-    if (parsed.isFeatured) return {key: 'isFeatured', value: 'true'};
-    if (parsed.category) return {key: 'category', value: parsed.category.id};
-    if (parsed.price) return null; // Price is handled separately via minPrice/maxPrice
-
-    // Fallback: encode as raw JSON filter
-    return {key: 'filter', value: input};
+    filter = JSON.parse(input) as ProductFilter;
   } catch {
     return null;
   }
+
+  if (filter.price) return null;
+  if (filter.productVendor) return {key: 'vendor', value: filter.productVendor};
+  if (filter.tag) return {key: 'tag', value: filter.tag};
+  if (filter.category) return {key: 'category', value: filter.category.id};
+  // The API's inputs name the option and property as well as their ids; one without names stays a raw `filter`.
+  if (filter.variantOption?.name && filter.variantOption.value)
+    return {key: `option_${filter.variantOption.name}`, value: filter.variantOption.value};
+  if (filter.productMetafield?.key && filter.productMetafield.value)
+    return {key: `prop_${filter.productMetafield.key}`, value: filter.productMetafield.value};
+  if (filter.brandModel) return {key: `brand_${filter.brandModel.brandId}`, value: filter.brandModel.modelId ?? ''};
+  if (filter.onSale === true) return {key: 'onSale', value: 'true'};
+  if (filter.isNew === true) return {key: 'isNew', value: 'true'};
+  if (filter.isFeatured === true) return {key: 'isFeatured', value: 'true'};
+  if (filter.available === true) return {key: 'available', value: 'true'};
+
+  return {key: 'filter', value: input};
 }
 
-/**
- * Check if a filter value is currently active in the URL search params.
- * Supports multi-select: checks all values for a given key.
- */
-export function isFilterActive(searchParams: URLSearchParams, input: string): boolean {
+/** Whether a facet value is applied on the current page. */
+export function isFilterActive(searchParams: URLSearchParams, input: string) {
   const param = filterInputToParam(input);
-  if (!param) return false;
-  return searchParams.getAll(param.key).includes(param.value);
+  return param ? searchParams.getAll(param.key).includes(param.value) : false;
 }
 
-/** Sort key mapping from URL param to GraphQL ProductSortKeys. */
-const SORT_MAP: Record<string, {sortKey: string; reverse: boolean}> = {
-  'price-asc': {sortKey: 'PRICE', reverse: false},
-  'price-desc': {sortKey: 'PRICE', reverse: true},
-  'title-asc': {sortKey: 'TITLE', reverse: false},
-  'title-desc': {sortKey: 'TITLE', reverse: true},
-  'created-desc': {sortKey: 'CREATED_AT', reverse: true},
-  'best-selling': {sortKey: 'BEST_SELLING', reverse: false},
-  'updated-desc': {sortKey: 'UPDATED_AT', reverse: true},
-};
+/**
+ * The URL with a facet value added, or removed when it is already applied. Pagination starts over. An added value goes
+ * to the end and a removed one leaves the others where they were: the address keeps the order the filters were chosen
+ * in, which the chosen filters' chips follow (T-558).
+ */
+export function toggleFilterParam(searchParams: URLSearchParams, input: string) {
+  const params = withoutPagination(searchParams);
+  const param = filterInputToParam(input);
+  if (!param) return params;
+
+  if (!params.getAll(param.key).includes(param.value)) {
+    params.append(param.key, param.value);
+    return params;
+  }
+  return new URLSearchParams([...params].filter(([key, value]) => key !== param.key || value !== param.value));
+}
 
 /**
- * Convert a sort URL param to GraphQL sortKey + reverse.
+ * The URL with one parameter set, or removed when empty. Pagination starts over. A value set goes to the end, as a
+ * filter just chosen (T-558).
  */
-export function buildSortFromParams(searchParams: URLSearchParams): {sortKey?: string; reverse?: boolean} {
-  const sort = searchParams.get('sort');
-  if (!sort || !SORT_MAP[sort]) return {};
-  return SORT_MAP[sort];
+export function setParam(searchParams: URLSearchParams, key: string, value: string | null) {
+  const params = withoutPagination(searchParams);
+  params.delete(key);
+  if (value) params.append(key, value);
+  return params;
+}
+
+/**
+ * Where a parameter last stands in the address — with a value, that pair — or -1: the later a filter was chosen, the
+ * higher (T-558).
+ */
+export function paramPosition(searchParams: URLSearchParams, key: string, value?: string) {
+  let position = -1;
+  [...searchParams].forEach(([k, v], index) => {
+    if (k === key && (value === undefined || v === value)) position = index;
+  });
+  return position;
+}
+
+/** The URL without any filter, keeping the search term and sorting. */
+export function clearFilterParams(searchParams: URLSearchParams) {
+  const params = new URLSearchParams();
+  for (const [key, value] of searchParams) {
+    if (NON_FILTER_PARAMS.includes(key) && key !== 'cursor' && key !== 'direction') params.append(key, value);
+  }
+  return params;
+}
+
+/** Whether any filter is applied. */
+export function hasFilterParams(searchParams: URLSearchParams) {
+  return [...searchParams.keys()].some((key) => !NON_FILTER_PARAMS.includes(key));
+}
+
+function withoutPagination(searchParams: URLSearchParams) {
+  const params = new URLSearchParams(searchParams);
+  params.delete('cursor');
+  params.delete('direction');
+  return params;
+}
+
+/** The sort orders the listing offers, each named by its text in `listing.sort`. The first is the store's own order. */
+export const SORT_OPTIONS: Array<{value: string; label: SortLabel; sortKey?: ProductSortKeys; reverse?: boolean}> = [
+  {value: '', label: 'featured'},
+  {value: 'best-selling', label: 'bestSelling', sortKey: 'BEST_SELLING'},
+  {value: 'created-desc', label: 'newest', sortKey: 'CREATED_AT', reverse: true},
+  {value: 'price-asc', label: 'priceAsc', sortKey: 'PRICE'},
+  {value: 'price-desc', label: 'priceDesc', sortKey: 'PRICE', reverse: true},
+  {value: 'title-asc', label: 'titleAsc', sortKey: 'TITLE'},
+  {value: 'title-desc', label: 'titleDesc', sortKey: 'TITLE', reverse: true},
+];
+
+/** A sort order's text in `listing.sort`; `relevance` names the store's own order on search results. */
+export type SortLabel =
+  'featured' | 'relevance' | 'bestSelling' | 'newest' | 'priceAsc' | 'priceDesc' | 'titleAsc' | 'titleDesc';
+
+/** `sortKey` and `reverse` for the products query, from the `sort` URL parameter. */
+export function getSortFromParams(searchParams: URLSearchParams): {sortKey?: ProductSortKeys; reverse?: boolean} {
+  const option = SORT_OPTIONS.find(({value}) => value && value === searchParams.get('sort'));
+  return option ? {sortKey: option.sortKey, reverse: option.reverse ?? false} : {};
 }

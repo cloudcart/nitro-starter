@@ -3,21 +3,16 @@
     "env.d.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
+    "app/**/*.d.ts",
     "*.ts",
     "*.tsx",
+    "*.d.ts",
+    ".graphqlrc.ts",
     ".react-router/types/**/*"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build"
-  ],
+  "exclude": ["node_modules", "dist", "build"],
   "compilerOptions": {
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2022"
-    ],
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",
@@ -30,20 +25,12 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "baseUrl": ".",
-    "types": [
-      "react-router",
-      "vite/client"
-    ],
+    "types": ["react-router", "vite/client", "@cloudcart/nitrogen/react-router-types"],
     "paths": {
-      "~/*": [
-        "app/*"
-      ]
+      "~/*": ["app/*"]
     },
     "noEmit": true,
-    "rootDirs": [
-      ".",
-      "./.react-router/types"
-    ],
+    "rootDirs": [".", "./.react-router/types"],
     "verbatimModuleSyntax": true
   }
 }

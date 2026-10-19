@@ -1,7 +1,12 @@
-import {data} from 'react-router';
+import type {Route} from './+types/$';
 
-export async function loader() {
-  throw data('Not Found', {status: 404});
+/** Any address no route serves: a 404, which `storefrontRedirect` in server.ts may turn into the merchant's redirect. */
+export async function loader({url}: Route.LoaderArgs) {
+  throw new Response(`${url.pathname} not found`, {
+    status: 404,
+  });
 }
 
-export default function CatchAll() { return null; }
+export default function CatchAllPage() {
+  return null;
+}

@@ -1,29 +1,51 @@
-import {createContext, useContext, useState, useEffect, type ReactNode} from 'react';
-import {XMarkIcon} from '@heroicons/react/24/outline';
+import {createContext, type ReactNode, use, useState} from 'react';
+import {Dialog} from '~/components/Dialog';
 
-type AsideType = 'cart' | 'search' | 'mobile' | 'closed';
-
-interface AsideContextValue {
+type AsideType = 'search' | 'cart' | 'mobile' | 'filters' | 'closed';
+type AsideContextValue = {
   type: AsideType;
-  open: (type: AsideType) => void;
+  open: (mode: AsideType) => void;
   close: () => void;
+};
+
+/**
+ * A drawer along one side of the page — the cart, the mobile menu and the listing filters open in one — and only one
+ * of them, or the search, is open at a time: the search opens through the same `open('search')` into a box near the
+ * top of the screen (`Dialog` with `variant="float"`, `PageLayout`'s `SearchModal`), not a drawer (B-404).
+ * @example
+ * ```jsx
+ * <Aside type="filters" heading={t('filters.title')} side="left">
+ *   <FilterPanel filters={filters} totalCount={totalCount} />
+ * </Aside>
+ * ```
+ */
+export function Aside({
+  children,
+  heading,
+  type,
+  side = 'right',
+}: {
+  children?: ReactNode;
+  type: AsideType;
+  heading: ReactNode;
+  side?: 'left' | 'right';
+}) {
+  const {type: activeType, close} = useAside();
+
+  return (
+    <Dialog variant="drawer" side={side} open={type === activeType} onClose={close} heading={heading}>
+      {children}
+    </Dialog>
+  );
 }
 
-const AsideContext = createContext<AsideContextValue>({
-  type: 'closed',
-  open: () => {},
-  close: () => {},
-});
+const AsideContext = createContext<AsideContextValue | null>(null);
 
-export function useAside() {
-  return useContext(AsideContext);
-}
-
-export function AsideProvider({children}: {children: ReactNode}) {
+Aside.Provider = function AsideProvider({children}: {children: ReactNode}) {
   const [type, setType] = useState<AsideType>('closed');
 
   return (
-    <AsideContext.Provider
+    <AsideContext
       value={{
         type,
         open: setType,
@@ -31,52 +53,14 @@ export function AsideProvider({children}: {children: ReactNode}) {
       }}
     >
       {children}
-    </AsideContext.Provider>
+    </AsideContext>
   );
-}
+};
 
-export function Aside({
-  children,
-  heading,
-  type,
-}: {
-  children?: ReactNode;
-  heading: ReactNode;
-  type: AsideType;
-}) {
-  const {type: activeType, close} = useAside();
-  const expanded = type === activeType;
-
-  useEffect(() => {
-    if (!expanded) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [close, expanded]);
-
-  return (
-    <div
-      aria-modal
-      className={`fixed inset-0 bg-black/30 z-[100] transition-[opacity,visibility] duration-300 ${expanded ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
-      role="dialog"
-    >
-      <button className="absolute inset-0 bg-transparent border-none w-[calc(100%-400px)] cursor-default" onClick={close} />
-      <aside className={`fixed top-0 right-0 w-[min(400px,100vw)] h-screen bg-light shadow-[-4px_0_24px_rgba(0,0,0,0.12)] transition-transform duration-300 flex flex-col ${expanded ? 'translate-x-0' : 'translate-x-full'}`}>
-        <header className="flex items-center justify-between px-5 h-16 border-b border-gray-200 shrink-0">
-          <h3 className="text-[0.85rem] font-bold tracking-widest">{heading}</h3>
-          <button
-            type="button"
-            onClick={close}
-            className="rounded-md p-1 text-gray-400 hover:text-dark transition-colors duration-150"
-            aria-label="Close"
-          >
-            <XMarkIcon className="size-6" />
-          </button>
-        </header>
-        <main className="flex-1 overflow-y-auto p-0">{children}</main>
-      </aside>
-    </div>
-  );
+export function useAside() {
+  const aside = use(AsideContext);
+  if (!aside) {
+    throw new Error('useAside must be used within an AsideProvider');
+  }
+  return aside;
 }

@@ -1,0 +1,6 @@
+# Read by pnpm only (`cloudcart nitrogen init --package-manager pnpm`); npm and yarn ignore it.
+# The dependencies whose install scripts may run, as npm runs them: pnpm 11 refuses an install
+# while a dependency's script is neither allowed nor denied here.
+allowBuilds:
+  esbuild: true
+  simple-git-hooks: true

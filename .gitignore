@@ -6,3 +6,9 @@ build
 *.local
 .DS_Store
 .cloudcart/
+
+# Local secrets: never in git. `.env.example` lists the names only.
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*

@@ -1,28 +1,54 @@
-import {Form, useSearchParams} from 'react-router';
-import {MagnifyingGlassIcon} from '@heroicons/react/24/outline';
+import {useEffect, useRef} from 'react';
+import {Form, type FormProps} from 'react-router';
+import {SEARCH_ENDPOINT} from '~/lib/search';
 
-interface SearchFormProps {
-  className?: string;
-}
+type SearchFormProps = Omit<FormProps, 'children'> & {
+  children: (args: {inputRef: React.RefObject<HTMLInputElement | null>}) => React.ReactNode;
+};
 
-export function SearchForm({className}: SearchFormProps) {
-  const [searchParams] = useSearchParams();
-  const query = searchParams.get('q') ?? '';
+/**
+ * A search form that sends its term to the search page.
+ * @example
+ * ```tsx
+ * <SearchForm>
+ *  {({inputRef}) => (
+ *    <>
+ *      <input ref={inputRef} type="search" defaultValue={term} name="query" placeholder={t('search.placeholder')} />
+ *      <button type="submit">{t('search.submit')}</button>
+ *   </>
+ *  )}
+ *  </SearchForm>
+ * ```
+ */
+export function SearchForm({children, ...props}: SearchFormProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useFocusOnCmdK(inputRef);
+
+  if (typeof children !== 'function') return null;
 
   return (
-    <Form method="get" action="/search" className={className ?? 'flex gap-2 mb-8'}>
-      <div className="relative flex-1">
-        <MagnifyingGlassIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-5 text-gray-400 pointer-events-none" />
-        <input
-          type="search"
-          name="q"
-          defaultValue={query}
-          placeholder="Search products..."
-          autoComplete="off"
-          className="form-input w-full py-3 pl-11 pr-4 border-[1.5px] border-gray-200 rounded-[10px] text-[0.95rem] transition-[border-color] duration-150 focus:border-brand focus:ring-0"
-        />
-      </div>
-      <button type="submit" className="py-3 px-6 bg-dark text-light border-none rounded-[10px] font-semibold text-sm hover:bg-gray-900 transition-colors duration-150">Search</button>
+    <Form method="get" action={SEARCH_ENDPOINT} {...props}>
+      {children({inputRef})}
     </Form>
   );
+}
+
+/** Focuses the input on cmd+k, and leaves it on Escape. */
+function useFocusOnCmdK(inputRef: React.RefObject<HTMLInputElement | null>) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'k' && event.metaKey) {
+        event.preventDefault();
+        inputRef.current?.focus();
+      }
+
+      if (event.key === 'Escape') {
+        inputRef.current?.blur();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [inputRef]);
 }

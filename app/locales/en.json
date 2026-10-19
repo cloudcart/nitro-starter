@@ -1,0 +1,712 @@
+{
+  "accessibility": {
+    "skipToContent": "Skip to content"
+  },
+  "actions": {
+    "close": "Close",
+    "viewAll": "View all",
+    "clear": "Clear",
+    "browseCategories": "Browse the categories"
+  },
+  "announcements": {
+    "label": "Announcements",
+    "pause": "Pause announcements",
+    "play": "Play announcements",
+    "previous": "Previous announcement",
+    "next": "Next announcement",
+    "welcome": "Welcome to {shop}",
+    "newArrivals": "See what is new in the store"
+  },
+  "cart": {
+    "title": "Cart",
+    "loading": "Loading the cart…",
+    "lines": "Products in the cart",
+    "empty": "Your cart is empty",
+    "emptyText": "Add products and they will show here.",
+    "continueShopping": "Continue shopping",
+    "removeLine": "Remove {title}",
+    "removeBundle": "Remove the bundle {title}",
+    "fixedQuantity": "Quantity: {count}",
+    "summary": "Order summary",
+    "discounts": "Discounts",
+    "saved": "You save {amount}",
+    "discountCode": "Discount code",
+    "applyCode": "Apply",
+    "removeCode": "Remove the code {code}",
+    "codeNotApplicable": "The code {code} does not apply to this cart.",
+    "appliedCodes": "Applied codes",
+    "checkout": "Check out",
+    "alsoLike": "You may also like",
+    "endsIn": "Ends in {time}",
+    "offer": {
+      "label": "Offer",
+      "add": "Add",
+      "added": "Added",
+      "decline": "No, thanks",
+      "addedTitle": "Added to your cart",
+      "done": "Continue",
+      "variant": "Option",
+      "endsIn": "The offer ends in {time}",
+      "instead": "Instead of {title}",
+      "additional": "{amount} more"
+    },
+    "subtotal": "Subtotal",
+    "countdownDays": {
+      "one": "{count} day {time}",
+      "other": "{count} days {time}"
+    }
+  },
+  "filters": {
+    "title": "Filters",
+    "clearAll": "Clear all",
+    "remove": "Remove {label}",
+    "chip": "{name}: {value}",
+    "price": "Price",
+    "priceRange": "{min} – {max}",
+    "priceFrom": "from {min}",
+    "priceTo": "up to {max}",
+    "minPrice": "Minimum price",
+    "maxPrice": "Maximum price",
+    "apply": "Apply",
+    "showAll": "Show all ({count})",
+    "showLess": "Show less",
+    "selected": {
+      "one": "{count} selected",
+      "other": "{count} selected"
+    },
+    "viewProducts": "View products",
+    "viewCount": {
+      "one": "View {count} product",
+      "other": "View {count} products"
+    },
+    "noMatch": "No products match these filters.",
+    "chosen": "Chosen filters",
+    "more": {
+      "one": "{count} more filter",
+      "other": "{count} more filters"
+    }
+  },
+  "footer": {
+    "menu": "Footer",
+    "policies": "Policies",
+    "privacyRequest": "Privacy request",
+    "cookieSettings": "Cookie settings",
+    "social": "Social media",
+    "copyright": "© {year} {shop}"
+  },
+  "form": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "name": "Name",
+    "email": "E-mail",
+    "phone": "Phone",
+    "accept": "I accept the",
+    "code": "Code",
+    "marketing": "Send me news and offers",
+    "save": "Save",
+    "error": "The form could not be sent. Try again in a moment.",
+    "required": "required",
+    "terms": "Terms to accept",
+    "invalid": {
+      "fill": "Fill in this field.",
+      "choose": "Choose one of the options.",
+      "check": "Tick this box to go on.",
+      "file": "Choose a file.",
+      "email": "Enter a valid e-mail address.",
+      "url": "Enter a valid web address.",
+      "number": "Enter a number.",
+      "min": "Enter {min} or more.",
+      "max": "Enter {max} or less.",
+      "step": "Enter a value in steps of {step}.",
+      "tooLong": "Use at most {maxLength} characters.",
+      "tooShort": "Use at least {minLength} characters.",
+      "pattern": "Use the format asked for."
+    }
+  },
+  "gallery": {
+    "label": "Product media",
+    "carousel": "slideshow",
+    "slide": "slide",
+    "position": "{index} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "show": "Show media {index} of {total}",
+    "zoom": "Zoom in",
+    "zoomOut": "Zoom out",
+    "spin": "Turn the product",
+    "zoomInto": "Zoom in: {alt}"
+  },
+  "header": {
+    "openMenu": "Open menu",
+    "search": "Search",
+    "account": "Account",
+    "signIn": "Sign in",
+    "cart": {
+      "one": "Cart, {count} item",
+      "other": "Cart, {count} items"
+    }
+  },
+  "listing": {
+    "count": {
+      "one": "{count} product",
+      "other": "{count} products"
+    },
+    "sortBy": "Sort by",
+    "sort": {
+      "featured": "Featured",
+      "relevance": "Relevance",
+      "bestSelling": "Best selling",
+      "newest": "Newest",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low",
+      "titleAsc": "Name: A–Z",
+      "titleDesc": "Name: Z–A"
+    },
+    "density": "Grid",
+    "fewer": "Larger products, fewer per row",
+    "more": "Smaller products, more per row",
+    "loadMore": "Load more",
+    "loadPrevious": "Load previous",
+    "loading": "Loading…",
+    "products": "Products",
+    "subcategories": "Subcategories",
+    "allProducts": "All products",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "empty": "No products here yet.",
+    "noCategories": "No categories yet.",
+    "noBrands": "No brands yet."
+  },
+  "menu": {
+    "viewAll": "View all",
+    "label": "Main menu",
+    "categories": "Categories",
+    "brands": "Brands",
+    "blog": "Blog"
+  },
+  "navigation": {
+    "breadcrumb": "Breadcrumb",
+    "home": "Home",
+    "menu": "Menu"
+  },
+  "product": {
+    "soldOut": "Sold out",
+    "valueSoldOut": "{value} — sold out",
+    "addToCart": "Add to cart",
+    "chooseOptions": "Choose options",
+    "rating": "Rated {rating} out of 5",
+    "reviewCount": {
+      "one": "{count} review",
+      "other": "{count} reviews"
+    },
+    "freeShipping": "Free shipping",
+    "offerEndsIn": "Offer ends in {time}",
+    "inStock": "In stock",
+    "availableToOrder": "Available to order",
+    "outOfStock": "Out of stock",
+    "requiredMissing": "Choose first: {names}",
+    "choose": "Choose…",
+    "length": "Length",
+    "width": "Width",
+    "atLeast": "At least {value}",
+    "file": {
+      "uploading": "Uploading {name}…",
+      "attached": "{name} is attached",
+      "remove": "Remove the file",
+      "types": "Accepted: {types}",
+      "maxSize": "Up to {size}",
+      "tooLarge": "The file is larger than {size}.",
+      "wrongType": "This type of file is not accepted.",
+      "failed": "The file could not be uploaded. Try again."
+    },
+    "bundle": {
+      "add": "Add bundle to cart",
+      "discount": "{percent}% off every product in this bundle",
+      "separately": "Bought separately: {amount}",
+      "choose": "Choose {title}",
+      "soldOut": "{title} — sold out"
+    },
+    "instalments": "Buy in instalments",
+    "instalmentMonthly": "from {amount}/mo",
+    "instalmentMonths": {
+      "one": "{count} month",
+      "other": "{count} months"
+    },
+    "inStores": "Available in our stores",
+    "compare": {
+      "add": "Compare",
+      "remove": "Remove from comparison",
+      "view": {
+        "one": "Compare {count} product",
+        "other": "Compare {count} products"
+      }
+    },
+    "details": {
+      "description": "Description",
+      "specifications": "Specifications",
+      "length": "Length",
+      "width": "Width",
+      "height": "Height",
+      "downloads": "Downloads",
+      "energyClass": "Energy class {label}",
+      "energyLabel": "Energy label",
+      "productSheet": "Product information sheet"
+    },
+    "related": {
+      "alsoLike": "You may also like",
+      "complementary": "Complementary products",
+      "previous": "Previous product",
+      "next": "Next product"
+    },
+    "backInStock": {
+      "title": "Tell me when it is back in stock",
+      "submit": "Notify me",
+      "done": "We will let you know."
+    },
+    "inquiry": {
+      "title": "Ask about this product",
+      "message": "Message",
+      "submit": "Send",
+      "done": "Thank you, we will get back to you."
+    },
+    "fastOrder": {
+      "done": "Thank you! Your order has been placed.",
+      "doneNumber": "Thank you! Your order #{number} has been placed."
+    },
+    "recentlyViewed": "Recently viewed",
+    "discountBadge": "−{percent}%",
+    "tiers": {
+      "title": "Buy more and save more",
+      "buy": "Buy {count}",
+      "buyRange": "Buy {min}–{max}",
+      "buyOrMore": "Buy {count}+",
+      "best": "Best value",
+      "perPiece": "{price} each",
+      "saving": "You save {amount}",
+      "pieces": "Pieces",
+      "piece": "Piece {number}: {option}",
+      "fastOrderOneVariant": "Fast order takes one variant: choose the same for every piece to order this way."
+    },
+    "fromPrice": "From {price}",
+    "ratingWithCount": {
+      "one": "Rated {rating} out of 5, {count} review",
+      "other": "Rated {rating} out of 5, {count} reviews"
+    }
+  },
+  "quantity": {
+    "label": "Quantity",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "of": "Quantity of {title}"
+  },
+  "reviews": {
+    "title": "Reviews",
+    "loading": "Loading reviews…",
+    "failed": "The reviews could not be loaded.",
+    "none": "No reviews yet. Be the first to share your thoughts.",
+    "noneTitle": "No reviews yet",
+    "basedOn": {
+      "one": "Based on {count} review",
+      "other": "Based on {count} reviews"
+    },
+    "byRating": "Reviews by rating",
+    "list": "Customer reviews",
+    "stars": {
+      "one": "{count} star",
+      "other": "{count} stars"
+    },
+    "filter": "Filter reviews by rating",
+    "all": "All",
+    "previous": "Show previous reviews",
+    "more": "Show more reviews",
+    "noneWithRating": {
+      "one": "No reviews with {count} star yet.",
+      "other": "No reviews with {count} stars yet."
+    },
+    "showAll": "Show all reviews",
+    "showReplies": {
+      "one": "Show the reply",
+      "other": "Show {count} replies"
+    },
+    "hideReplies": {
+      "one": "Hide the reply",
+      "other": "Hide the replies"
+    },
+    "share": "Share your thoughts",
+    "shareText": "If you have used this product, tell other customers what you think.",
+    "write": "Write a review",
+    "rating": "Rating",
+    "reviewTitle": "Title",
+    "comment": "Review",
+    "send": "Send review",
+    "thanks": "Thank you for your review.",
+    "answer": "Answer",
+    "answerLabel": "Your answer to {name}",
+    "answerSend": "Send answer",
+    "answerThanks": "Thank you for your answer.",
+    "cancel": "Cancel"
+  },
+  "search": {
+    "title": "Search",
+    "label": "Search the store",
+    "placeholder": "Search",
+    "submit": "Search",
+    "loading": "Searching…",
+    "status": {
+      "one": "{count} result",
+      "other": "{count} results"
+    },
+    "empty": "No results for “{term}”",
+    "emptyHint": "Check the spelling, or try a shorter or more general word.",
+    "viewAll": "View all results",
+    "viewAllCount": {
+      "one": "View {count} result",
+      "other": "View all {count} results"
+    },
+    "products": "Products",
+    "pagesAndArticles": "Pages and articles",
+    "metaTitle": "Search: {term}",
+    "error": "The search could not be completed. Try again in a moment.",
+    "clear": "Clear the search",
+    "bestSellers": "Best sellers",
+    "suggestions": "Categories and brands",
+    "clearRecent": "Clear the products you viewed"
+  },
+  "subscribe": {
+    "title": "Subscribe",
+    "open": "Open",
+    "submit": "Subscribe",
+    "choose": "Choose…",
+    "acceptPolicy": "I accept the",
+    "policyNotAccepted": "Please accept the {title}.",
+    "notSent": "The form could not be sent. Please try again.",
+    "email": "E-mail",
+    "phone": "Phone",
+    "firstName": "First name",
+    "lastName": "Last name"
+  },
+  "wishlist": {
+    "add": "Add to wishlist",
+    "remove": "Remove from wishlist",
+    "signIn": "Sign in to save this product"
+  },
+  "home": {
+    "hero": {
+      "heading": "Welcome to {shop}",
+      "text": "New arrivals, favourites and everything in between.",
+      "button": "Shop all"
+    },
+    "featured": "Featured",
+    "newest": "New arrivals",
+    "collections": "Shop by category"
+  },
+  "content": {
+    "blog": "Blog"
+  },
+  "contact": {
+    "title": "Contact us",
+    "registrationNumber": "Company ID: {number}",
+    "vatNumber": "VAT number: {number}",
+    "formTitle": "Send us a message",
+    "subject": "Subject",
+    "message": "Message",
+    "send": "Send",
+    "sent": "Thank you, we will get back to you."
+  },
+  "account": {
+    "nav": {
+      "label": "Account",
+      "profile": "Profile",
+      "orders": "Orders",
+      "returns": "Returns",
+      "shippingAddresses": "Delivery addresses",
+      "billingAddresses": "Billing addresses",
+      "wishlist": "Wishlist",
+      "downloads": "Downloads",
+      "payments": "Payments",
+      "policies": "Accepted policies",
+      "privacyRequests": "Privacy requests",
+      "yourData": "Your data",
+      "signOut": "Sign out"
+    },
+    "order": {
+      "number": "Order #{number}",
+      "lines": "Products",
+      "financial": {
+        "PENDING": "Awaiting payment",
+        "AUTHORIZED": "Authorized",
+        "PARTIALLY_PAID": "Partly paid",
+        "PAID": "Paid",
+        "PARTIALLY_REFUNDED": "Partly refunded",
+        "REFUNDED": "Refunded",
+        "VOIDED": "Cancelled"
+      },
+      "fulfillment": {
+        "UNFULFILLED": "Not shipped",
+        "PARTIALLY_FULFILLED": "Partly shipped",
+        "FULFILLED": "Shipped"
+      },
+      "back": "Back to orders",
+      "note": "Note: {note}",
+      "shippingAddress": "Delivery address",
+      "billingAddress": "Billing address",
+      "returnItems": "Return items from this order",
+      "returnUntil": "until {date}",
+      "placedOn": "Placed on {date}"
+    },
+    "returnStatus": {
+      "PENDING": "Being processed",
+      "RETURNED": "Returned",
+      "CANCELLED": "Cancelled"
+    },
+    "address": {
+      "default": "Default",
+      "edit": "Edit",
+      "makeDefault": "Make default",
+      "delete": "Delete",
+      "company": "Company",
+      "vat": "VAT number",
+      "bulstat": "Company ID (EIK/BULSTAT)",
+      "mol": "Responsible person (MOL)",
+      "country": "Country",
+      "chooseCountry": "Choose a country",
+      "region": "Region",
+      "city": "City",
+      "zip": "Postal code",
+      "street": "Street",
+      "number": "Number",
+      "address2": "Apartment, floor, entrance",
+      "useAsDefault": {
+        "shipping": "Use as my default delivery address",
+        "billing": "Use as my default billing address"
+      },
+      "save": "Save",
+      "cancel": "Cancel",
+      "add": {
+        "shipping": "Add a delivery address",
+        "billing": "Add a billing address"
+      },
+      "none": {
+        "shipping": "You have no saved delivery addresses.",
+        "billing": "You have no saved billing addresses."
+      }
+    },
+    "table": {
+      "product": "Product",
+      "quantity": "Quantity",
+      "total": "Total",
+      "paymentMethod": "Payment method",
+      "order": "Order",
+      "date": "Date",
+      "reference": "Reference",
+      "status": "Status",
+      "amount": "Amount",
+      "file": "File",
+      "size": "Size",
+      "download": "Download",
+      "policy": "Policy",
+      "form": "Form",
+      "request": "Request",
+      "handled": "Handled",
+      "waiting": "Waiting"
+    },
+    "welcome": "Welcome, {name}",
+    "title": "Your account",
+    "profile": {
+      "saved": "Your details were saved."
+    },
+    "orders": {
+      "none": "You have no orders yet.",
+      "startShopping": "Start shopping"
+    },
+    "downloads": {
+      "none": "No files to download. Files you buy appear here once the order is complete."
+    },
+    "payments": {
+      "none": "No payments yet.",
+      "toOrders": "See your orders"
+    },
+    "returns": {
+      "none": "You have not returned anything.",
+      "start": "Return items"
+    },
+    "wishlist": {
+      "none": "Nothing saved yet. Tap the heart on a product to keep it here.",
+      "browse": "Browse products"
+    },
+    "policies": {
+      "none": "You have not accepted any of the store's policies yet.",
+      "back": "Back to accepted policies",
+      "acceptedOn": "Accepted on"
+    },
+    "privacyRequests": {
+      "new": "New request",
+      "none": "You have not sent any privacy requests."
+    }
+  },
+  "seo": {
+    "article": "{article}: an article from {blog} at {store}.",
+    "articleTag": "Articles about {tag} from {store}.",
+    "blog": "News, guides and articles from {store}.",
+    "blogCategory": "{blog}: articles from {store}.",
+    "categories": "All product categories at {store}.",
+    "collection": "Shop {collection} at {store}.",
+    "contact": "Write to {store}, or find its contact details.",
+    "home": "Shop online at {store}.",
+    "page": "{page}: information from {store}.",
+    "product": "{product} at {store}.",
+    "productTag": "Products tagged {tag} at {store}.",
+    "store": "{name}: the address, opening hours and contacts of a {store} store.",
+    "stores": "The stores of {store}: addresses, opening hours and contacts.",
+    "vendor": "{vendor} products at {store}.",
+    "vendors": "All the brands at {store}.",
+    "articleTagTitle": "{tag} — Blog"
+  },
+  "stores": {
+    "title": "Our stores",
+    "none": "This store has no physical locations.",
+    "hours": "Opening hours",
+    "closed": "Closed",
+    "map": "Map of {name}"
+  },
+  "blog": {
+    "categories": "Blog categories",
+    "all": "All",
+    "empty": "No articles here yet.",
+    "allArticles": "All articles"
+  },
+  "comments": {
+    "title": "Comments",
+    "none": "No comments yet.",
+    "awaiting": "Awaiting approval",
+    "comment": "Comment",
+    "moderated": "Comments appear after the store approves them.",
+    "post": "Post comment",
+    "thanks": "Thank you for your comment."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "The page you are looking for does not exist or has moved.",
+    "continue": "Continue shopping",
+    "products": "You may like"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "home": "Go to the home page",
+    "text": "The page could not be shown. Try again in a moment, or go to the home page."
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signInIntro": "Enter your e-mail and we will send you a code to sign in.",
+    "sendCode": "Send me a code",
+    "newHere": "New here?",
+    "createAccount": "Create an account",
+    "codeSent": "If {email} has an account, a sign-in code is on its way. Enter it below.",
+    "otherEmail": "Use another e-mail",
+    "registerTitle": "Create an account",
+    "register": "Create account",
+    "checkEmail": "Check your e-mail",
+    "accountReady": "Your account is ready. We sent a sign-in code to {email}.",
+    "haveAccount": "Already have an account?"
+  },
+  "gdpr": {
+    "intro": "What we keep about you, and how to get a copy of it or have it removed.",
+    "download": "Download a copy",
+    "file": {
+      "personalInformation": "Personal information",
+      "addresses": "Addresses",
+      "orders": "Orders"
+    },
+    "csv": "{name} (CSV)",
+    "signInToDownload": "Sign in to download your data.",
+    "inAccount": "In your account",
+    "askUs": "Ask us",
+    "askCopy": "For a copy of all your data",
+    "askDelete": "To delete your data",
+    "askOther": "Something else",
+    "request": {
+      "title": "Privacy request",
+      "intro": "Ask us about the personal data we keep about you. We answer every request.",
+      "sent": "Your request has been sent.",
+      "what": "What would you like?",
+      "message": "Message",
+      "send": "Send request"
+    },
+    "requestType": {
+      "INFO": "A question about my data",
+      "DOWNLOAD": "A copy of my data",
+      "DELETE": "Delete my data",
+      "MARKETING_UNSUBSCRIBE": "Stop marketing messages"
+    },
+    "policyForm": {
+      "REGISTER": "Registration",
+      "CONTACTS": "Contact form",
+      "SUBMIT_PAYMENT": "Order",
+      "SEGMENT_SUBSCRIPTION_POPUP": "Subscription",
+      "POLICIES_POPUP": "Consent request"
+    }
+  },
+  "withdrawal": {
+    "title": "Return items",
+    "name": "Your name",
+    "orderNumber": "Order number",
+    "email": "E-mail used for the order",
+    "continue": "Continue",
+    "codeSent": "If the order number and e-mail match an order, we sent a code to {email}. Enter it to continue.",
+    "codeResent": "A new code is on its way.",
+    "resend": "Send a new code",
+    "resendIn": "Send a new code in {seconds} s",
+    "nothingLeft": "Nothing in this order can be returned any more.",
+    "cancels": "The order has not shipped yet, so returning all of it cancels the order. Nothing needs sending back.",
+    "whatGoesBack": "What goes back",
+    "whole": "The whole order",
+    "someItems": "Some items",
+    "wholeOnly": "This order can only be returned as a whole.",
+    "howMany": "How many of {title}",
+    "noItems": "Choose at least one item to return.",
+    "expired": "The time to finish this return ran out. Please start again.",
+    "refund": "Refund",
+    "toCard": "To the card I paid with",
+    "toBank": "To my bank account",
+    "accountHolder": "Account holder",
+    "iban": "IBAN",
+    "bic": "BIC",
+    "note": "Note to the store",
+    "acceptPage": "I have read and accept the",
+    "cancelOrder": "Cancel the order",
+    "send": "Send return request",
+    "sent": "Your return request was sent. We will let you know when the store has processed it.",
+    "track": "Track it any time:",
+    "status": {
+      "title": "Return {reference}",
+      "items": "Items",
+      "toBank": "To bank account",
+      "toCard": "To the card used for the order",
+      "ending": "ending {digits}",
+      "yourNote": "Your note",
+      "sentOn": "Sent on {date}",
+      "refundedAmount": "Refunded {amount}",
+      "refundedAmountOn": "Refunded {amount} on {date}"
+    }
+  },
+  "compare": {
+    "title": "Compare products",
+    "none": "No products to compare yet. Use “Compare” on a product page to add one.",
+    "browse": "Browse the catalogue",
+    "remove": "Remove",
+    "property": "Property"
+  },
+  "policyConsent": {
+    "title": "Our policies",
+    "later": "Not now",
+    "accept": "Accept"
+  },
+  "format": {
+    "list": ", ",
+    "separator": " · ",
+    "nameValue": "{name}: {value}",
+    "fullName": "{firstName} {lastName}",
+    "times": "× {quantity}",
+    "quantityOf": "{quantity} × {item}"
+  }
+}

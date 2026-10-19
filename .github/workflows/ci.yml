@@ -1,0 +1,68 @@
+name: CI
+
+# Every storefront repository is created from this template, so this file is copied into each
+# of them. The checks run only in the template's own repository; a storefront's pushes are
+# built by its deploy workflow.
+on:
+  push:
+  pull_request:
+
+jobs:
+  source:
+    if: github.repository == 'cloudcart/nitro-starter'
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.nitrogen.outputs.published }}
+    steps:
+      - uses: actions/checkout@v5
+      # The template stands on its own: no file names the framework it was modelled on, in its
+      # content or its path. The name is decoded here, not written. Lockfiles name third-party
+      # packages and are skipped. `git grep` exits 1 when nothing matches; any other failure fails.
+      # Not in the pre-commit hook: storefronts inherit the hook, and this rule is the template's.
+      - name: Names
+        run: |
+          set -euo pipefail
+          name=$(echo aHlkcm9nZW4= | base64 -d)
+          status=0
+          found=$(git grep -n -i -I -e "$name" -- . ':!package-lock.json') || status=$?
+          if [ "$status" -gt 1 ]; then echo "::error::git grep failed with $status"; exit "$status"; fi
+          paths=$(git ls-files | { grep -i -F -e "$name" || [ $? -eq 1 ]; })
+          if [ -n "$found$paths" ]; then
+            echo "::error::A name that must not appear was found:"
+            if [ -n "$found" ]; then echo "$found" | cut -d: -f1,2; fi
+            if [ -n "$paths" ]; then echo "$paths"; fi
+            exit 1
+          fi
+      # Before a Nitrogen release is on npm, the template is tried against local packs, which a
+      # runner cannot install; the checks then wait for the published packages.
+      - id: nitrogen
+        run: |
+          if grep -q '"file:' package.json; then
+            echo "::notice::Nitrogen is installed from local packs; the checks run once it comes from npm."
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  check:
+    needs: source
+    if: needs.source.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run codegen
+      # The generated query types are committed; codegen must leave them unchanged.
+      - run: git diff --exit-code -- storefrontapi.generated.d.ts
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      # The packages the storefront runs on.
+      - run: npm audit --omit=dev

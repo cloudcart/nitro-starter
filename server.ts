@@ -1,39 +1,47 @@
-import {createRequestHandler} from 'react-router';
-import {createNitrogenContext} from '@cloudcart/nitrogen';
+import * as serverBuild from 'virtual:react-router/server-build';
+import {createRequestHandler, storefrontRedirect, type ExecutionContext} from '@cloudcart/nitrogen';
+import {createNitrogenRouterContext} from '~/lib/context';
 
-const handler = createRequestHandler(
-  // @ts-expect-error — virtual module provided by React Router at build time
-  () => import('virtual:react-router/server-build'),
-  'production',
-);
-
+/**
+ * The storefront's worker. Every request goes through here — in development
+ * too, where Nitrogen's Vite plugin runs this same file.
+ */
 export default {
-  async fetch(request: Request, env: Record<string, any>) {
-    // Static assets (build/client) are attached to this Worker and served
-    // directly by Cloudflare's edge before this handler runs, so here we only
-    // handle SSR. (See the Nova deploy pipeline — assets are uploaded via the
-    // Workers-for-Platforms assets-upload-session, not read from KV.)
-    const context = await createNitrogenContext({
-      request,
-      env: {
-        SESSION_SECRET: env.SESSION_SECRET ?? 'nitrogen-dev-secret',
-        PUBLIC_STORE_DOMAIN: env.PUBLIC_STORE_DOMAIN,
-        // When a custom domain is routed to this storefront, the Storefront
-        // API is reached directly at the origin so the edge worker never
-        // fetches its own domain (which would loop). Set by the platform on
-        // "Route to this storefront"; falls back to PUBLIC_STORE_DOMAIN.
-        PUBLIC_API_ORIGIN: env.PUBLIC_API_ORIGIN,
-        PUBLIC_STOREFRONT_API_TOKEN: env.PUBLIC_STOREFRONT_API_TOKEN,
-        PRIVATE_STOREFRONT_API_TOKEN: env.PRIVATE_STOREFRONT_API_TOKEN,
-      },
-    });
+  async fetch(request: Request, env: Env, executionContext: ExecutionContext): Promise<Response> {
+    try {
+      const nitrogenContext = await createNitrogenRouterContext(request, env, executionContext);
 
-    const response = await handler(request, context);
+      /**
+       * Nitrogen's request handler serves the Storefront API at /api/sf and
+       * delegates everything else to React Router.
+       */
+      const handleRequest = createRequestHandler({
+        build: serverBuild,
+        mode: process.env.NODE_ENV,
+        getLoadContext: () => nitrogenContext,
+        // Only the store's own domain is indexed: a preview host answers with `X-Robots-Tag: noindex` (B-262).
+        storeDomain: env.PUBLIC_STORE_DOMAIN,
+      });
 
-    if (context.session.isPending) {
-      response.headers.set('Set-Cookie', await context.session.commit());
+      const response = await handleRequest(request);
+
+      if (nitrogenContext.session.isPending) {
+        response.headers.set('Set-Cookie', await nitrogenContext.session.commit());
+      }
+
+      if (response.status === 404) {
+        /**
+         * Only for a 404 from the app: if the merchant set up a redirect for
+         * this path in the CloudCart admin, `storefrontRedirect` follows it;
+         * otherwise it passes the 404 through.
+         */
+        return storefrontRedirect({request, response, storefront: nitrogenContext.storefront});
+      }
+
+      return response;
+    } catch (error) {
+      console.error(error);
+      return new Response('An unexpected error occurred', {status: 500});
     }
-
-    return response;
   },
 };

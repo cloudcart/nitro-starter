@@ -1,88 +1,458 @@
-import {Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData, useRouteError, isRouteErrorResponse, type MetaFunction} from 'react-router';
+import {
+  isRouteErrorResponse,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+  type ShouldRevalidateFunction,
+  useRouteError,
+  useRouteLoaderData,
+} from 'react-router';
+import {
+  Analytics,
+  createTranslator,
+  getConsentFromCookieHeader,
+  getCookieConsent,
+  getMarketingPixels,
+  shopAnalyticsFrom,
+  getSubscribeForms,
+  TranslationsProvider,
+  useTranslation,
+  useNonce,
+} from '@cloudcart/nitrogen';
+import {
+  GoogleConsentMode,
+  PrivacyBanner,
+  SubscribePopups,
+  type SubscribePopupsProps,
+  useFrameFocusVisible,
+  useValidityMessages,
+} from '@cloudcart/nitrogen-react';
+// animate.css, where the form builder's opening and closing animations come from; loaded when a form opens.
+import animationsStylesheet from 'animate.css/animate.min.css?url';
 import type {Route} from './+types/root';
-import {getContext} from '~/lib/context';
-import {getSeoMeta} from '@cloudcart/nitrogen';
-import {AsideProvider, Aside} from '~/components/Aside';
-import {CartDrawer} from '~/components/CartDrawer';
 import {PageLayout} from '~/components/PageLayout';
-import '~/app.css';
+import {RouteErrorBoundary} from '~/components/RouteError';
+import {POLICY_CONSENT_REQUEST_FRAGMENT, PolicyConsentRequest} from '~/components/PolicyConsentRequest';
+import {FOOTER_SUBSCRIBE_FORM_ID} from '~/lib/footer';
+import {STORE_CONTACT_FRAGMENT} from '~/components/StoreContact';
+import {PRIVACY_BANNER_CLASSES} from '~/lib/privacy-banner';
+import {SUBSCRIBE_POPUP_CLASSES, subscribeFormLabels} from '~/lib/subscribe-forms';
+import {getTranslations} from '~/lib/translations.server';
+import {pagePath} from '~/lib/urls';
+import appStyles from '~/styles/app.css?url';
+// The body font's files the store's texts need, fetched with the stylesheet instead of after it: in time for the first
+// paint, so text does not reflow when the font arrives (`font-display: swap`) — on a slow phone that moved the cookie
+// bar enough to fail CLS. The same files `app.css` imports (Vite gives one asset one URL).
+import fontCyrillic from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-cyrillic-wght-normal.woff2?url';
+import fontLatin from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url';
+import {ifSignedIn} from '~/lib/customer';
+import {validityMessage} from '~/lib/validity';
 
-export const meta: MetaFunction = () => getSeoMeta({title: 'Nitrogen | Modern Commerce'});
+export type RootLoader = typeof loader;
 
-export const shouldRevalidate: Route.ShouldRevalidateFunction = ({formMethod, currentUrl, nextUrl}) => {
-  if (formMethod && formMethod !== 'GET') return true;
+/** Languages written in Cyrillic: their pages need the font's Cyrillic file. */
+const CYRILLIC_LANGUAGES = new Set(['be', 'bg', 'kk', 'ky', 'mk', 'mn', 'ru', 'sr', 'tg', 'uk']);
+
+/**
+ * The root's data — menus, shop, cookie banner — is loaded once and kept while
+ * the visitor browses. It is loaded again after a form is sent (add to cart,
+ * sign in…) and when a page asks for it with useRevalidator.
+ */
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formMethod,
+  currentUrl,
+  nextUrl,
+  defaultShouldRevalidate,
+}) => {
+  // A form sent: React Router's answer, which is "yes" unless the sender said the post changes
+  // nothing the page shows (a pop-up's view count).
+  if (formMethod && formMethod !== 'GET') return defaultShouldRevalidate;
   if (currentUrl.toString() === nextUrl.toString()) return true;
   return false;
 };
 
-export async function loader({context, request}: Route.LoaderArgs) {
-  const ctx = await getContext(context, request);
-  const [shop, headerMenu, footerMenu, wishlistIds] = await Promise.all([
-    ctx.storefront.getShop(),
-    ctx.storefront.getMenu('main-menu'),
-    ctx.storefront.getMenu('footer'),
-    ctx.customerAccount.isLoggedIn()
-      ? ctx.customerAccount.getWishlistIds().catch(() => [])
-      : Promise.resolve([]),
-  ]);
-
-  return {shop, headerMenu, footerMenu, cart: ctx.cart.get(), wishlistIds};
+export function links() {
+  return [{rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg'}];
 }
 
-export function Layout({children}: {children: React.ReactNode}) {
+export async function loader(args: Route.LoaderArgs) {
+  // Start the data below the fold without holding up the first byte…
+  const deferredData = loadDeferredData(args);
+
+  // …and wait only for what the first screen needs.
+  const criticalData = await loadCriticalData(args);
+
+  const {env} = args.context;
+
+  return {
+    ...deferredData,
+    ...criticalData,
+    publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+    // The analytics' shop — its id, language and currency — from the header's answer: nothing asked again (B-453).
+    shop: shopAnalyticsFrom(criticalData.header),
+    // The browser reports to the storefront's own /api/sf (Nitrogen's default), never across origins to the store.
+    consent: {storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN},
+  };
+}
+
+/**
+ * What the page cannot render without: the header, the cookie banner the
+ * merchant set up in the GDPR app, and the texts in the store's language, so
+ * the first HTML is already translated. If it fails, the page fails.
+ */
+async function loadCriticalData({context, request}: Route.LoaderArgs) {
+  const {storefront} = context;
+
+  const [header, cookieConsent] = await Promise.all([
+    // The menu with the shop's name, logo and domain, which the merchant edits: at most a minute old.
+    storefront.query(HEADER_QUERY, {
+      cache: storefront.CacheSettings(),
+      variables: {headerMenuHandle: 'main'},
+    }),
+    getCookieConsent({storefront}),
+  ]);
+
+  const translations = await getTranslations(header.localization.language.isoCode);
+  // The visitor's stored cookie choice, so the first HTML already holds the banner for one who has not chosen: it
+  // paints with the page, not after hydration.
+  const consentChoice = getConsentFromCookieHeader(request.headers.get('Cookie'), cookieConsent?.cookieName);
+
+  return {header, cookieConsent, consentChoice, translations};
+}
+
+/**
+ * What can arrive after the first byte: the footer, the cart, whether the
+ * visitor is signed in, their wishlist, the store's subscribe forms and its
+ * marketing pixels. None of it may throw — the page must render without it.
+ */
+function loadDeferredData({context, request}: Route.LoaderArgs) {
+  const {storefront, customerAccount, cart} = context;
+
+  const footer = storefront
+    .query(FOOTER_QUERY, {
+      cache: storefront.CacheSettings(),
+      variables: {footerMenuHandle: 'footer'},
+    })
+    .catch((error: Error) => {
+      console.error(error);
+      return null;
+    });
+
+  // What every page needs about the signed-in customer, in one query; null when no one is signed in.
+  const signedInCustomer = ifSignedIn(customerAccount, () => customerAccount.query(SIGNED_IN_CUSTOMER_QUERY))
+    .then((result) => result?.customer ?? null)
+    .catch((error: unknown) => {
+      console.error(error);
+      return null;
+    });
+  // Their wishlist, for the heart on every product.
+  const wishlist = signedInCustomer.then((customer) => (customer ? customer.wishlistProductIds : null));
+  // The policies the store asks them to accept after signing in (`<PolicyConsentRequest>`).
+  const policyConsentRequest = signedInCustomer.then((customer) => customer?.policyConsentRequest ?? null);
+
+  // The store's pop-up subscribe forms (`<SubscribePopups>`) and the footer's embedded one (`<SubscribeForm>`), for
+  // the visitor in the request's analytics cookie, in one call.
+  const subscribeForms = getSubscribeForms({
+    storefront,
+    customerAccount,
+    request,
+    embeddedFormId: FOOTER_SUBSCRIBE_FORM_ID,
+  }).catch((error: unknown) => {
+    console.error(error);
+    return [];
+  });
+
+  // The merchant's marketing pixels (Google, Meta, TikTok), from the cookie banner's own call (`getCookieConsent`).
+  const pixels = getMarketingPixels({storefront}).catch((error: unknown) => {
+    console.error(error);
+    return null;
+  });
+
+  // The cart is read on every request and never cached: a failed call shows no cart, not a failed page (B-385).
+  const cartData = cart.get().catch((error: unknown) => {
+    console.error(error);
+    return null;
+  });
+
+  return {
+    cart: cartData,
+    isLoggedIn: customerAccount.isLoggedIn(),
+    footer,
+    wishlist,
+    policyConsentRequest,
+    subscribeForms,
+    pixels,
+    // For the pixels to match their events to the signed-in customer: a hash, never the e-mail.
+    customerEmailHash: customerAccount.getEmailHash() ?? null,
+  };
+}
+
+/**
+ * The error page's title. A page that throws renders the root's error boundary, and React Router then reads `meta`
+ * only up to the root, so the page's own title is gone: a missing page or an error still gets one, in the store's
+ * language. Every page sets its own otherwise.
+ */
+export const meta: Route.MetaFunction = ({data, error}) => {
+  if (!error) return [];
+  const t = data ? createTranslator(data.translations) : null;
+  const title =
+    isRouteErrorResponse(error) && error.status === 404
+      ? (t?.('notFound.title') ?? 'Page not found')
+      : (t?.('error.title') ?? 'Something went wrong');
+  return [{title}, {name: 'robots', content: 'noindex'}];
+};
+
+export function Layout({children}: {children?: React.ReactNode}) {
+  const nonce = useNonce();
+  const data = useRouteLoaderData<RootLoader>('root');
+  const lang = data?.header.localization.language.isoCode.toLowerCase() ?? 'en';
+  // A frame the keyboard entered — a store's map, a video — shows the focus ring (`app.css`, B-446).
+  useFrameFocusVisible();
+
   return (
-    <html lang="en">
+    <html lang={lang}>
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        {/* Google Consent Mode v2 from the visitor's cookie choice, before any tag loads. The merchant's Google tags are
+            pixels the provider runs after consent (`pixels`); never add a vendor's script here (B-398). */}
+        <GoogleConsentMode consent={data?.cookieConsent ?? null} />
+        <link rel="preload" href={fontLatin} as="font" type="font/woff2" crossOrigin="anonymous" />
+        {CYRILLIC_LANGUAGES.has(lang) && (
+          <link rel="preload" href={fontCyrillic} as="font" type="font/woff2" crossOrigin="anonymous" />
+        )}
+        <link rel="stylesheet" href={appStyles}></link>
         <Meta />
         <Links />
       </head>
       <body>
         {children}
-        <ScrollRestoration />
-        <Scripts />
+        <ScrollRestoration nonce={nonce} />
+        <Scripts nonce={nonce} />
       </body>
     </html>
   );
 }
 
 export default function App() {
-  const data = useRouteLoaderData<typeof loader>('root');
-  const shop = data?.shop ?? {name: 'Nitrogen', description: null};
-  const cart = data?.cart ?? Promise.resolve(null);
+  const data = useRouteLoaderData<RootLoader>('root');
+
+  if (!data) {
+    return <Outlet />;
+  }
 
   return (
-    <AsideProvider>
-      <Aside type="cart" heading="CART">
-        <CartDrawer cart={cart} />
-      </Aside>
-      <PageLayout
-        shop={shop}
-        headerMenu={data?.headerMenu ?? null}
-        footerMenu={data?.footerMenu ?? null}
-        cart={cart}
+    <AppShell data={data}>
+      <Outlet />
+    </AppShell>
+  );
+}
+
+/**
+ * Everything around a page: the store's language, analytics, the header and footer, the cookie banner, the
+ * pop-ups and the policy consent request. Pages and the error page share it.
+ */
+function AppShell({data, children}: {data: Awaited<ReturnType<RootLoader>>; children: React.ReactNode}) {
+  return (
+    <TranslationsProvider translations={data.translations}>
+      <Analytics.Provider
+        cart={data.cart}
+        shop={data.shop}
+        consent={data.consent}
+        wishlist={data.wishlist}
+        pixels={data.pixels}
+        customerEmailHash={data.customerEmailHash}
       >
-        <Outlet />
-      </PageLayout>
-    </AsideProvider>
+        <PageLayout {...data} hasCookieConsent={Boolean(data.cookieConsent)}>
+          {children}
+        </PageLayout>
+        <PrivacyBanner
+          consent={data.cookieConsent}
+          storedChoice={data.consentChoice}
+          classNames={PRIVACY_BANNER_CLASSES}
+        />
+        <StorePopups forms={data.subscribeForms} consent={data.cookieConsent} />
+        <PolicyConsentRequest />
+        <StoreValidityMessages />
+      </Analytics.Provider>
+    </TranslationsProvider>
+  );
+}
+
+/** The store's words, not the browser's, for a form the browser will not send (B-454). */
+function StoreValidityMessages() {
+  const {t} = useTranslation();
+  useValidityMessages((reason, control) => validityMessage(reason, control, t));
+  return null;
+}
+
+/** The store's pop-up subscribe forms, with their own words in the store's language. */
+function StorePopups({forms, consent}: Pick<SubscribePopupsProps, 'forms' | 'consent'>) {
+  const {t} = useTranslation();
+
+  return (
+    <SubscribePopups
+      forms={forms}
+      consent={consent}
+      animationsStylesheet={animationsStylesheet}
+      policyUrl={pagePath}
+      labels={subscribeFormLabels(t)}
+      classNames={SUBSCRIBE_POPUP_CLASSES}
+    />
   );
 }
 
 export function ErrorBoundary() {
   const error = useRouteError();
-  let msg = 'Unknown error', status = 500;
-  if (isRouteErrorResponse(error)) { msg = error.data?.message ?? error.statusText; status = error.status; }
-  else if (error instanceof Error) { msg = error.message; }
+  const data = useRouteLoaderData<RootLoader>('root');
+
+  // The root's own loader failed: there is no store data, so no header, footer or translations — and no store language
+  // to say this in, so it is the one text written in JSX.
+  if (!data) {
+    const missing = isRouteErrorResponse(error) && error.status === 404;
+    return (
+      <div className="mx-auto max-w-reading px-gutter py-24 text-center">
+        {/* eslint-disable-next-line starter/no-literal-text -- no translations without the root's data */}
+        <h1 className="text-h3">{missing ? 'Page not found' : 'Something went wrong'}</h1>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-8 md:px-8 md:py-10">
-        <div className="text-center py-16">
-          <h1 className="text-8xl font-extrabold text-gray-200 leading-none">{status}</h1>
-          <p className="text-gray-500 mt-2">{msg}</p>
-          <a href="/" className="text-brand font-semibold mt-4 inline-block">Go Home</a>
-        </div>
-      </main>
-    </div>
+    <AppShell data={data}>
+      <RouteErrorBoundary />
+    </AppShell>
   );
 }
+
+const SIGNED_IN_CUSTOMER_QUERY = `#graphql
+  query SignedInCustomer($customerAccessToken: String!) {
+    customer(customerAccessToken: $customerAccessToken) {
+      wishlistProductIds
+      policyConsentRequest {
+        ...PolicyConsentRequest
+      }
+    }
+  }
+  ${POLICY_CONSENT_REQUEST_FRAGMENT}
+` as const;
+
+// The main menu: an item's collection (`resourceId`) gives its mega-menu panel its products.
+const MENU_FRAGMENT = `#graphql
+  fragment MenuItem on MenuItem {
+    id
+    resourceId
+    title
+    url
+    openInNewTab
+  }
+  fragment ChildMenuItem on MenuItem {
+    ...MenuItem
+  }
+  fragment ParentMenuItem on MenuItem {
+    ...MenuItem
+    items {
+      ...ChildMenuItem
+    }
+  }
+  fragment Menu on Menu {
+    items {
+      ...ParentMenuItem
+    }
+  }
+` as const;
+
+// The footer's menu: its links only, two levels flattened into one list (B-441).
+const FOOTER_MENU_FRAGMENT = `#graphql
+  fragment FooterMenuItem on MenuItem {
+    id
+    title
+    url
+    openInNewTab
+  }
+  fragment FooterMenu on Menu {
+    items {
+      ...FooterMenuItem
+      items {
+        ...FooterMenuItem
+      }
+    }
+  }
+` as const;
+
+// The menus are the CloudCart admin's two system menus: "main" and "footer".
+const HEADER_QUERY = `#graphql
+  fragment Shop on Shop {
+    # For the analytics' shop (shopAnalyticsFrom), with the localization below.
+    id
+    name
+    description
+    ianaTimezone
+    primaryDomain {
+      url
+    }
+    brand {
+      logo {
+        image {
+          url
+          width
+          height
+        }
+      }
+    }
+    # How the store writes money, for an amount the page writes itself: the chosen price range (T-556).
+    currencyFormat {
+      symbol
+      symbolPosition
+      decimals
+      wholeUnits
+      decimalSeparator
+      thousandsSeparator
+    }
+  }
+  query Header($headerMenuHandle: String!) {
+    shop {
+      ...Shop
+    }
+    localization {
+      language {
+        isoCode
+      }
+      country {
+        currency {
+          isoCode
+          symbol
+        }
+      }
+    }
+    menu(handle: $headerMenuHandle) {
+      ...Menu
+    }
+  }
+  ${MENU_FRAGMENT}
+` as const;
+
+const FOOTER_QUERY = `#graphql
+  query Footer($footerMenuHandle: String!) {
+    menu(handle: $footerMenuHandle) {
+      ...FooterMenu
+    }
+    policies {
+      id
+      page {
+        title
+        handle
+      }
+    }
+    shop {
+      contact {
+        ...StoreContact
+      }
+      gdprRequestTypes
+    }
+  }
+  ${FOOTER_MENU_FRAGMENT}
+  ${STORE_CONTACT_FRAGMENT}
+` as const;

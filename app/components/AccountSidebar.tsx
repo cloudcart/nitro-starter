@@ -1,45 +1,70 @@
 import {Form, NavLink} from 'react-router';
-import {UserIcon, ShoppingBagIcon, MapPinIcon, BuildingOfficeIcon, HeartIcon, ArrowDownTrayIcon, CreditCardIcon, ArrowLeftStartOnRectangleIcon} from '@heroicons/react/24/outline';
+import {type TranslationKey, useTranslation} from '@cloudcart/nitrogen';
+import {useSubmission} from '~/lib/action';
 
-const links = [
-  {to: '/account/profile', label: 'Profile', icon: UserIcon, end: true},
-  {to: '/account/orders', label: 'Orders', icon: ShoppingBagIcon, end: false},
-  {to: '/account/payments', label: 'Payments', icon: CreditCardIcon, end: true},
-  {to: '/account/downloads', label: 'Downloads', icon: ArrowDownTrayIcon, end: true},
-  {to: '/account/wishlist', label: 'Wishlist', icon: HeartIcon, end: true},
-  {to: '/account/addresses/shipping', label: 'Shipping addresses', icon: MapPinIcon, end: true},
-  {to: '/account/addresses/billing', label: 'Billing addresses', icon: BuildingOfficeIcon, end: true},
+type AccountLink = {to: string; label: TranslationKey; end?: boolean};
+
+const LINKS: AccountLink[] = [
+  {to: '/account', label: 'account.nav.profile', end: true},
+  {to: '/account/orders', label: 'account.nav.orders'},
+  {to: '/account/returns', label: 'account.nav.returns'},
+  {to: '/account/address/shipping', label: 'account.nav.shippingAddresses'},
+  {to: '/account/address/billing', label: 'account.nav.billingAddresses'},
+  {to: '/account/wishlist', label: 'account.nav.wishlist'},
+  {to: '/account/files', label: 'account.nav.downloads'},
+  {to: '/account/payments', label: 'account.nav.payments'},
 ];
 
-export function AccountSidebar() {
+/** The privacy pages, listed while the store runs the GDPR app. */
+const PRIVACY_LINKS: AccountLink[] = [
+  {to: '/account/gdpr', label: 'account.nav.policies'},
+  {to: '/account/gdpr-requests', label: 'account.nav.privacyRequests'},
+  {to: '/gdpr', label: 'account.nav.yourData'},
+];
+
+/**
+ * The account's sections, the current one marked, and "Sign out". From 990 px a column beside the page; below, one
+ * row that scrolls sideways.
+ */
+export function AccountSidebar({hasPrivacyPages}: {hasPrivacyPages: boolean}) {
+  const {t} = useTranslation();
+  const links = hasPrivacyPages ? [...LINKS, ...PRIVACY_LINKS] : LINKS;
+  const signingOut = useSubmission('/auth/logout') !== null;
+
   return (
-    <nav className="flex flex-col gap-1 text-sm">
-      {links.map(({to, label, icon: Icon, end}) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          className={({isActive}) =>
-            `flex items-center gap-2 py-2 px-3 rounded-lg transition-colors hover:no-underline ${
-              isActive
-                ? 'bg-gray-100 text-dark font-medium'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-dark'
-            }`
-          }
-        >
-          <Icon className="size-4 shrink-0" />
-          {label}
-        </NavLink>
-      ))}
-      <Form method="POST" action="/account/logout" className="mt-2">
-        <button
-          type="submit"
-          className="flex w-full items-center gap-2 py-2 px-3 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-dark"
-        >
-          <ArrowLeftStartOnRectangleIcon className="size-4 shrink-0" />
-          Sign out
-        </button>
-      </Form>
+    <nav
+      aria-label={t('account.nav.label')}
+      // The row scrolls on a phone, so its links' focus rings are drawn inside them (B-194).
+      className="scrollbar-none -mx-gutter overflow-x-auto px-gutter md:-mx-gutter-md md:px-gutter-md lg:mx-0 lg:overflow-visible lg:px-0"
+    >
+      <ul className="flex gap-2 lg:flex-col lg:gap-1">
+        {links.map((link) => (
+          <li key={link.to} className="shrink-0">
+            <NavLink
+              to={link.to}
+              end={link.end}
+              prefetch="intent"
+              className={({isActive}) =>
+                `block rounded-button px-4 py-2 whitespace-nowrap hover:bg-surface hover:no-underline focus-visible:-outline-offset-2 ${isActive ? 'bg-surface font-medium text-foreground' : 'text-muted'}`
+              }
+            >
+              {t(link.label)}
+            </NavLink>
+          </li>
+        ))}
+        <li className="shrink-0">
+          <Form method="post" action="/auth/logout">
+            <button
+              type="submit"
+              aria-busy={signingOut || undefined}
+              onClick={signingOut ? (event) => event.preventDefault() : undefined}
+              className="busy flex w-full items-center gap-2 rounded-button px-4 py-2 text-left whitespace-nowrap text-muted hover:bg-surface hover:text-foreground focus-visible:-outline-offset-2"
+            >
+              {t('account.nav.signOut')}
+            </button>
+          </Form>
+        </li>
+      </ul>
     </nav>
   );
 }
