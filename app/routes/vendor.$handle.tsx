@@ -77,12 +77,13 @@ export default function Vendor() {
           vendor.image && (
             <Image
               data={vendor.image}
-              // The vendor's name is beside the logo, so the logo adds nothing to read.
+              // The vendor's name is the page's heading — on a phone read by screen readers only — so the logo adds
+              // nothing to read.
               alt=""
               width={160}
               // At the page's top: loaded at once (B-443).
               loading="eager"
-              className="h-16 w-auto object-contain"
+              className="h-16 w-auto max-w-full object-contain object-left"
             />
           )
         }
