@@ -3,7 +3,7 @@ import {useNavigate, useSearchParams} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {setParam, SORT_OPTIONS, type SortLabel} from '~/lib/filters';
 import {TextSelect} from '~/components/ui/Field';
-import {ColumnsIcon} from '~/components/ui/icons';
+import {ColumnsIcon, SortIcon} from '~/components/ui/icons';
 
 /** How many products a row of the listing holds: `roomy` shows them larger, `dense` fits more. */
 export type Density = 'roomy' | 'dense';
@@ -44,12 +44,16 @@ export function ListingCount({count}: {count: number}) {
   );
 }
 
-/** The sort order as its text and an arrow, kept in the `sort` URL parameter. `defaultSort` names the store's own order. */
+/**
+ * The sort order as its text and an arrow, kept in the `sort` URL parameter; on a phone an icon, with a dot while the
+ * order is not the store's own (T-566). `defaultSort` names the store's own order.
+ */
 export function SortSelect({defaultSort = 'featured'}: {defaultSort?: SortLabel}) {
   const {t} = useTranslation();
   const id = useId();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const sort = searchParams.get('sort') ?? '';
 
   return (
     <div className="flex items-center gap-2">
@@ -58,7 +62,13 @@ export function SortSelect({defaultSort = 'featured'}: {defaultSort?: SortLabel}
       </label>
       <TextSelect
         id={id}
-        value={searchParams.get('sort') ?? ''}
+        value={sort}
+        phoneIcon={
+          <>
+            <SortIcon className="size-5" />
+            {sort && <span className="absolute -top-0.5 -right-1 size-2 rounded-full bg-accent" />}
+          </>
+        }
         options={SORT_OPTIONS.map((option) => ({
           value: option.value,
           label: t(`listing.sort.${option.value ? option.label : defaultSort}`),

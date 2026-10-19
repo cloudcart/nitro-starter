@@ -88,24 +88,37 @@ export function Select({
  * A select drawn as its chosen option's text and an arrow, with no box (the listing's sort). The browser's own select
  * lies over them, see-through, so a click or a tap opens its list — a phone's own picker — and the keyboard works as on
  * any select. The text is 16 px on a phone, so Safari on iOS does not zoom in; the focus ring goes round the text.
+ * With `phoneIcon`, a phone shows that icon in a 44 px square instead of the text and the arrow (T-566); the select is
+ * still named by its label and read with its value.
  */
 export function TextSelect({
   options,
   value,
+  phoneIcon,
   className = '',
   ...props
 }: Omit<ComponentProps<'select'>, 'value' | 'children'> & {
   /** The choices in order: the value sent and the text shown. */
   options: {value: string; label: string}[];
   value: string;
+  /** What a phone shows in place of the text and the arrow. */
+  phoneIcon?: ReactNode;
 }) {
   const chosen = options.find((option) => option.value === value) ?? options[0];
+  const text = phoneIcon ? 'max-md:hidden' : '';
   return (
     <span
-      className={`relative inline-flex h-11 items-center gap-1 rounded-input text-field font-medium has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent md:text-body ${className}`}
+      className={`relative inline-flex h-11 items-center gap-1 rounded-input text-field font-medium has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent md:text-body ${phoneIcon ? 'max-md:w-11 max-md:justify-center' : ''} ${className}`}
     >
-      <span aria-hidden="true">{chosen?.label}</span>
-      <ChevronDownIcon aria-hidden="true" className="size-4 shrink-0" />
+      {phoneIcon && (
+        <span aria-hidden="true" className="relative md:hidden">
+          {phoneIcon}
+        </span>
+      )}
+      <span aria-hidden="true" className={text}>
+        {chosen?.label}
+      </span>
+      <ChevronDownIcon aria-hidden="true" className={`size-4 shrink-0 ${text}`} />
       <select value={value} className="absolute inset-0 cursor-pointer appearance-none opacity-0" {...props}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>

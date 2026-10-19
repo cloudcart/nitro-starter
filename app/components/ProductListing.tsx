@@ -1,9 +1,9 @@
-import type {ReactNode} from 'react';
+import {type ReactNode, useRef} from 'react';
 import {useLocation, useNavigation, useSearchParams} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {PaginatedResourceSection} from '@cloudcart/nitrogen-react';
 import type {ListingFilterFragment, ProductItemFragment} from 'storefrontapi.generated';
-import {Aside, useAside} from '~/components/Aside';
+import {Aside} from '~/components/Aside';
 import {
   DensityToggle,
   LISTING_CARD_SIZES,
@@ -16,10 +16,11 @@ import {ProductItem} from '~/components/ProductItem';
 import {
   ActiveFilters,
   activeFilterCount,
-  FILTER_PILL,
   FilterPanel,
+  FiltersButton,
   FilterSidebar,
   usableFilters,
+  useFitsBeside,
 } from '~/components/ProductFilters';
 import {buttonClass, ButtonLink} from '~/components/ui/Button';
 import {EmptyState} from '~/components/ui/EmptyState';
@@ -57,7 +58,6 @@ export function ProductListing({
   after?: ReactNode;
 }) {
   const {t} = useTranslation();
-  const {open} = useAside();
   const [searchParams] = useSearchParams();
   const [density, setDensity] = useListingDensity();
   const usable = usableFilters(filters);
@@ -65,6 +65,12 @@ export function ProductListing({
   // Filters in the URL, whether or not the API still offers their facets (an empty result may offer none).
   const filtered = hasFilterParams(searchParams);
   const pending = useListingPending();
+  // The filter button's name shows where the whole pill fits on the toolbar's line beside the sort and the density
+  // (T-566).
+  const rowRef = useRef<HTMLDivElement>(null);
+  const filtersCopyRef = useRef<HTMLSpanElement>(null);
+  const restRef = useRef<HTMLDivElement>(null);
+  const filtersNamed = useFitsBeside(rowRef, filtersCopyRef, restRef);
 
   return (
     <div className="lg:grid lg:grid-cols-[var(--container-filters)_minmax(0,1fr)] lg:gap-10">
@@ -78,24 +84,16 @@ export function ProductListing({
             filters' heading row beside it (`h-11`, its padding and line in it), its controls on the same middle and
             its line on that row's line (T-543). */}
         <div
+          ref={rowRef}
           data-listing-toolbar
           className="-mx-gutter flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-border bg-background px-gutter py-3 lg:h-11 max-lg:sticky max-lg:top-16 max-lg:z-30 max-lg:transition-[top] max-lg:duration-300 max-lg:ease-out max-lg:header-hidden:top-0 md:-mx-gutter-md md:px-gutter-md lg:mx-0 lg:px-0 lg:pt-0"
         >
-          <button type="button" onClick={() => open('filters')} className={`${FILTER_PILL} lg:hidden`}>
-            <FilterIcon className="size-4" />
-            {t('filters.title')}
-            {chosen > 0 && (
-              <span className="text-muted">
-                <span aria-hidden="true">({chosen})</span>
-                <span className="sr-only">{t('filters.selected', {count: chosen})}</span>
-              </span>
-            )}
-          </button>
+          <FiltersButton chosen={chosen} named={filtersNamed} copyRef={filtersCopyRef} className="lg:hidden" />
           {products.totalCount != null && <ListingCount count={products.totalCount} />}
           {/* The chosen filters above the row's line (T-554): from 990 px in the room before the sort, below it a line of
               their own at the row's end. */}
           <ActiveFilters filters={usable} className="order-last basis-full lg:order-none lg:flex-1 lg:basis-0" />
-          <div className="ml-auto flex items-center gap-4">
+          <div ref={restRef} className="ml-auto flex items-center gap-4">
             <SortSelect defaultSort={defaultSort} />
             <DensityToggle value={density} onChange={setDensity} />
           </div>

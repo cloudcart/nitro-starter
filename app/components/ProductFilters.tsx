@@ -18,7 +18,7 @@ import {AccordionItem} from '~/components/ui/Accordion';
 import {Button} from '~/components/ui/Button';
 import {AffixInput, Checkbox} from '~/components/ui/Field';
 import {Dropdown} from '~/components/ui/Dropdown';
-import {CloseIcon, MoreIcon} from '~/components/ui/icons';
+import {CloseIcon, FilterIcon, MoreIcon} from '~/components/ui/icons';
 import {CountBadge} from '~/components/ui/Badge';
 import type {RootLoader} from '~/root';
 
@@ -30,9 +30,9 @@ import type {RootLoader} from '~/root';
 
 type Filter = ListingFilterFragment;
 
-/** The button that opens the filters' drawer below 990 px: a pill. */
-export const FILTER_PILL =
-  'inline-flex min-h-11 items-center gap-2 rounded-button border border-border px-4 text-small hover:border-foreground';
+/** The frame of the button that opens the filters' drawer below 990 px, round its name or its icon alone. */
+const PILL_FRAME = 'inline-flex min-h-11 items-center rounded-button border border-border hover:border-foreground';
+const FILTER_PILL = `${PILL_FRAME} gap-2 px-4 text-small whitespace-nowrap`;
 
 /** How many values a facet shows before "Show all". */
 const VISIBLE_VALUES = 8;
@@ -279,6 +279,99 @@ export function ActiveFilters({filters, className = ''}: {filters: Filter[]; cla
       </div>
     </div>
   );
+}
+
+/**
+ * The button that opens the filters' drawer below 990 px: a pill with its icon, its name and the count of the values
+ * chosen. Where the toolbar's line has no room for the name (`named` false: the user, 2026-10-19, T-566), the icon
+ * alone, the count a badge on its corner; the name stays for screen readers. A copy of the whole pill lies out of
+ * sight (`copyRef`), for the toolbar to measure (`useFitsBeside`), so the name comes back once there is room again.
+ */
+export function FiltersButton({
+  chosen,
+  named,
+  copyRef,
+  className = '',
+}: {
+  chosen: number;
+  named: boolean;
+  copyRef: RefObject<HTMLSpanElement | null>;
+  className?: string;
+}) {
+  const {t} = useTranslation();
+  const {open} = useAside();
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => open('filters')}
+        className={`${named ? FILTER_PILL : `${PILL_FRAME} relative w-11 justify-center`} ${className}`}
+      >
+        <FilterIcon className="size-4" />
+        <span className={named ? undefined : 'sr-only'}>{t('filters.title')}</span>
+        {chosen > 0 && (
+          <>
+            {named ? (
+              <span aria-hidden="true" className="text-muted">
+                ({chosen})
+              </span>
+            ) : (
+              <span aria-hidden="true" className="absolute -top-2 -right-2">
+                <CountBadge>{chosen}</CountBadge>
+              </span>
+            )}
+            <span className="sr-only">{t('filters.selected', {count: chosen})}</span>
+          </>
+        )}
+      </button>
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none invisible absolute top-0 left-0 h-0 w-0 overflow-hidden ${className}`}
+      >
+        <span ref={copyRef} className={`${FILTER_PILL} w-max`}>
+          <FilterIcon className="size-4" />
+          {t('filters.title')}
+          {chosen > 0 && <span className="text-muted">({chosen})</span>}
+        </span>
+      </span>
+    </>
+  );
+}
+
+/**
+ * Whether `copyRef`'s element, at its whole width, fits on `rowRef`'s line beside `restRef`'s: the row's width inside
+ * its padding, less the other's width and the row's gap. Again as any of them changes size (the screen turned, a font
+ * that loads, a count that grew). The server, and the first render, say it does. Called by the component that renders
+ * the row: a child's layout effect runs before its parent's refs are set.
+ */
+export function useFitsBeside(
+  rowRef: RefObject<HTMLElement | null>,
+  copyRef: RefObject<HTMLElement | null>,
+  restRef: RefObject<HTMLElement | null>,
+): boolean {
+  const [fits, setFits] = useState(true);
+
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const copy = copyRef.current;
+    const rest = restRef.current;
+    if (!row || !copy || !rest) return;
+
+    const fit = () => {
+      const style = getComputedStyle(row);
+      const room = row.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const gap = parseFloat(style.columnGap) || 0;
+      setFits(copy.getBoundingClientRect().width + gap + rest.getBoundingClientRect().width <= room);
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    for (const element of [row, copy, rest]) observer.observe(element);
+    return () => observer.disconnect();
+  }, [rowRef, copyRef, restRef]);
+
+  return fits;
 }
 
 /** The chips' height, and the square of "⋯" beside them: 26 px (T-555). */

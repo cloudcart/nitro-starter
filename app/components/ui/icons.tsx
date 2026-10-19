@@ -2,6 +2,7 @@ import type {ComponentType, SVGProps} from 'react';
 import {
   AdjustmentsHorizontalIcon,
   Bars3Icon,
+  BarsArrowDownIcon,
   ChatBubbleLeftRightIcon,
   ChevronDownIcon as ChevronDownSvg,
   ChevronLeftIcon as ChevronLeftSvg,
@@ -58,6 +59,7 @@ export const PlusIcon = (props: IconProps) => <Icon svg={PlusSvg} {...props} />;
 export const RemoveIcon = (props: IconProps) => <Icon svg={TrashSvg} {...props} />;
 export const ReviewsIcon = (props: IconProps) => <Icon svg={ChatBubbleLeftRightIcon} {...props} />;
 export const SearchIcon = (props: IconProps) => <Icon svg={MagnifyingGlassIcon} {...props} />;
+export const SortIcon = (props: IconProps) => <Icon svg={BarsArrowDownIcon} {...props} />;
 export const DiscountIcon = (props: IconProps) => <Icon svg={TagSvg} {...props} />;
 
 /** A grid's columns, drawn as `count` bars: the listing's density buttons. */
