@@ -29,7 +29,8 @@ const MAX_SWATCHES = 5;
  * A product in a listing: its pictures in the card's frame (`aspect-card`, the same for every card), the badges, the
  * vendor, title, rating (as the merchant's settings say), price and stock; under it the values of one option to choose.
  * On a desktop, hovering the picture shows arrows through the product's pictures; on a phone they are swiped.
- * Pointing at a value shows its variant's picture; choosing one points the link, the price and quick add at it.
+ * Pointing at a value shows its variant's picture, kept until another is pointed at, and points the link at it: the
+ * product opens on the picture the card showed (B-491). Choosing one also prices the card and quick add at it.
  * Quick add, on a desktop, adds straight to the cart when there is nothing left to choose, otherwise it is a link to
  * the product to choose there.
  */
@@ -50,17 +51,19 @@ export function ProductItem({
   const swatches = swatchOption(product);
   const [chosen, setChosen] = useState<CardValue | null>(null);
   const [pointed, setPointed] = useState<CardValue | null>(null);
+  // The value whose picture the card shows: the last pointed at, which stays when the pointer moves on, or the chosen.
+  const shown = pointed ?? chosen;
   const variant = chosen?.firstSelectableVariant ?? product.selectedOrFirstAvailableVariant;
   const variantUrl = useVariantUrl(
     product.handle,
-    useMemo(() => (chosen && swatches ? [{name: swatches.name, value: chosen.name}] : undefined), [chosen, swatches]),
+    useMemo(() => (shown && swatches ? [{name: swatches.name, value: shown.name}] : undefined), [shown, swatches]),
   );
   // The store's own discount: its percentage, and whether the merchant hides the price before it.
   const {discount} = product;
   // The merchant's settings decide whether a card shows the rating (`ReviewDisplayProvider`).
   const showRating = useCardRating(product.reviewSummary);
-  // A pointed or chosen value's own picture lies over the product's pictures.
-  const variantImage = (pointed ?? chosen)?.firstSelectableVariant?.image ?? null;
+  // The shown value's own picture lies over the product's pictures.
+  const variantImage = shown?.firstSelectableVariant?.image ?? null;
   const trackRef = useRef<HTMLDivElement>(null);
   const pictures = useCardPictures(product, trackRef);
 
@@ -102,7 +105,8 @@ export function ProductItem({
       )}
       {/* Over the picture, outside the link: a button in a link is not allowed. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 aspect-card">
-        {!variantImage && <CardArrows pictures={pictures} />}
+        {/* Over a pointed value's picture the arrows go back to the product's pictures. */}
+        {!chosen && <CardArrows pictures={pictures} onMove={() => setPointed(null)} />}
         <div className="pointer-events-auto absolute top-2 left-2">
           <WishlistButton productId={product.id} />
         </div>
@@ -239,7 +243,7 @@ function CardPictures({
  * invert the colour under them, legible on light and dark pictures (Q-36). Their focus ring inverts too: an accent ring
  * under the blend would vanish where the accent is black (B-318).
  */
-function CardArrows({pictures}: {pictures: CardPicturesState}) {
+function CardArrows({pictures, onMove}: {pictures: CardPicturesState; onMove: () => void}) {
   const {t} = useTranslation();
   const {current, list} = pictures;
   if (list.length < 2) return null;
@@ -252,7 +256,10 @@ function CardArrows({pictures}: {pictures: CardPicturesState}) {
         type="button"
         aria-label={t('gallery.previous')}
         disabled={current === 0}
-        onClick={() => pictures.go(current - 1)}
+        onClick={() => {
+          onMove();
+          pictures.go(current - 1);
+        }}
         className={`${arrow} left-0`}
       >
         <ChevronLeftIcon className="size-8" strokeWidth={2.25} />
@@ -261,7 +268,10 @@ function CardArrows({pictures}: {pictures: CardPicturesState}) {
         type="button"
         aria-label={t('gallery.next')}
         disabled={current === list.length - 1}
-        onClick={() => pictures.go(current + 1)}
+        onClick={() => {
+          onMove();
+          pictures.go(current + 1);
+        }}
         className={`${arrow} right-0`}
       >
         <ChevronRightIcon className="size-8" strokeWidth={2.25} />
@@ -280,7 +290,8 @@ const CARD_SIZES =
 
 /**
  * One option's values under a card: colours or pictures when the store shows the option that way, words otherwise.
- * Pointing at a value shows its variant's picture; choosing one selects it for the card, choosing it again lets go.
+ * Pointing at a value shows its variant's picture until another is pointed at; choosing one selects it for the card,
+ * choosing it again lets go.
  */
 function Swatches({
   option,
@@ -290,7 +301,7 @@ function Swatches({
 }: {
   option: CardOption;
   chosen: CardValue | null;
-  onPoint: (value: CardValue | null) => void;
+  onPoint: (value: CardValue) => void;
   onChoose: (value: CardValue) => void;
 }) {
   const shown = option.optionValues.slice(0, MAX_SWATCHES);
@@ -309,10 +320,9 @@ function Swatches({
               aria-label={color || picture ? value.name : undefined}
               aria-pressed={pressed}
               title={value.name}
+              // No reset on leaving: between two swatches the card keeps the last picture, not the product's (B-491).
               onPointerEnter={() => onPoint(value)}
-              onPointerLeave={() => onPoint(null)}
               onFocus={() => onPoint(value)}
-              onBlur={() => onPoint(null)}
               onClick={() => onChoose(value)}
               className={
                 color || picture

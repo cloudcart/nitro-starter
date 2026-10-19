@@ -110,10 +110,11 @@ function Slideshow({
     );
   };
 
-  // A newly chosen variant brings its picture forward; on the first render it is simply there.
+  // A newly chosen variant brings its picture forward; on the first render it is simply there — placed before the
+  // page paints, so a product opened from a card's variant shows that picture, not the first (B-491).
   const variantIndex = variantImage ? media.findIndex((item) => item.previewImage?.url === variantImage.url) : -1;
   const shownRef = useRef<number | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (variantIndex < 0 || variantIndex === shownRef.current) return;
     go(variantIndex, shownRef.current === null ? 'instant' : undefined);
     shownRef.current = variantIndex;
