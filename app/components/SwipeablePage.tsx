@@ -24,33 +24,25 @@ import {
   setSwiping,
 } from '~/lib/page-swipe';
 import {BELOW_MD} from '~/lib/breakpoints';
+import {dragDirection, leansAcross, opensNeighbour, type Sample, slideFinish, speedOf} from '~/lib/swipe-gesture';
 
 /** A phone: below the theme's `md`. */
 const PHONE = BELOW_MD;
 
-/** How far a finger moves before its drag is read as across (the page follows it) or up and down (the browser's). */
-const DRAG_SLACK = 10;
-
-/** A drag let go past a quarter of the screen opens the neighbour; so does a shorter flick. */
-const SWIPE_SHARE = 0.25;
-const FLICK_DISTANCE = 40;
-const FLICK_SPEED = 0.4;
-
 /** Where there is no product that way, the page follows a third of the finger and comes back. */
 const HELD_BACK = 1 / 3;
 
-/** How long the pages take to slide, and how: as the gallery's flights. */
-const SLIDE_MS = 300;
-const SLIDE_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
+/** How long a step back through the history may take before the page is brought back. */
+const BACK_WAIT_MS = 3000;
+
+/** The finger's moves kept for its speed at the end: more than its last 100 ms hold at any rate of events. */
+const KEPT_SAMPLES = 32;
 
 /**
  * Where a drag does not start: what has its own sideways touch, and the full-screen gallery. An element inside the page
  * that scrolls up and down sets `touch-pan-y` itself: the browser reads `touch-action` only up to the first element
  * that scrolls (MDN), so the page's would not reach a touch on it (B-353).
  */
-/** How long a step back through the history may take before the page is brought back. */
-const BACK_WAIT_MS = 3000;
-
 const OWN_TOUCH = 'dialog, input, select, textarea, [class*="cc-spin-image"]';
 
 /** Where the neighbours' pages stand: under what is above the page, their content where the page's would be. */
@@ -91,6 +83,9 @@ function usePhone(): boolean {
  * with no transition (`setSwiping`); its buy parts come once it is in (`data-arrived`; the `swipe-page` utility).
  * Otherwise both slide back, the buy parts with them. Where there is nothing that way the page follows a third of the
  * finger; the browser's own sideways swipe through history is off meanwhile (`data-page-swipes` on `<html>`, app.css).
+ * A thumb sweeps in an arc: once a drag goes across, the browser's own scroll is held for that touch (`touchmove`), as
+ * Safari would otherwise scroll on the arc's first wobble and take the touch away (T-568). A flick is read from the
+ * finger's last moments, and the page finishes its slide at the finger's speed (`swipe-gesture.ts`).
  * A neighbour not loaded yet shows its listing card's picture and title, and loads when let go. Nothing moves for a
  * visitor who asks for less motion, or while the page is zoomed in (a sideways move pans it then); the swipe still
  * opens the neighbour.
@@ -126,7 +121,7 @@ export function SwipeablePage({
   useEffect(() => {
     const page = pageRef.current;
     if (!page || (!previous && !next)) return;
-    let drag: {x: number; y: number; id: number; time: number; across?: boolean} | null = null;
+    let drag: {x: number; y: number; id: number; samples: Sample[]; across?: boolean} | null = null;
     let measured = false;
     let swiped = false;
     const touches = new Set<number>();
@@ -194,11 +189,13 @@ export function SwipeablePage({
       for (const side of [1, -1] as const) panelOf(side)?.style.setProperty('visibility', 'hidden');
       measured = false;
     };
-    const back = () => {
+    /** The page back in its place, starting at its own `speed` across when the finger let it go moving. */
+    const back = (speed = 0) => {
       const left = page.style.left;
       stop();
       if (!left || reducedMotion()) return clear();
-      const timing = {duration: SLIDE_MS, easing: SLIDE_EASING};
+      const offset = parseFloat(left) || 0;
+      const timing = slideFinish(Math.abs(offset), -Math.sign(offset) * speed);
       running.push(page.animate([{left}, {left: '0px'}], timing));
       for (const side of [1, -1] as const) {
         const panel = panelOf(side);
@@ -210,13 +207,14 @@ export function SwipeablePage({
       void running[0].finished.then(clear, () => {});
     };
 
+    /** A drag let go `dx` across (null: given up), the finger at `speed` (signed, px/ms). */
     const release = (dx: number | null, speed: number) => {
       const step = dx !== null && dx < 0 ? 1 : -1;
       const to = dx === null ? undefined : step > 0 ? next?.path : (previous?.path ?? listing?.path);
-      const far =
-        dx !== null &&
-        (Math.abs(dx) >= window.innerWidth * SWIPE_SHARE || (Math.abs(dx) >= FLICK_DISTANCE && speed >= FLICK_SPEED));
-      if (!to || !far) return back();
+      if (dx === null) return back();
+      // Where there is nothing that way the page moved at a third of the finger's speed.
+      if (!to) return back(speed * HELD_BACK);
+      if (!opensNeighbour(dx, speed, window.innerWidth)) return back(speed);
       // The page just behind in the history — the product swiped from, or the listing opened from — is stepped back
       // to, where it was; any other is opened.
       const index = historyIndex();
@@ -253,9 +251,9 @@ export function SwipeablePage({
       };
       const panel = panelOf(step);
       if (reducedMotion() || !panel) return open();
-      // The page goes out the way the finger went and its neighbour takes the screen; then it opens there.
+      // The page goes out the way the finger went, at its speed, and its neighbour takes the screen; then it opens there.
       stop();
-      const timing = {duration: SLIDE_MS, easing: SLIDE_EASING, fill: 'forwards' as const};
+      const timing = {...slideFinish(window.innerWidth - Math.abs(dx), -step * speed), fill: 'forwards' as const};
       const gone = -step * window.innerWidth;
       const out = page.animate([{left: page.style.left || '0px'}, {left: `${gone}px`}], timing);
       running.push(out, panel.animate([{transform: panel.style.transform}, {transform: 'none'}], timing));
@@ -273,28 +271,47 @@ export function SwipeablePage({
         return;
       }
       const starts = window.matchMedia(PHONE).matches && !zoomed() && !ownTouch(event.target);
-      drag = starts ? {x: event.clientX, y: event.clientY, id: event.pointerId, time: event.timeStamp} : null;
+      drag = starts
+        ? {x: event.clientX, y: event.clientY, id: event.pointerId, samples: [{x: event.clientX, t: event.timeStamp}]}
+        : null;
+    };
+    const sample = (event: PointerEvent) => {
+      drag?.samples.push({x: event.clientX, t: event.timeStamp});
+      if (drag && drag.samples.length > KEPT_SAMPLES) drag.samples.shift();
     };
     const onMove = (event: PointerEvent) => {
       if (!drag || drag.id !== event.pointerId) return;
+      sample(event);
       const dx = event.clientX - drag.x;
       const dy = event.clientY - drag.y;
       if (drag.across === undefined) {
-        if (Math.max(Math.abs(dx), Math.abs(dy)) < DRAG_SLACK) return;
-        drag.across = Math.abs(dx) > Math.abs(dy);
+        const direction = dragDirection(dx, dy);
+        if (!direction) return;
+        drag.across = direction === 'across';
       }
       // Up and down is the browser's: it scrolls.
       if (drag.across) follow(dx);
     };
+    // The browser's scroll held for the one finger of a drag that goes across — already while its move inside the
+    // slack leans sideways — so Safari does not take the touch on the thumb's arc (WebKit bug 232545). A touch
+    // the browser already scrolls cannot be held (`cancelable` false), and up and down stays the browser's.
+    const onTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!drag || !event.cancelable || event.touches.length !== 1 || !touch) return;
+      const dx = touch.clientX - drag.x;
+      const dy = touch.clientY - drag.y;
+      const across = drag.across ?? leansAcross(dx, dy);
+      if (across) event.preventDefault();
+    };
     const onUp = (event: PointerEvent) => {
       touches.delete(event.pointerId);
       if (!drag || drag.id !== event.pointerId) return;
-      const {x, time, across} = drag;
+      sample(event);
+      const {x, samples, across} = drag;
       drag = null;
       if (!across) return;
       swiped = true;
-      const dx = event.clientX - x;
-      release(dx, Math.abs(dx) / Math.max(event.timeStamp - time, 1));
+      release(event.clientX - x, speedOf(samples));
     };
     const onCancel = (event: PointerEvent) => {
       // The browser took the move (a scroll), or the touch was lost: a drag under way goes back.
@@ -318,6 +335,7 @@ export function SwipeablePage({
     page.addEventListener('pointermove', onMove);
     page.addEventListener('pointerup', onUp);
     page.addEventListener('pointercancel', onCancel);
+    page.addEventListener('touchmove', onTouchMove, {passive: false});
     page.addEventListener('click', onClick, true);
     window.visualViewport?.addEventListener('resize', onZoom);
     return () => {
@@ -327,6 +345,7 @@ export function SwipeablePage({
       page.removeEventListener('pointermove', onMove);
       page.removeEventListener('pointerup', onUp);
       page.removeEventListener('pointercancel', onCancel);
+      page.removeEventListener('touchmove', onTouchMove);
       page.removeEventListener('click', onClick, true);
       window.visualViewport?.removeEventListener('resize', onZoom);
     };
