@@ -87,7 +87,8 @@ export function ProductListing({
           {/* The chosen filters above the row's line (T-554): from 990 px in the room before the sort, below it a line of
               their own at the row's end. */}
           <ActiveFilters filters={usable} className="order-last basis-full lg:order-none lg:flex-1 lg:basis-0" />
-          <div ref={restRef} className="ml-auto flex items-center gap-4">
+          {/* On a phone the sort's icon stands beside the view buttons, as close as they stand to each other (T-572). */}
+          <div ref={restRef} className="ml-auto flex items-center gap-4 max-md:gap-0">
             <SortSelect defaultSort={defaultSort} />
             <DensityToggle value={density} onChange={setDensity} />
           </div>
