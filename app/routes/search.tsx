@@ -2,7 +2,6 @@ import {useLoaderData} from 'react-router';
 import {Analytics, getPaginationVariables, useTranslation} from '@cloudcart/nitrogen';
 import type {Route} from './+types/search';
 import {metaTranslator, privateMeta} from '~/lib/meta';
-import type {RegularSearchQuery} from 'storefrontapi.generated';
 import {ProductListing} from '~/components/ProductListing';
 import {SearchForm} from '~/components/SearchForm';
 import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
@@ -13,11 +12,10 @@ import {
   type RegularSearchReturn,
   SEARCH_PARAM,
 } from '~/lib/search';
-import {articlePath, pagePath} from '~/lib/urls';
 import {Input} from '~/components/ui/Field';
 import {Button, ButtonLink} from '~/components/ui/Button';
 import {ListingHeader} from '~/components/ListingHeader';
-import {PillLinks} from '~/components/PillLinks';
+import {OTHER_RESULTS, SearchOtherResults} from '~/components/SearchOtherResults';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT, ReviewDisplayProvider} from '~/components/ReviewDisplay';
 import {integerOf} from '~/lib/action';
 import {EmptyState} from '~/components/ui/EmptyState';
@@ -104,7 +102,10 @@ export default function SearchPage() {
         />
       ) : (
         <div className="mt-10 flex flex-col gap-12">
-          <OtherResults pages={result.items.pages.nodes} articles={result.items.articles.nodes} />
+          <SearchOtherResults
+            pages={result.items.pages.nodes.flatMap((node) => (node.__typename === 'Page' ? [node] : []))}
+            articles={result.items.articles.nodes.flatMap((node) => (node.__typename === 'Article' ? [node] : []))}
+          />
           <ReviewDisplayProvider value={reviewDisplay}>
             <ProductListing products={{...products, filters: products.productFilters}} defaultSort="relevance" />
           </ReviewDisplayProvider>
@@ -117,31 +118,6 @@ export default function SearchPage() {
         />
       ) : null}
     </div>
-  );
-}
-
-type SearchNodes<T extends 'pages' | 'articles'> = RegularSearchQuery[T]['nodes'];
-
-/** The pages and articles that match, above the products. */
-function OtherResults({pages, articles}: {pages: SearchNodes<'pages'>; articles: SearchNodes<'articles'>}) {
-  const {t} = useTranslation();
-  const links = [
-    ...pages.flatMap((page) =>
-      'handle' in page && page.__typename === 'Page' ? [{title: page.title, to: pagePath(page.handle)}] : [],
-    ),
-    ...articles.flatMap((article) =>
-      'handle' in article && article.__typename === 'Article'
-        ? [{title: article.title, to: articlePath(article.handle)}]
-        : [],
-    ),
-  ];
-  if (!links.length) return null;
-
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-h5">{t('search.pagesAndArticles')}</h2>
-      <PillLinks label={t('search.pagesAndArticles')} links={links} />
-    </section>
   );
 }
 
@@ -160,6 +136,7 @@ export const SEARCH_QUERY = `#graphql
     $sortKey: ProductSortKeys
     $reverse: Boolean
     $buyer: BuyerInput
+    $otherResults: Int!
   ) @inContext(buyer: $buyer) {
     productReviewSettings {
       ...ProductReviewDisplay
@@ -191,7 +168,7 @@ export const SEARCH_QUERY = `#graphql
         endCursor
       }
     }
-    pages: search(query: $term, types: [PAGE], first: 10) {
+    pages: search(query: $term, types: [PAGE], first: $otherResults) {
       nodes {
         __typename
         ... on Page {
@@ -200,7 +177,7 @@ export const SEARCH_QUERY = `#graphql
         }
       }
     }
-    articles: search(query: $term, types: [ARTICLE], first: 10) {
+    articles: search(query: $term, types: [ARTICLE], first: $otherResults) {
       nodes {
         __typename
         ... on Article {
@@ -244,6 +221,7 @@ async function regularSearch({
       sortKey: sortKey ?? 'RELEVANCE',
       reverse,
       buyer: await customerAccount.getBuyer(),
+      otherResults: OTHER_RESULTS,
     },
   });
 
@@ -260,9 +238,14 @@ async function regularSearch({
 /** What the search panel shows as the visitor types: the products as cards, the rest as links (B-441). */
 const PREDICTIVE_SEARCH_QUERY = `#graphql
   query PredictiveSearch($term: String!, $limit: Int!, $buyer: BuyerInput) @inContext(buyer: $buyer) {
+    productReviewSettings {
+      ...ProductReviewDisplay
+    }
     predictiveSearch(query: $term, limit: $limit, limitScope: EACH) {
       products {
         ...SearchProduct
+        # The search page's own cards: "View all" opens the page on these products at once (T-574).
+        ...ProductItem
       }
       productsFound
       collections {
@@ -288,6 +271,8 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
     }
   }
   ${SEARCH_PRODUCT_FRAGMENT}
+  ${PRODUCT_ITEM_FRAGMENT}
+  ${PRODUCT_REVIEW_DISPLAY_FRAGMENT}
 ` as const;
 
 async function predictiveSearch({
@@ -308,6 +293,7 @@ async function predictiveSearch({
     .query(PREDICTIVE_SEARCH_QUERY, {variables: {limit, term, buyer: await customerAccount.getBuyer()}})
     .catch((error: Error) => ({predictiveSearch: null, errors: [error]}));
   const {predictiveSearch: items, errors} = answer;
+  const reviewDisplay = 'productReviewSettings' in answer ? answer.productReviewSettings : null;
   if (errors || !items) {
     console.error(errors?.map(({message}) => message).join(', ') ?? 'predictiveSearch: no result');
     return {type, term, error: true, result: getEmptyPredictiveSearchResult()};
@@ -316,5 +302,5 @@ async function predictiveSearch({
   const {products, collections, vendors, pages, articles} = items;
   const total = [products, collections, vendors, pages, articles].reduce((count, list) => count + list.length, 0);
 
-  return {type, term, result: {items, total}};
+  return {type, term, reviewDisplay, result: {items, total}};
 }

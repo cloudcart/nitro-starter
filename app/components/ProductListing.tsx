@@ -41,6 +41,12 @@ type ProductConnection = {
 const AUTO_LOAD_PAGES = 3;
 
 /**
+ * How far below the screen "Load more" starts the next page by itself: two screens, as a search's page can take over a
+ * second to come (T-574), so it is there before the visitor reaches the end.
+ */
+const AUTO_LOAD_MARGIN = '200% 0px';
+
+/**
  * A product listing: from 990 px the filters in a column at the side, moving with the page (below, a drawer);
  * beside them a row of the count, the chosen filters as chips, the sort and the grid's density, then the products,
  * the next pages loading as the visitor scrolls, with a real "Load more" link under them, and what the page puts under
@@ -106,6 +112,7 @@ export function ProductListing({
             <PaginatedResourceSection<ProductItemFragment>
               connection={products}
               autoLoad={AUTO_LOAD_PAGES}
+              autoLoadMargin={AUTO_LOAD_MARGIN}
               ariaLabel={t('listing.products')}
               resourcesClassName={`grid gap-x-4 gap-y-8 ${LISTING_GRID_CLASSES[density]}`}
               paginationClassName={`${buttonClass('secondary')} mx-auto my-10 flex w-fit`}

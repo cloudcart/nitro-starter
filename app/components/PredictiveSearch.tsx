@@ -12,6 +12,7 @@ import {
   SEARCH_ENDPOINT,
   SEARCH_PARAM,
   type PredictiveSearchReturn,
+  rememberSearch,
   searchUrl,
 } from '~/lib/search';
 import {articlePath, collectionPath, pagePath, vendorPath} from '~/lib/urls';
@@ -58,6 +59,11 @@ export function PredictiveSearch({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searched = term.trim();
   const searching = Array.from(searched).length >= MIN_TERM;
+
+  // What the panel shows is kept: the search page for its term opens on its products at once (T-574).
+  useEffect(() => {
+    if (fetcher.data) rememberSearch(fetcher.data);
+  }, [fetcher.data]);
 
   useEffect(
     () => () => {

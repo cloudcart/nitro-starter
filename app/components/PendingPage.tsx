@@ -1,13 +1,25 @@
 import {type ReactNode, useLayoutEffect} from 'react';
-import {matchPath} from 'react-router';
+import {type Location, matchPath} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
+import type {ProductItemFragment} from 'storefrontapi.generated';
 import {BreadcrumbsPlaceholder} from '~/components/Breadcrumbs';
 import {ListingHeaderPlaceholder} from '~/components/ListingHeader';
-import {LISTING_COLUMNS, LISTING_GRID_CLASSES, LISTING_TOOLBAR, useListingDensity} from '~/components/ListingToolbar';
-import {ProductItemPlaceholder} from '~/components/ProductItem';
+import {
+  LISTING_CARD_SIZES,
+  LISTING_COLUMNS,
+  LISTING_GRID_CLASSES,
+  LISTING_TOOLBAR,
+  useListingDensity,
+} from '~/components/ListingToolbar';
+import {ProductItem, ProductItemPlaceholder} from '~/components/ProductItem';
 import {GalleryPlaceholder, PRODUCT_TITLE, PRODUCT_VENDOR, ProductColumns} from '~/components/ProductLayout';
+import {ReviewDisplayProvider} from '~/components/ReviewDisplay';
+import {SearchOtherResults} from '~/components/SearchOtherResults';
+import {Button} from '~/components/ui/Button';
+import {Input} from '~/components/ui/Field';
 import {Price} from '~/components/ui/Price';
 import type {Opening, Pending} from '~/lib/opening';
+import {rememberedSearch, SEARCH_PARAM} from '~/lib/search';
 
 /** The page box every page below the header stands in. */
 const PAGE = 'mx-auto max-w-page px-gutter py-8 md:px-gutter-md';
@@ -16,15 +28,15 @@ const PAGE = 'mx-auto max-w-page px-gutter py-8 md:px-gutter-md';
 const PENDING_CARDS = 6;
 
 /** The pages that show at once while they load, by their paths; the rest keep the page left until theirs comes. */
-const VIEWS: Array<[pattern: string, view: (opening: Opening) => ReactNode]> = [
+const VIEWS: Array<[pattern: string, view: (opening: Opening, location: Location) => ReactNode]> = [
   ['/product/:handle', (opening) => <ProductPending opening={opening} />],
   ...['/category/:handle', '/vendor/:handle', '/tags/:handle', '/selection/:handle', '/products'].map(
-    (pattern): [string, (opening: Opening) => ReactNode] => [
+    (pattern): [string, (opening: Opening, location: Location) => ReactNode] => [
       pattern,
       (opening) => <ListingPending title={opening.title} />,
     ],
   ),
-  ['/search', () => <SearchPending />],
+  ['/search', (_opening, location) => <SearchPending search={location.search} />],
   ['/page/:handle', (opening) => <ContentPending title={opening.title} />],
   ['/article/:handle', (opening) => <ArticlePending title={opening.title} />],
 ];
@@ -49,7 +61,7 @@ export function PendingPage({location, opening}: Pending) {
 
   return (
     <div aria-busy="true" data-pending-page className="min-h-pending-page">
-      {view?.(opening)}
+      {view?.(opening, location)}
     </div>
   );
 }
@@ -93,8 +105,19 @@ function ProductPending({opening}: {opening: Opening}) {
   );
 }
 
-/** A listing: its title as the link named it, the toolbar's row and a first screen of cards' room. */
-function ListingPending({title, underHeader}: {title?: string; underHeader?: ReactNode}) {
+/**
+ * A listing: its title as the link named it, the toolbar's row, and the products already found as the page's cards, or
+ * a first screen of cards' room.
+ */
+function ListingPending({
+  title,
+  underHeader,
+  products = [],
+}: {
+  title?: string;
+  underHeader?: ReactNode;
+  products?: ProductItemFragment[];
+}) {
   const [density] = useListingDensity();
 
   return (
@@ -119,9 +142,16 @@ function ListingPending({title, underHeader}: {title?: string; underHeader?: Rea
             <span className="ml-auto h-11 w-28 bg-surface lg:h-8" />
           </div>
           <div className={`mt-6 grid gap-x-4 gap-y-8 ${LISTING_GRID_CLASSES[density]}`}>
-            {Array.from({length: PENDING_CARDS}, (_, index) => (
-              <ProductItemPlaceholder key={index} />
-            ))}
+            {products.length
+              ? products.map((product, index) => (
+                  <ProductItem
+                    key={product.id}
+                    product={product}
+                    loading={index < 8 ? 'eager' : undefined}
+                    sizes={LISTING_CARD_SIZES[density]}
+                  />
+                ))
+              : Array.from({length: PENDING_CARDS}, (_, index) => <ProductItemPlaceholder key={index} />)}
           </div>
         </div>
       </div>
@@ -129,19 +159,43 @@ function ListingPending({title, underHeader}: {title?: string; underHeader?: Rea
   );
 }
 
-/** The search's results: the page's own title, its search box's room, then the listing's. */
-function SearchPending() {
+/**
+ * The search's results: the page's own title and its search box with the term, then the listing's — with what the
+ * search panel found for the term, when the page was opened from it: its pages and articles and its products, as the
+ * page's own (T-574).
+ */
+function SearchPending({search}: {search: string}) {
   const {t} = useTranslation();
+  const found = rememberedSearch(search);
+  const items = found?.result.items;
+
   return (
-    <ListingPending
-      title={t('search.title')}
-      underHeader={
-        <div aria-hidden="true" className="mb-10 flex max-w-column gap-2">
-          <span className="h-11 min-w-0 flex-1 bg-surface" />
-          <span className="h-11 w-24 bg-surface" />
-        </div>
-      }
-    />
+    <ReviewDisplayProvider value={found?.reviewDisplay}>
+      <ListingPending
+        title={t('search.title')}
+        underHeader={
+          <>
+            {/* The page's search box as it will stand, the term in it; not for use while the page loads. */}
+            <div inert className="mb-10 flex max-w-column gap-2">
+              <Input
+                defaultValue={new URLSearchParams(search).get(SEARCH_PARAM) ?? ''}
+                aria-label={t('search.label')}
+                type="search"
+                className="min-w-0 flex-1"
+              />
+              <Button>{t('search.submit')}</Button>
+            </div>
+            {/* As the page puts them: above the products, `gap-12` apart. */}
+            {items && (items.pages.length > 0 || items.articles.length > 0) && (
+              <div className="mb-12">
+                <SearchOtherResults pages={items.pages} articles={items.articles} />
+              </div>
+            )}
+          </>
+        }
+        products={items?.products}
+      />
+    </ReviewDisplayProvider>
   );
 }
 
