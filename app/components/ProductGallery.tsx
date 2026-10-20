@@ -113,6 +113,9 @@ function Slideshow({
   const variantIndex = variantImage ? media.findIndex((item) => item.previewImage?.url === variantImage.url) : -1;
   // The slide the page opens on: the one the picture clicked stands under (T-571).
   const [openedOn] = useState(Math.max(variantIndex, 0));
+  // The thumbnails' pictures as the browser loaded them, by media id: a slide shows its own under its photograph
+  // until that loads, rather than a blank (T-573).
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const shownRef = useRef<number | null>(null);
   useLayoutEffect(() => {
     if (variantIndex < 0 || variantIndex === shownRef.current) return;
@@ -183,7 +186,7 @@ function Slideshow({
                   eager={index === 0}
                   sizes={sizes}
                   // The photograph the page opens on: the picture clicked stays in view under it until it loads (T-571).
-                  backdrop={index === openedOn ? backdrop : undefined}
+                  backdrop={(index === openedOn ? backdrop : undefined) ?? thumbnails[item.id]}
                   lifted={lifted === item.id}
                   // The picture's own description stays in the button's name (B-211).
                   label={
@@ -250,6 +253,7 @@ function Slideshow({
           media={media}
           current={current}
           onPick={(index) => go(index)}
+          onLoaded={(id, src) => setThumbnails((shown) => (shown[id] === src ? shown : {...shown, [id]: src}))}
           className="hidden md:flex lg:max-h-sticky-height lg:flex-col"
         />
       )}
@@ -289,7 +293,7 @@ function Photo({
   eager: boolean;
   /** The slide's width in the page. */
   sizes: string;
-  /** A picture under the photograph until it loads: the one the page was opened from. */
+  /** A picture under the photograph until it loads: the one the page was opened from, or the slide's thumbnail. */
   backdrop?: string;
   label: string;
   /** The product's title: the photo's alt text when the merchant gave none. */
@@ -329,11 +333,14 @@ function Thumbnails({
   media,
   current,
   onPick,
+  onLoaded,
   className = '',
 }: {
   media: GalleryMedia[];
   current: number;
   onPick: (index: number) => void;
+  /** A thumbnail's picture has loaded: the address the browser chose for it. */
+  onLoaded: (id: string, src: string) => void;
   className?: string;
 }) {
   const {t} = useTranslation();
@@ -348,6 +355,10 @@ function Thumbnails({
           aria-label={t('gallery.show', {index: index + 1, total})}
           aria-current={index === current}
           onClick={() => onPick(index)}
+          onLoad={(event) => {
+            const picture = event.target;
+            if (picture instanceof HTMLImageElement && picture.currentSrc) onLoaded(item.id, picture.currentSrc);
+          }}
           className={`relative size-16 shrink-0 overflow-hidden border-2 bg-background transition-colors focus-visible:-outline-offset-2 ${index === current ? 'border-foreground' : 'border-transparent hover:border-border'}`}
         >
           {item.previewImage ? (
