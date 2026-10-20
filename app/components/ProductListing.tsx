@@ -7,7 +7,9 @@ import {Aside} from '~/components/Aside';
 import {
   DensityToggle,
   LISTING_CARD_SIZES,
+  LISTING_COLUMNS,
   LISTING_GRID_CLASSES,
+  LISTING_TOOLBAR,
   ListingCount,
   SortSelect,
   useListingDensity,
@@ -73,21 +75,13 @@ export function ProductListing({
   const filtersNamed = useFitsBeside(rowRef, filtersCopyRef, restRef);
 
   return (
-    <div className="lg:grid lg:grid-cols-[var(--container-filters)_minmax(0,1fr)] lg:gap-10">
+    <div className={LISTING_COLUMNS}>
       <FilterSidebar filters={usable} className="hidden lg:block" />
       <Aside type="filters" heading={t('filters.title')} side="left">
         <FilterPanel filters={usable} totalCount={products.totalCount} />
       </Aside>
       <div className="min-w-0">
-        {/* Below 990 px the row stays at the screen's top, under the header while it shows and in its place when it
-            slides away (`header-hidden:`), edge to edge on the page's background. From 990 px it is as high as the
-            filters' heading row beside it (`h-11`, its padding and line in it), its controls on the same middle and
-            its line on that row's line (T-543). */}
-        <div
-          ref={rowRef}
-          data-listing-toolbar
-          className="-mx-gutter flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-border bg-background px-gutter py-3 lg:h-11 max-lg:sticky max-lg:top-16 max-lg:z-30 max-lg:transition-[top] max-lg:duration-300 max-lg:ease-out max-lg:header-hidden:top-0 md:-mx-gutter-md md:px-gutter-md lg:mx-0 lg:px-0 lg:pt-0"
-        >
+        <div ref={rowRef} data-listing-toolbar className={LISTING_TOOLBAR}>
           <FiltersButton chosen={chosen} named={filtersNamed} copyRef={filtersCopyRef} className="lg:hidden" />
           {products.totalCount != null && <ListingCount count={products.totalCount} />}
           {/* The chosen filters above the row's line (T-554): from 990 px in the room before the sort, below it a line of

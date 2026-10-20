@@ -1,5 +1,5 @@
 import {type ComponentProps, type ReactNode, useState} from 'react';
-import {data, type ShouldRevalidateFunction, useLoaderData, useRouteLoaderData} from 'react-router';
+import {data, type ShouldRevalidateFunction, useLoaderData, useLocation, useRouteLoaderData} from 'react-router';
 import {
   Analytics,
   analyticsInputFromRequest,
@@ -21,6 +21,7 @@ import {collectionCrumbs} from '~/components/CollectionView';
 import {buyerUserAgent, type FormError} from '~/components/FormFields';
 import {RelatedProducts} from '~/components/ProductExtras';
 import {ProductGallery} from '~/components/ProductGallery';
+import {ProductColumns} from '~/components/ProductLayout';
 import {SwipeablePage} from '~/components/SwipeablePage';
 import {LinkedProducts} from '~/components/LinkedProducts';
 import {ProductInfo} from '~/components/ProductInfo';
@@ -35,6 +36,7 @@ import {API_ERROR, formFields, integerOf, payloadOf} from '~/lib/action';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
 import {loadProductPageSettings} from '~/lib/product-page';
 import {useListingNeighbours} from '~/lib/listing-context';
+import {openedPicture} from '~/lib/opening';
 import {missingResource} from '~/lib/missing';
 import {SHARED_PAGE} from '~/lib/page-cache';
 
@@ -376,6 +378,7 @@ export default function Product() {
 
   // The products before and after this one in the listing it was opened from: on a phone the page is swiped to them.
   const neighbours = useListingNeighbours(productPath(product.handle));
+  const location = useLocation();
 
   return (
     <ReviewDisplayProvider value={settings.productReviewSettings}>
@@ -385,7 +388,7 @@ export default function Product() {
         preview={(ahead) => <ProductPreview data={ahead as ProductPageData} />}
         className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md"
       >
-        <ProductTop data={data} selectedVariant={selectedVariant}>
+        <ProductTop data={data} selectedVariant={selectedVariant} backdrop={openedPicture(location.pathname)}>
           <LinkedProducts key={product.handle} handle={product.handle} />
         </ProductTop>
 
@@ -432,10 +435,13 @@ export default function Product() {
 function ProductTop({
   data: {product, settings, isLoggedIn, extras},
   selectedVariant,
+  backdrop,
   children,
 }: {
   data: ProductPageData;
   selectedVariant: ComponentProps<typeof ProductInfo>['selectedVariant'];
+  /** The picture the page was opened from, under its first photograph until that loads (T-571). */
+  backdrop?: string;
   /** The end of the info column, the page's alone: a preview loads nothing below the first screen (T-550). */
   children?: ReactNode;
 }) {
@@ -450,25 +456,29 @@ function ProductTop({
   return (
     <>
       <Breadcrumbs items={productCrumbs(product)} />
-      {/* One column as wide as the page below 990 px: nothing in it — a title's long word, say — widens it (B-358). */}
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
-        {/* On a phone the gallery runs from edge to edge of the screen, outside the page's gutters; on a desktop it
-            stays in view beside the info column until that column ends. */}
-        <div data-page-photo className="-mx-gutter md:mx-0 lg:sticky lg:top-sticky-top lg:self-start">
-          <ProductGallery media={product.media} variant={pieceVariant ?? selectedVariant} title={product.title} />
-        </div>
-        <ProductInfo
-          product={product}
-          selectedVariant={selectedVariant}
-          productOptions={productOptions}
-          settings={settings}
-          extras={extras}
-          isLoggedIn={isLoggedIn}
-          onPieceShown={(variant) => setPiece({forVariant: selectedVariant?.id, variant})}
-        >
-          {children}
-        </ProductInfo>
-      </div>
+      <ProductColumns
+        gallery={
+          <ProductGallery
+            media={product.media}
+            variant={pieceVariant ?? selectedVariant}
+            title={product.title}
+            backdrop={backdrop}
+          />
+        }
+        info={
+          <ProductInfo
+            product={product}
+            selectedVariant={selectedVariant}
+            productOptions={productOptions}
+            settings={settings}
+            extras={extras}
+            isLoggedIn={isLoggedIn}
+            onPieceShown={(variant) => setPiece({forVariant: selectedVariant?.id, variant})}
+          >
+            {children}
+          </ProductInfo>
+        }
+      />
     </>
   );
 }

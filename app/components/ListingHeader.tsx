@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import {Breadcrumbs, type Crumb} from '~/components/Breadcrumbs';
+import {Breadcrumbs, BreadcrumbsPlaceholder, type Crumb} from '~/components/Breadcrumbs';
 import {PillLinks} from '~/components/PillLinks';
 
 /**
@@ -36,6 +36,20 @@ export function ListingHeader({
         </div>
         <PillLinks label={linksLabel ?? title} links={links} current={currentLink} />
       </div>
+    </header>
+  );
+}
+
+/** The head of a listing being opened (`PendingPage`): the title its link gave, the breadcrumb's line until it loads. */
+export function ListingHeaderPlaceholder({title}: {title?: string}) {
+  return (
+    <header className="pb-8">
+      <BreadcrumbsPlaceholder />
+      {title ? (
+        <h1 className="min-w-0 text-title wrap-break-word">{title}</h1>
+      ) : (
+        <span aria-hidden="true" className="block h-lh w-1/2 bg-surface text-title" />
+      )}
     </header>
   );
 }

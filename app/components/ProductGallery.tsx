@@ -6,6 +6,7 @@ import {ChevronLeftIcon, ChevronRightIcon, CloseIcon, PlayIcon} from '~/componen
 import {Badge} from '~/components/ui/Badge';
 import {ImagePlaceholder} from '~/components/ui/ImagePlaceholder';
 import {reducedMotion} from '~/lib/motion';
+import {GALLERY_FRAME, GALLERY_STAGE, SLIDE_SIZES} from '~/components/ProductLayout';
 
 /** One of the product's media, as the product query reads `Product.media`. */
 type GalleryMedia = MediaData & {id: string};
@@ -34,20 +35,6 @@ const FLIGHT_MS = 300;
 /** The flight's easing: quick to leave, gentle to land. */
 const FLIGHT_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
 
-/**
- * A slide's width in the page, for the browser to pick the copy that fills it. From the product page's layout: the
- * page box (`max-w-page`, 90rem, and its gutters, 2.5rem from 750 px and 1.25rem below), the 7:5 grid with its 4rem gap
- * from 990 px, and beside the slide there the thumbnails' column (64 px and a 12 px gap); from 750 px to 990 px the slide
- * takes the box's width, and on a phone the screen's, edge to edge. The square is also capped by the screen's height,
- * which only a short screen reaches.
- */
-const SLIDE_SIZES = {
-  withThumbnails:
-    '(min-width: 1440px) 680px, (min-width: 990px) calc(58.34vw - 160px), (min-width: 750px) calc(100vw - 80px), 100vw',
-  alone:
-    '(min-width: 1440px) 756px, (min-width: 990px) calc(58.34vw - 84px), (min-width: 750px) calc(100vw - 80px), 100vw',
-};
-
 /** The most dots a phone shows: they say which way the photographs go and where the visitor is, not how many. */
 const MAX_DOTS = 3;
 
@@ -64,17 +51,26 @@ export function ProductGallery({
   media,
   variant,
   title,
+  backdrop,
 }: {
   media: GalleryMedia[];
   variant: GalleryVariant;
   title: string;
+  /** The picture the page was opened from, as the browser loaded it: under the first photograph until it loads. */
+  backdrop?: string;
 }) {
   // The variant's own media, in its order, when the merchant linked any to it, and the whole gallery when none: the
   // API's rule for `mediaIds` (B-388). Another set of media is another slideshow, from its start.
   const own = variant?.mediaIds?.length ? variant.mediaIds.flatMap((id) => media.filter((item) => item.id === id)) : [];
   const shown = own.length ? own : media;
   return (
-    <Slideshow key={shown.map((item) => item.id).join(' ')} media={shown} variantImage={variant?.image} title={title} />
+    <Slideshow
+      key={shown.map((item) => item.id).join(' ')}
+      media={shown}
+      variantImage={variant?.image}
+      title={title}
+      backdrop={backdrop}
+    />
   );
 }
 
@@ -83,10 +79,12 @@ function Slideshow({
   media,
   variantImage,
   title,
+  backdrop,
 }: {
   media: GalleryMedia[];
   variantImage: {url: string} | null | undefined;
   title: string;
+  backdrop?: string;
 }) {
   const {t} = useTranslation();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -113,6 +111,8 @@ function Slideshow({
   // A newly chosen variant brings its picture forward; on the first render it is simply there — placed before the
   // page paints, so a product opened from a card's variant shows that picture, not the first (B-491).
   const variantIndex = variantImage ? media.findIndex((item) => item.previewImage?.url === variantImage.url) : -1;
+  // The slide the page opens on: the one the picture clicked stands under (T-571).
+  const [openedOn] = useState(Math.max(variantIndex, 0));
   const shownRef = useRef<number | null>(null);
   useLayoutEffect(() => {
     if (variantIndex < 0 || variantIndex === shownRef.current) return;
@@ -141,11 +141,7 @@ function Slideshow({
   };
 
   return (
-    <section
-      aria-roledescription={t('gallery.carousel')}
-      aria-label={t('gallery.label')}
-      className="flex flex-col gap-3 lg:flex-row-reverse lg:items-start"
-    >
+    <section aria-roledescription={t('gallery.carousel')} aria-label={t('gallery.label')} className={GALLERY_FRAME}>
       {/* On a phone a container as wide as the track: the track's height follows its width in whole pixels. */}
       <div className="group/stage relative min-w-0 flex-1 max-md:@container">
         <div
@@ -161,7 +157,7 @@ function Slideshow({
           // A phone pages up and down; from 750 px the slideshow pages sideways. A scroller, it says itself that a
           // sideways move is not the browser's: the page's `pan-y` stops at it, and the page's swipe would be cut
           // (`SwipeablePage`, B-353). Its height in whole pixels on a phone (`h-photo-square`, B-356).
-          className="scrollbar-none flex aspect-square max-h-sticky-height w-full snap-mandatory scroll-smooth max-md:h-photo-square max-md:touch-pan-y max-md:touch-pinch-zoom max-md:flex-col max-md:snap-y max-md:overflow-y-auto md:snap-x md:overflow-x-auto"
+          className={`scrollbar-none flex ${GALLERY_STAGE} snap-mandatory scroll-smooth max-md:touch-pan-y max-md:touch-pinch-zoom max-md:flex-col max-md:snap-y max-md:overflow-y-auto md:snap-x md:overflow-x-auto`}
         >
           {media.map((item, index) => (
             <div
@@ -186,6 +182,8 @@ function Slideshow({
                   alt={title}
                   eager={index === 0}
                   sizes={sizes}
+                  // The photograph the page opens on: the picture clicked stays in view under it until it loads (T-571).
+                  backdrop={index === openedOn ? backdrop : undefined}
                   lifted={lifted === item.id}
                   // The picture's own description stays in the button's name (B-211).
                   label={
@@ -280,6 +278,7 @@ function Photo({
   item,
   eager,
   sizes,
+  backdrop,
   label,
   alt,
   lifted,
@@ -290,6 +289,8 @@ function Photo({
   eager: boolean;
   /** The slide's width in the page. */
   sizes: string;
+  /** A picture under the photograph until it loads: the one the page was opened from. */
+  backdrop?: string;
   label: string;
   /** The product's title: the photo's alt text when the merchant gave none. */
   alt: string;
@@ -297,14 +298,18 @@ function Photo({
   lifted: boolean;
   onOpen: (origin: Origin) => void;
 }) {
+  // Gone once the photograph has loaded: a photograph with a transparent ground would show it through.
+  const [loaded, setLoaded] = useState(false);
   return (
     <button
       ref={ref}
       type="button"
       aria-label={label}
       onClick={(event) => onOpen(photoBox(event.currentTarget, item.previewImage))}
+      onLoad={() => setLoaded(true)}
+      style={backdrop && !loaded ? {backgroundImage: `url(${JSON.stringify(backdrop)})`} : undefined}
       // The track scrolls, so a ring outside the slide would be cut off: it is drawn inside (B-194).
-      className="relative size-full cursor-zoom-in overflow-hidden focus-visible:-outline-offset-2"
+      className="relative size-full cursor-zoom-in overflow-hidden bg-contain bg-center bg-no-repeat focus-visible:-outline-offset-2"
     >
       <MediaFile
         data={item}

@@ -9,7 +9,8 @@ import {ImagePlaceholder} from '~/components/ui/ImagePlaceholder';
 import {buttonClass, ButtonLink} from '~/components/ui/Button';
 import {ADD_TO_CART_FETCHER_KEY} from '~/lib/cart';
 import {quickAddOf} from '~/lib/quick-add';
-import {useVariantUrl} from '~/lib/variants';
+import {noteProduct} from '~/lib/opening';
+import {shownCompareAtPrice, useVariantUrl} from '~/lib/variants';
 import {CardPrice} from './CardPrice';
 import {useCardRating, useEveryCardRated} from './ReviewDisplay';
 import {StarRating} from './StarRating';
@@ -64,12 +65,33 @@ export function ProductItem({
   const showRating = useCardRating(product.reviewSummary);
   // The shown value's own picture lies over the product's pictures.
   const variantImage = shown?.firstSelectableVariant?.image ?? null;
+  // The variant the link opens the page on: the shown value's, else the product's first available (B-491).
+  const opened = shown?.firstSelectableVariant ?? product.selectedOrFirstAvailableVariant;
   const trackRef = useRef<HTMLDivElement>(null);
   const pictures = useCardPictures(product, trackRef);
 
   return (
     <div className="group relative" onPointerEnter={() => pictures.interested()}>
-      <Link className="block hover:no-underline" prefetch="intent" to={variantUrl}>
+      <Link
+        className="block hover:no-underline"
+        prefetch="intent"
+        to={variantUrl}
+        // Its page opens at once from what the card shows, while the page loads (T-571).
+        onClick={(event) =>
+          noteProduct(
+            event.currentTarget,
+            {
+              title: product.title,
+              vendor: product.vendor,
+              image: variantImage ?? pictures.list[0] ?? null,
+              pictures: pictures.list.length,
+              price: opened?.price ?? null,
+              compareAtPrice: shownCompareAtPrice(opened?.compareAtPrice, discount),
+            },
+            event.currentTarget.querySelector<HTMLImageElement>('img[data-card-opens]')?.currentSrc || undefined,
+          )
+        }
+      >
         <div className="relative aspect-card overflow-hidden">
           <CardPictures pictures={pictures} trackRef={trackRef} loading={loading} over={variantImage} sizes={sizes} />
           <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
@@ -223,6 +245,8 @@ function CardPictures({
                 // The title is in the same link: the picture adds nothing for a screen reader (B-211).
                 alt=""
                 data={image}
+                // The picture the product page opens on (`noteProduct`), unless a value's picture lies over it.
+                data-card-opens={(index === 0 && !over) || undefined}
                 // Past the first, a picture is here only once it is wanted, one ahead of the one shown: fetched now,
                 // not when it is scrolled into view, so the arrow shows it loaded (B-492).
                 loading={index === 0 ? loading : 'eager'}
@@ -234,7 +258,13 @@ function CardPictures({
         ))}
       </div>
       {over && (
-        <Image alt="" data={over} sizes={sizes} className="absolute inset-0 size-full bg-background object-contain" />
+        <Image
+          alt=""
+          data={over}
+          sizes={sizes}
+          data-card-opens
+          className="absolute inset-0 size-full bg-background object-contain"
+        />
       )}
     </>
   );

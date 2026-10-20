@@ -148,6 +148,9 @@
   --container-filters: 17rem;
   /* The main area's least height, so a short page keeps the footer low. */
   --spacing-main: 60vh;
+  /* A page being opened (`PendingPage`) stands at least a screen high: the footer stays below it, as it will under the
+     page that replaces it, rather than showing for a moment (T-571). */
+  --spacing-pending-page: 100dvh;
   /* Columns: the cart page's summary, the account's navigation, a mega menu's first column at its narrowest. */
   --container-cart-summary: 24rem;
   --container-account-nav: 14rem;

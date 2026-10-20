@@ -27,6 +27,7 @@ import {vendorPath} from '~/lib/urls';
 import {NO_PIECES, type PieceChoice, tierChoices, tierPieces} from '~/lib/quantity-tiers';
 import {quantityWithin, shownCompareAtPrice} from '~/lib/variants';
 import {ProductLabel} from '~/components/ProductLabel';
+import {PRODUCT_TITLE, PRODUCT_VENDOR} from '~/components/ProductLayout';
 
 type Variant = ProductFragment['selectedOrFirstAvailableVariant'];
 
@@ -96,11 +97,10 @@ export function ProductInfo({
             )}
           </Link>
         ) : (
-          product.vendor && <p className="text-small tracking-label text-muted uppercase">{product.vendor}</p>
+          product.vendor && <p className={PRODUCT_VENDOR}>{product.vendor}</p>
         )}
         <div className="flex items-start justify-between gap-4">
-          {/* A word longer than the row breaks at its edge (B-358). */}
-          <h1 className="min-w-0 text-product wrap-break-word">{product.title}</h1>
+          <h1 className={PRODUCT_TITLE}>{product.title}</h1>
           <WishlistButton productId={product.id} place="page" />
         </div>
         {product.shortDescription && <p className="text-muted">{product.shortDescription}</p>}

@@ -14,6 +14,18 @@ export type Density = 'roomy' | 'dense';
  */
 const COLUMNS: Record<Density, [number, number, number]> = {roomy: [1, 2, 2], dense: [2, 3, 3]};
 
+/** A listing's columns: from 990 px the filters at the side, the products beside them. */
+export const LISTING_COLUMNS = 'lg:grid lg:grid-cols-[var(--container-filters)_minmax(0,1fr)] lg:gap-10';
+
+/**
+ * The listing's toolbar row. Below 990 px it stays at the screen's top, under the header while it shows and in its
+ * place when it slides away (`header-hidden:`), edge to edge on the page's background. From 990 px it is as high as the
+ * filters' heading row beside it (`h-11`, its padding and line in it), its controls on the same middle and its line on
+ * that row's line (T-543).
+ */
+export const LISTING_TOOLBAR =
+  '-mx-gutter flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-border bg-background px-gutter py-3 lg:h-11 max-lg:sticky max-lg:top-16 max-lg:z-30 max-lg:transition-[top] max-lg:duration-300 max-lg:ease-out max-lg:header-hidden:top-0 md:-mx-gutter-md md:px-gutter-md lg:mx-0 lg:px-0 lg:pt-0';
+
 export const LISTING_GRID_CLASSES: Record<Density, string> = {
   roomy: 'grid-cols-1 md:grid-cols-2',
   dense: 'grid-cols-2 md:grid-cols-3',

@@ -49,6 +49,15 @@ export function Breadcrumbs({items}: {items: Crumb[]}) {
   );
 }
 
+/** The breadcrumb's place on a page being opened (`PendingPage`): its line, until the page knows where it sits. */
+export function BreadcrumbsPlaceholder() {
+  return (
+    <div aria-hidden="true" className="-mt-4 mb-4 text-small">
+      <span className="block h-lh w-48 max-w-full bg-surface" />
+    </div>
+  );
+}
+
 /** The breadcrumb as JSON-LD, for search results; `home` names the first crumb, as the visible one does. */
 export function breadcrumbJsonLd(origin: string, items: Crumb[], home: string) {
   return generateBreadcrumbJsonLd([
