@@ -29,7 +29,6 @@ import {
   type SubscribePopupsProps,
   useFrameFocusVisible,
   useValidityMessages,
-  useVisitorData,
   VisitorDataScript,
 } from '@cloudcart/nitrogen-react';
 // animate.css, where the form builder's opening and closing animations come from; loaded when a form opens.
@@ -50,7 +49,7 @@ import appStyles from '~/styles/app.css?url';
 import fontCyrillic from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-cyrillic-wght-normal.woff2?url';
 import fontLatin from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url';
 import {ifSignedIn} from '~/lib/customer';
-import {VISITOR_PATH, type VisitorData} from '~/lib/visitor';
+import {rootWithVisitorData, useRootWithVisitorData, VISITOR_PATH} from '~/lib/visitor';
 import {loadVisitorData, noVisitorData} from '~/lib/visitor.server';
 import {validityMessage} from '~/lib/validity';
 
@@ -76,6 +75,15 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   if (currentUrl.toString() === nextUrl.toString()) return true;
   return false;
 };
+
+/**
+ * The root's data when it is loaded again in the browser — after a form, or a revalidation of the same address — with
+ * the visitor's own data on a page cached for every visitor (B-509). Not on the first load: the server's HTML and the
+ * early request (`VisitorDataScript`) give that.
+ */
+export async function clientLoader({serverLoader}: Route.ClientLoaderArgs) {
+  return rootWithVisitorData(await serverLoader());
+}
 
 export function links() {
   return [{rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg'}];
@@ -245,10 +253,9 @@ export default function App() {
  * pop-ups and the policy consent request. Pages and the error page share it.
  */
 function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>; children: React.ReactNode}) {
-  // On a page cached for every visitor, their own data over the page's; asked again after a form (the root's data
-  // is loaded again then).
-  const visitor = useVisitorData<VisitorData>(VISITOR_PATH, {enabled: root.visitorFromBrowser, refreshKey: root});
-  const data = visitor ? {...root, ...visitor} : root;
+  // On a page cached for every visitor, their own data over the page's; after a form it comes with the root's
+  // (`clientLoader`).
+  const data = useRootWithVisitorData(root);
 
   return (
     <TranslationsProvider translations={data.translations}>
