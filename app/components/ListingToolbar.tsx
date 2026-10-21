@@ -31,6 +31,12 @@ export const LISTING_GRID_CLASSES: Record<Density, string> = {
   dense: 'grid-cols-2 md:grid-cols-3',
 };
 
+/** The cards of a listing's first row, at its widest: their pictures are fetched first (`ProductItem`'s `priority`). */
+export const LISTING_FIRST_ROW: Record<Density, number> = {
+  roomy: Math.max(...COLUMNS.roomy),
+  dense: Math.max(...COLUMNS.dense),
+};
+
 /**
  * A listing card's picture width for each density, for the browser to pick its size (B-320): the columns above, in
  * the page's width (`--container-page`, 90rem) less its gutters (`--spacing-gutter` 1.25rem, `-md` 2.5rem), and from

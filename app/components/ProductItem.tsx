@@ -38,11 +38,14 @@ const MAX_SWATCHES = 5;
 export function ProductItem({
   product,
   loading,
+  priority = false,
   sizes = CARD_SIZES,
   titleAs: Title = 'h3',
 }: {
   product: ProductItemFragment;
   loading?: 'eager' | 'lazy';
+  /** In a listing's first row: its picture is fetched before the page's others (`fetchPriority="high"`, T-598). */
+  priority?: boolean;
   /** The picture's width in the page, when the card's column is not `CARD_SIZES`' (a listing's density). */
   sizes?: string;
   /** The title's element: a heading under its section's h2, or plain text where no heading belongs (B-448). */
@@ -93,7 +96,14 @@ export function ProductItem({
         }
       >
         <div className="relative aspect-card overflow-hidden">
-          <CardPictures pictures={pictures} trackRef={trackRef} loading={loading} over={variantImage} sizes={sizes} />
+          <CardPictures
+            pictures={pictures}
+            trackRef={trackRef}
+            loading={loading}
+            priority={priority}
+            over={variantImage}
+            sizes={sizes}
+          />
           <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
             {discount?.percent && (
               <Badge variant="highlight">{t('product.discountBadge', {percent: discount.percent})}</Badge>
@@ -225,12 +235,14 @@ function CardPictures({
   pictures,
   trackRef,
   loading,
+  priority,
   over,
   sizes,
 }: {
   pictures: CardPicturesState;
   trackRef: RefObject<HTMLDivElement | null>;
   loading?: 'eager' | 'lazy';
+  priority: boolean;
   over: CardImage | null;
   sizes: string;
 }) {
@@ -266,6 +278,7 @@ function CardPictures({
                 // Past the first, a picture is here only once it is wanted, one ahead of the one shown: fetched now,
                 // not when it is scrolled into view, so the arrow shows it loaded (B-492).
                 loading={index === 0 ? loading : 'eager'}
+                fetchPriority={index === 0 && priority ? 'high' : undefined}
                 sizes={sizes}
                 className="size-full object-contain"
               />

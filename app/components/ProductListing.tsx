@@ -7,6 +7,7 @@ import {Aside} from '~/components/Aside';
 import {
   DensityToggle,
   LISTING_CARD_SIZES,
+  LISTING_FIRST_ROW,
   LISTING_COLUMNS,
   LISTING_GRID_CLASSES,
   LISTING_TOOLBAR,
@@ -125,6 +126,7 @@ export function ProductListing({
                   key={product.id}
                   product={product}
                   loading={index < 8 ? 'eager' : undefined}
+                  priority={index < LISTING_FIRST_ROW[density]}
                   sizes={LISTING_CARD_SIZES[density]}
                 />
               )}
