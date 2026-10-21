@@ -1,7 +1,7 @@
-import {type RefObject, useMemo, useRef, useState} from 'react';
+import {type ReactNode, type RefObject, useCallback, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {AddToCartButton, Image} from '@cloudcart/nitrogen-react';
+import {AddToCartButton, cloudcartLoader, Image} from '@cloudcart/nitrogen-react';
 import type {ProductItemFragment} from 'storefrontapi.generated';
 import {Badge} from '~/components/ui/Badge';
 import {ChevronLeftIcon, ChevronRightIcon} from '~/components/ui/icons';
@@ -210,8 +210,16 @@ function useCardPictures(product: ProductItemFragment, trackRef: RefObject<HTMLD
 type CardPicturesState = ReturnType<typeof useCardPictures>;
 
 /**
+ * The width of the thumbnail a slide shows until its own picture loads: a few kilobytes, and sharp enough at a card's
+ * width to read as the picture. The image CDN makes any width on request.
+ */
+const THUMBNAIL_WIDTH = 200;
+
+/**
  * The product's pictures in the card's frame, one at a time, swiped on a phone. `over`, a variant's picture, lies
- * over them while it is pointed at or chosen.
+ * over them while it is pointed at or chosen. Once the card's own picture has loaded, the next one's thumbnail is
+ * fetched behind it, and the one after the shown one's as the visitor moves: a picture swiped to shows at once, a
+ * little soft, until its own loads (T-593).
  */
 function CardPictures({
   pictures,
@@ -226,6 +234,12 @@ function CardPictures({
   over: CardImage | null;
   sizes: string;
 }) {
+  // The card's own picture has loaded — before the page was interactive too, when no `load` is left to hear.
+  const [shown, setShown] = useState(false);
+  const firstRef = useCallback((picture: HTMLImageElement | null) => {
+    if (picture?.complete && picture.naturalWidth > 0) setShown(true);
+  }, []);
+
   if (!pictures.list.length) return <ImagePlaceholder />;
 
   return (
@@ -239,9 +253,11 @@ function CardPictures({
         className="scrollbar-none flex size-full snap-x snap-mandatory overflow-x-auto scroll-smooth"
       >
         {pictures.list.map((image, index) => (
-          <div key={image.url} className="size-full shrink-0 snap-center">
+          <CardSlide key={image.url} thumbnail={shown && index > 0 && index <= pictures.current + 1 ? image : null}>
             {index <= pictures.reach && (
               <Image
+                ref={index === 0 ? firstRef : undefined}
+                onLoad={index === 0 ? () => setShown(true) : undefined}
                 // The title is in the same link: the picture adds nothing for a screen reader (B-211).
                 alt=""
                 data={image}
@@ -254,7 +270,7 @@ function CardPictures({
                 className="size-full object-contain"
               />
             )}
-          </div>
+          </CardSlide>
         ))}
       </div>
       {over && (
@@ -267,6 +283,24 @@ function CardPictures({
         />
       )}
     </>
+  );
+}
+
+/**
+ * One of a card's slides: its thumbnail, when it has one, under its picture until the picture loads — then gone, so a
+ * picture with a transparent ground does not show it through (as the product page's gallery, T-573).
+ */
+function CardSlide({thumbnail, children}: {thumbnail: CardImage | null; children: ReactNode}) {
+  const [loaded, setLoaded] = useState(false);
+  const backdrop = thumbnail && !loaded ? cloudcartLoader({src: thumbnail.url, width: THUMBNAIL_WIDTH}) : null;
+  return (
+    <div
+      onLoad={() => setLoaded(true)}
+      style={backdrop ? {backgroundImage: `url(${JSON.stringify(backdrop)})`} : undefined}
+      className="size-full shrink-0 snap-center bg-contain bg-center bg-no-repeat"
+    >
+      {children}
+    </div>
   );
 }
 
