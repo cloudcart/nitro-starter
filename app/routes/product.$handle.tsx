@@ -385,7 +385,7 @@ export default function Product() {
       <SwipeablePage
         data={data}
         neighbours={neighbours}
-        preview={(ahead) => <ProductPreview data={ahead as ProductPageData} />}
+        preview={(ahead, picture) => <ProductPreview data={ahead as ProductPageData} backdrop={picture} />}
         className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md"
       >
         <ProductTop data={data} selectedVariant={selectedVariant} backdrop={openedPicture(location.pathname)}>
@@ -483,11 +483,14 @@ function ProductTop({
   );
 }
 
-/** A neighbour's product page as it will open, rendered ahead from its loaded data: the variant it opens with. */
-function ProductPreview({data}: {data: ProductPageData}) {
+/**
+ * A neighbour's product page as it will open, rendered ahead from its loaded data: the variant it opens with, over the
+ * picture its card showed until its photograph loads.
+ */
+function ProductPreview({data, backdrop}: {data: ProductPageData; backdrop?: string}) {
   return (
     <ReviewDisplayProvider value={data.settings.productReviewSettings}>
-      <ProductTop data={data} selectedVariant={data.product.selectedOrFirstAvailableVariant} />
+      <ProductTop data={data} selectedVariant={data.product.selectedOrFirstAvailableVariant} backdrop={backdrop} />
     </ReviewDisplayProvider>
   );
 }

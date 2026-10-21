@@ -24,6 +24,7 @@ import {
   setSwiping,
 } from '~/lib/page-swipe';
 import {BELOW_MD} from '~/lib/breakpoints';
+import {noteSwipe} from '~/lib/opening';
 import {dragDirection, leansAcross, opensNeighbour, type Sample, slideFinish, speedOf} from '~/lib/swipe-gesture';
 
 /** A phone: below the theme's `md`. */
@@ -101,8 +102,11 @@ export function SwipeablePage({
   data: unknown;
   /** The listing's products either side, and before the product opened from it, the listing itself. */
   neighbours: Neighbours;
-  /** A neighbour's page from its route data, as the page itself renders it. */
-  preview: (data: unknown) => ReactNode;
+  /**
+   * A neighbour's page from its route data, as the page itself renders it, with its card's picture under its
+   * photograph until that loads: the picture shown before the data came stays in view (B-540).
+   */
+  preview: (data: unknown, picture?: string) => ReactNode;
   className: string;
   children: ReactNode;
 }) {
@@ -226,8 +230,9 @@ export function SwipeablePage({
       const open = () => {
         const from = window.location.pathname;
         // This page stays loaded for a swipe back. The neighbour's page, in place, stays while its own loads behind
-        // it, and replaces it with no transition.
+        // it, and replaces it with no transition — over its card's picture until its photograph loads (B-540).
         if (!window.location.search) keepPage(from, data);
+        noteSwipe(to, step > 0 ? next?.picture : previous?.picture);
         setSwiping(true);
         if (stepBack) {
           void navigate(-1);
@@ -395,7 +400,7 @@ export function SwipeablePage({
             >
               {loaded !== undefined ? (
                 <div className={className} style={geometry ? {marginTop: geometry.pageTop - geometry.top} : undefined}>
-                  {preview(loaded)}
+                  {preview(loaded, product.picture)}
                 </div>
               ) : (
                 <ListedPreview product={product} geometry={geometry} />

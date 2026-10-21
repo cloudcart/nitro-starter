@@ -44,6 +44,9 @@ export interface OpenedProduct {
 /** The last click on a link to a page of this store, and when it was. */
 let clicked: (Opening & {at: number}) | null = null;
 
+/** The last product a swipe opened, with the picture its card showed (`SwipeablePage`), and when. */
+let swiped: {pathname: string; picture: string; at: number} | null = null;
+
 /** A path as its letters, for comparing an encoded one with one that is not. */
 function decoded(path: string): string {
   try {
@@ -110,13 +113,20 @@ export function noteProduct(link: HTMLAnchorElement, product: OpenedProduct, pic
 }
 
 /**
- * The picture the link to `pathname` showed, as the browser loaded it: the page's own photograph stands over it while
- * it loads, so the picture clicked stays in view.
+ * The picture the link to `pathname` showed, as the browser loaded it — or the card's picture of the product a swipe
+ * opened: the page's own photograph stands over it while it loads, so the picture stays in view (B-540).
  */
 export function openedPicture(pathname: string): string | undefined {
-  return clicked && performance.now() - clicked.at < PICTURE_MS && decoded(clicked.pathname) === decoded(pathname)
-    ? clicked.picture
-    : undefined;
+  const opened = [clicked, swiped].find(
+    (opening) =>
+      opening && performance.now() - opening.at < PICTURE_MS && decoded(opening.pathname) === decoded(pathname),
+  );
+  return opened?.picture;
+}
+
+/** Notes the product a swipe opens and its card's picture, which its page shows under its photograph until it loads. */
+export function noteSwipe(pathname: string, picture: string | undefined) {
+  swiped = picture ? {pathname, picture, at: performance.now()} : null;
 }
 
 /** The click a navigation came from, decided once, as the navigation starts. */
