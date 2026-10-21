@@ -11,6 +11,8 @@ import {
 } from 'react-router';
 import {
   Analytics,
+  answeredWithCart,
+  clearLatestCart,
   createTranslator,
   getConsentFromCookieHeader,
   getCookieConsent,
@@ -18,6 +20,7 @@ import {
   isSharedPage,
   shopAnalyticsFrom,
   TranslationsProvider,
+  useLatestCart,
   useTranslation,
   useNonce,
 } from '@cloudcart/nitrogen';
@@ -63,18 +66,20 @@ const CYRILLIC_LANGUAGES = new Set(['be', 'bg', 'kk', 'ky', 'mk', 'mn', 'ru', 's
 
 /**
  * The root's data — menus, shop, cookie banner — is loaded once and kept while
- * the visitor browses. It is loaded again after a form is sent (add to cart,
- * sign in…) and when a page asks for it with useRevalidator.
+ * the visitor browses. It is loaded again after a form is sent (sign in…) and
+ * when a page asks for it with useRevalidator — not after a cart form that
+ * answered with the cart, which the page shows from its answer (`useLatestCart`).
  */
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   formMethod,
+  actionResult,
   currentUrl,
   nextUrl,
   defaultShouldRevalidate,
 }) => {
   // A form sent: React Router's answer, which is "yes" unless the sender said the post changes
-  // nothing the page shows (a pop-up's view count).
-  if (formMethod && formMethod !== 'GET') return defaultShouldRevalidate;
+  // nothing the page shows (a pop-up's view count), or the cart's answer is all it changed.
+  if (formMethod && formMethod !== 'GET') return answeredWithCart(actionResult) ? false : defaultShouldRevalidate;
   if (currentUrl.toString() === nextUrl.toString()) return true;
   return false;
 };
@@ -85,7 +90,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
  * early request (`VisitorDataScript`) give that.
  */
 export async function clientLoader({serverLoader}: Route.ClientLoaderArgs) {
-  return rootWithVisitorData(await serverLoader());
+  const root = await rootWithVisitorData(await serverLoader());
+  // Its cart is the cart as it is now: the one a cart form answered with gives way, as the data arrives.
+  clearLatestCart();
+  return root;
 }
 
 export function links() {
@@ -260,18 +268,20 @@ function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>
   // On a page cached for every visitor, their own data over the page's; after a form it comes with the root's
   // (`clientLoader`).
   const data = useRootWithVisitorData(root);
+  // The cart a cart form answered with, until the root's own data comes again.
+  const cart = useLatestCart(data.cart);
 
   return (
     <TranslationsProvider translations={data.translations}>
       <Analytics.Provider
-        cart={data.cart}
+        cart={cart}
         shop={data.shop}
         consent={data.consent}
         wishlist={data.wishlist}
         pixels={data.pixels}
         customerEmailHash={data.customerEmailHash}
       >
-        <PageLayout {...data} hasCookieConsent={Boolean(data.cookieConsent)}>
+        <PageLayout {...data} cart={cart} hasCookieConsent={Boolean(data.cookieConsent)}>
           {children}
         </PageLayout>
         <PrivacyBanner

@@ -1,5 +1,5 @@
 import {AppSession, createNitrogenContext, type ExecutionContext} from '@cloudcart/nitrogen';
-import {CART_QUERY_FRAGMENT} from '~/lib/fragments';
+import {CART_MUTATE_FRAGMENT, CART_QUERY_FRAGMENT} from '~/lib/fragments';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 
 // Services of your own for every loader and action — a CMS client, a reviews
@@ -39,6 +39,7 @@ export async function createNitrogenRouterContext(request: Request, env: Env, ex
       customerAccount: {loginPath: '/auth/login'},
       cart: {
         queryFragment: CART_QUERY_FRAGMENT,
+        mutateFragment: CART_MUTATE_FRAGMENT,
       },
     },
     additionalContext,

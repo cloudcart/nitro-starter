@@ -130,6 +130,17 @@ export const CART_QUERY_FRAGMENT = `#graphql
   }
 ` as const;
 
+/**
+ * What a cart mutation answers with: the cart as `CART_QUERY_FRAGMENT` reads it, so the page shows the answer with no
+ * request for the cart (`useLatestCart`).
+ */
+export const CART_MUTATE_FRAGMENT = `#graphql
+  fragment CartApiMutation on Cart {
+    ...CartApiQuery
+  }
+  ${CART_QUERY_FRAGMENT}
+` as const;
+
 // A product as listings show it: categories, search, brands, tags, the home page.
 export const PRODUCT_ITEM_FRAGMENT = `#graphql
   fragment ProductItemMoney on MoneyV2 {

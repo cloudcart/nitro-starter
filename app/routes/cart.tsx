@@ -1,5 +1,12 @@
 import {data, type HeadersFunction, useLoaderData} from 'react-router';
-import {Analytics, CartForm, type CartQueryDataReturn, localRedirectPath, useTranslation} from '@cloudcart/nitrogen';
+import {
+  Analytics,
+  CartForm,
+  cartClientAction,
+  type CartQueryDataReturn,
+  localRedirectPath,
+  useTranslation,
+} from '@cloudcart/nitrogen';
 import type {Route} from './+types/cart';
 import {errorMeta, metaTranslator, privateMeta} from '~/lib/meta';
 import {CartCrossSell} from '~/components/CartCrossSell';
@@ -9,6 +16,12 @@ import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT} from '~/components/ReviewDisplay';
 import {RouteErrorBoundary} from '~/components/RouteError';
 import {privatePageHeaders} from '~/lib/headers';
+
+/**
+ * The cart the action answers with is the one the page shows next, with no request for it (`useLatestCart`): noted
+ * before the router has the answer.
+ */
+export const clientAction = ({serverAction}: Route.ClientActionArgs) => cartClientAction(serverAction);
 
 /** An action's error shows inside the store's layout, translated (B-201). */
 export const ErrorBoundary = RouteErrorBoundary;
