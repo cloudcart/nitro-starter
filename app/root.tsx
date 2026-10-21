@@ -28,6 +28,7 @@ import {
   SubscribePopups,
   type SubscribePopupsProps,
   useFrameFocusVisible,
+  useKeptPages,
   useValidityMessages,
   VisitorDataScript,
 } from '@cloudcart/nitrogen-react';
@@ -41,6 +42,8 @@ import {STORE_CONTACT_FRAGMENT} from '~/components/StoreContact';
 import {PRIVACY_BANNER_CLASSES} from '~/lib/privacy-banner';
 import {SUBSCRIBE_POPUP_CLASSES, subscribeFormLabels} from '~/lib/subscribe-forms';
 import {getTranslations} from '~/lib/translations.server';
+import {isCartOrWishlistForm} from '~/lib/cart';
+import {KEPT_PAGES} from '~/lib/kept-pages';
 import {pagePath} from '~/lib/urls';
 import appStyles from '~/styles/app.css?url';
 // The body font's files the store's texts need, fetched with the stylesheet instead of after it: in time for the first
@@ -236,6 +239,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
 
 export default function App() {
   const data = useRouteLoaderData<RootLoader>('root');
+  useKeptPages({pages: KEPT_PAGES, keepAfter: isCartOrWishlistForm});
 
   if (!data) {
     return <Outlet />;

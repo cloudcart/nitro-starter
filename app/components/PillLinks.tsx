@@ -1,5 +1,3 @@
-import {Link} from 'react-router';
-
 /**
  * A row of links as pills, such as a category's subcategories, the blog's categories or the pages a search found,
  * named by `label`. The link to `current` is filled and marked as the current page.
@@ -22,14 +20,13 @@ export function PillLinks({
           const isCurrent = link.to === current;
           return (
             <li key={link.to}>
-              <Link
+              <KeptLink
                 to={link.to}
-                prefetch="intent"
                 aria-current={isCurrent ? 'page' : undefined}
                 className={`inline-flex min-h-11 items-center rounded-button border px-4 text-small hover:no-underline ${isCurrent ? 'border-foreground bg-foreground text-background' : 'border-border hover:border-foreground'}`}
               >
                 {link.title}
-              </Link>
+              </KeptLink>
             </li>
           );
         })}
@@ -37,3 +34,4 @@ export function PillLinks({
     </nav>
   );
 }
+import {KeptLink} from '@cloudcart/nitrogen-react';

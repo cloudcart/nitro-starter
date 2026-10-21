@@ -6,12 +6,15 @@ import type {Crumb} from '~/components/Breadcrumbs';
 import {ListingHeader} from '~/components/ListingHeader';
 import {formatWeekday} from '~/lib/format';
 import {storePath, telHref} from '~/lib/urls';
-import {RichText} from '@cloudcart/nitrogen-react';
+import {RichText, keptPageLoader} from '@cloudcart/nitrogen-react';
 import {missingResource} from '~/lib/missing';
 import {SHARED_PAGE} from '~/lib/page-cache';
 
 /** The same page for every visitor: served from the page cache (`server.ts`). */
 export const handle = SHARED_PAGE;
+
+/** Shown from the data this tab kept on a step back, or loaded on a link's intent (`KEPT_PAGES`). */
+export const clientLoader = (args: Route.ClientLoaderArgs) => keptPageLoader(args);
 
 // A page that throws is titled by the root's `meta`.
 export const meta: Route.MetaFunction = ({data, matches, params}) => {

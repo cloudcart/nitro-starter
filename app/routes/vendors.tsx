@@ -1,6 +1,6 @@
-import {Link, useLoaderData} from 'react-router';
+import {useLoaderData} from 'react-router';
 import {getPaginationVariables, useTranslation} from '@cloudcart/nitrogen';
-import {Image, PaginatedResourceSection} from '@cloudcart/nitrogen-react';
+import {Image, PaginatedResourceSection, keptPageLoader, KeptLink} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/vendors';
 import {metaTranslator, pageMeta, storeName} from '~/lib/meta';
 import type {VendorItemFragment} from 'storefrontapi.generated';
@@ -12,6 +12,9 @@ import {SHARED_PAGE} from '~/lib/page-cache';
 
 /** The same page for every visitor: served from the page cache (`server.ts`). */
 export const handle = SHARED_PAGE;
+
+/** Shown from the data this tab kept on a step back, or loaded on a link's intent (`KEPT_PAGES`). */
+export const clientLoader = (args: Route.ClientLoaderArgs) => keptPageLoader(args);
 
 export const meta: Route.MetaFunction = ({location, matches}) => {
   const t = metaTranslator(matches);
@@ -60,10 +63,9 @@ export default function Vendors() {
           loadingLabel={t('listing.loading')}
         >
           {({node: vendor, index}) => (
-            <Link
+            <KeptLink
               key={vendor.id}
               to={vendorPath(vendor.handle)}
-              prefetch="intent"
               className="flex flex-col items-center gap-3 rounded-card border border-border p-4 text-center hover:border-foreground hover:no-underline"
             >
               <div className="flex h-16 w-full items-center justify-center">
@@ -84,7 +86,7 @@ export default function Vendors() {
                 )}
               </div>
               <span className="font-medium">{vendor.title}</span>
-            </Link>
+            </KeptLink>
           )}
         </PaginatedResourceSection>
       )}

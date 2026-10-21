@@ -1,4 +1,4 @@
-import {NavLink} from 'react-router';
+import {KeptNavLink} from '@cloudcart/nitrogen-react';
 import type {HeaderQuery} from 'storefrontapi.generated';
 
 /** A top item of the main menu, with its children. */
@@ -34,15 +34,14 @@ export function MenuLink({
   }
 
   return (
-    <NavLink
+    <KeptNavLink
       end
       onClick={onClick}
-      prefetch="intent"
       to={to}
       {...(item.openInNewTab ? {target: '_blank', rel: 'noreferrer'} : {})}
       className={({isActive}) => `${className ?? ''} ${isActive ? 'font-medium' : ''}`}
     >
       {label}
-    </NavLink>
+    </KeptNavLink>
   );
 }

@@ -1,4 +1,4 @@
-import {Link} from 'react-router';
+import {KeptLink} from '@cloudcart/nitrogen-react';
 import {useTranslation} from '@cloudcart/nitrogen';
 
 /**
@@ -14,10 +14,10 @@ export function SectionHeading({id, title, to}: {id: string; title: string; to?:
         {title}
       </h2>
       {to && (
-        <Link to={to} prefetch="intent" className="shrink-0 font-medium underline underline-offset-4">
+        <KeptLink to={to} className="shrink-0 font-medium underline underline-offset-4">
           {t('actions.viewAll')}
           <span className="sr-only">: {title}</span>
-        </Link>
+        </KeptLink>
       )}
     </div>
   );

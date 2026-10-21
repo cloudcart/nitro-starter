@@ -9,23 +9,18 @@ import {
   useSyncExternalStore,
 } from 'react';
 import {createPortal} from 'react-dom';
-import {useFetcher, useNavigate} from 'react-router';
+import {useNavigate} from 'react-router';
+import {keepPage, keptPage, openKeptPage, useLoadPageAhead} from '@cloudcart/nitrogen-react';
 import {ImagePlaceholder} from '~/components/ui/ImagePlaceholder';
 import type {ListedProduct, Neighbours} from '~/lib/listing-context';
 import {reducedMotion} from '~/lib/motion';
-import {
-  historyIndex,
-  isJustBehind,
-  isSwiping,
-  keepPage,
-  keptPage,
-  listingPictureOf,
-  notePage,
-  setSwiping,
-} from '~/lib/page-swipe';
+import {historyIndex, isJustBehind, isSwiping, listingPictureOf, notePage, setSwiping} from '~/lib/page-swipe';
 import {BELOW_MD} from '~/lib/breakpoints';
 import {noteSwipe} from '~/lib/opening';
 import {dragDirection, leansAcross, opensNeighbour, type Sample, slideFinish, speedOf} from '~/lib/swipe-gesture';
+
+/** How long data loaded for a page beside this one opens it: the page cache keeps a page fresh as long. */
+const FRESH_MS = 60_000;
 
 /** A phone: below the theme's `md`. */
 const PHONE = BELOW_MD;
@@ -114,13 +109,14 @@ export function SwipeablePage({
   const previousPanelRef = useRef<HTMLDivElement>(null);
   const nextPanelRef = useRef<HTMLDivElement>(null);
   const phone = usePhone();
-  // The neighbours' route data, loaded ahead or kept from a moment ago.
+  // The neighbours' route data, loaded ahead or kept from a moment ago; null for one whose load was redirected or failed.
   const [ahead, setAhead] = useState<Record<string, unknown>>({});
   const [geometry, setGeometry] = useState<Geometry | null>(null);
   const navigate = useNavigate();
   // A page a swipe brought in: its buy parts come now, the page being in.
   const [arrived] = useState(isSwiping);
-  const dataOf = (product?: ListedProduct) => (product ? (ahead[product.path] ?? keptPage(product.path)) : undefined);
+  const dataOf = (product?: ListedProduct) =>
+    product && (product.path in ahead ? ahead[product.path] : keptPage(product.path, {maxAge: FRESH_MS}));
 
   useEffect(() => {
     const page = pageRef.current;
@@ -229,8 +225,9 @@ export function SwipeablePage({
           : listing?.index !== undefined && index !== undefined && listing.index === index - 1);
       const open = () => {
         const from = window.location.pathname;
-        // This page stays loaded for a swipe back. The neighbour's page, in place, stays while its own loads behind
-        // it, and replaces it with no transition — over its card's picture until its photograph loads (B-540).
+        // This page stays loaded for a swipe back. The neighbour's page opens from the data loaded ahead for it, at
+        // once, with no transition — over its card's picture until its photograph loads (B-540) — or, without it, stays
+        // in place while its own loads behind it.
         if (!window.location.search) keepPage(from, data);
         noteSwipe(to, step > 0 ? next?.picture : previous?.picture);
         setSwiping(true);
@@ -246,6 +243,7 @@ export function SwipeablePage({
           }, BACK_WAIT_MS);
           return;
         }
+        openKeptPage(to, {maxAge: FRESH_MS});
         void Promise.resolve(navigate(to)).finally(() => {
           // A navigation that did not leave (stopped, or answered in place) brings the page back at once.
           if (window.location.pathname !== from) return;
@@ -374,10 +372,7 @@ export function SwipeablePage({
               <Preload
                 key={product.path}
                 path={product.path}
-                onLoad={(loaded) => {
-                  keepPage(product.path, loaded);
-                  setAhead((current) => ({...current, [product.path]: loaded}));
-                }}
+                onLoad={(loaded) => setAhead((current) => ({...current, [product.path]: loaded}))}
               />
             ),
         )}
@@ -398,7 +393,7 @@ export function SwipeablePage({
               panelRef={step > 0 ? nextPanelRef : previousPanelRef}
               geometry={geometry}
             >
-              {loaded !== undefined ? (
+              {loaded != null ? (
                 <div className={className} style={geometry ? {marginTop: geometry.pageTop - geometry.top} : undefined}>
                   {preview(loaded, product.picture)}
                 </div>
@@ -412,12 +407,14 @@ export function SwipeablePage({
   );
 }
 
-/** Loads a neighbour's route data once the page is idle, then hands it over (and is gone, its fetcher with it). */
+/**
+ * Loads a neighbour's route data once the page is idle, kept for its opening (`useLoadPageAhead`), then hands it over —
+ * null when the load was redirected or failed — and is gone, its fetcher with it.
+ */
 function Preload({path, onLoad}: {path: string; onLoad: (data: unknown) => void}) {
-  const fetcher = useFetcher();
-  const {load} = fetcher;
+  const {load, data: loaded} = useLoadPageAhead();
   useEffect(() => {
-    const start = () => void load(path);
+    const start = () => load(path);
     if (typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(start, {timeout: 2000});
       return () => window.cancelIdleCallback(id);
@@ -425,7 +422,6 @@ function Preload({path, onLoad}: {path: string; onLoad: (data: unknown) => void}
     const timer = setTimeout(start, 200);
     return () => clearTimeout(timer);
   }, [load, path]);
-  const loaded = fetcher.data;
   // Handed over once: the parent then stops rendering this.
   const handOver = useEffectEvent((data: unknown) => onLoad(data));
   useEffect(() => {

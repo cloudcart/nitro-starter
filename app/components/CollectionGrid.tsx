@@ -1,6 +1,5 @@
 import {useId} from 'react';
-import {Link} from 'react-router';
-import {Image} from '@cloudcart/nitrogen-react';
+import {Image, KeptLink} from '@cloudcart/nitrogen-react';
 import type {CollectionCardFragment} from 'storefrontapi.generated';
 import {SectionHeading} from '~/components/SectionHeading';
 import {collectionPath} from '~/lib/urls';
@@ -42,7 +41,7 @@ export function CollectionCard({
   sizes?: string;
 }) {
   return (
-    <Link to={collectionPath(collection)} prefetch="intent" className="group flex flex-col gap-3 hover:no-underline">
+    <KeptLink to={collectionPath(collection)} className="group flex flex-col gap-3 hover:no-underline">
       <div className="aspect-[4/3] overflow-hidden rounded-card bg-surface">
         {collection.image ? (
           <Image
@@ -59,7 +58,7 @@ export function CollectionCard({
         )}
       </div>
       <span className="text-card group-hover:underline">{collection.title}</span>
-    </Link>
+    </KeptLink>
   );
 }
 

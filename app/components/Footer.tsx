@@ -1,7 +1,7 @@
 import {Suspense} from 'react';
-import {Await, NavLink} from 'react-router';
+import {Await} from 'react-router';
 import {getPrivacyBanner, type SubscribeFormData, useTranslation} from '@cloudcart/nitrogen';
-import {SubscribeForm, type SubscribeFormPart} from '@cloudcart/nitrogen-react';
+import {SubscribeForm, type SubscribeFormPart, KeptNavLink} from '@cloudcart/nitrogen-react';
 import type {FooterQuery, HeaderQuery} from 'storefrontapi.generated';
 import {StoreContact} from '~/components/StoreContact';
 import {TextPlaceholder} from '~/components/ui/TextPlaceholder';
@@ -142,15 +142,14 @@ function FooterMenu({
                 </a>
               ) : (
                 // The merchant's "open in a new tab" for a page of the store, as the main menu keeps it (B-441).
-                <NavLink
+                <KeptNavLink
                   end
-                  prefetch="intent"
                   to={to}
                   {...(item.openInNewTab ? {target: '_blank', rel: 'noreferrer'} : {})}
                   className="text-muted hover:text-foreground"
                 >
                   {item.title}
-                </NavLink>
+                </KeptNavLink>
               )}
             </li>
           );
@@ -181,16 +180,16 @@ function FooterPolicies({
       <ul className="flex flex-wrap gap-x-4 gap-y-2">
         {policies.map(({id, page}) => (
           <li key={id}>
-            <NavLink prefetch="intent" to={pagePath(page.handle)} className="hover:text-foreground">
+            <KeptNavLink to={pagePath(page.handle)} className="hover:text-foreground">
               {page.title}
-            </NavLink>
+            </KeptNavLink>
           </li>
         ))}
         {takesPrivacyRequests && (
           <li>
-            <NavLink prefetch="intent" to="/gdpr/request" className="hover:text-foreground">
+            <KeptNavLink to="/gdpr/request" className="hover:text-foreground">
               {t('footer.privacyRequest')}
-            </NavLink>
+            </KeptNavLink>
           </li>
         )}
         {hasCookieConsent && (

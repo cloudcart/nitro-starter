@@ -1,4 +1,4 @@
-import {type ReactNode, Suspense, useId, useRef, useState} from 'react';
+import {type ReactNode, Suspense, useEffect, useId, useRef, useState} from 'react';
 import {Await, Link, useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {Image, Money, useAutoLoad} from '@cloudcart/nitrogen-react';
@@ -8,9 +8,29 @@ import {ProductItem, ProductItemPlaceholder} from '~/components/ProductItem';
 import {SectionHeading} from '~/components/SectionHeading';
 import {Button} from '~/components/ui/Button';
 import {storePath} from '~/lib/urls';
+import type {clientLoader as productExtrasLoader} from '~/routes/product-extras.$handle';
 import type {loader as relatedProductsLoader} from '~/routes/related-products';
 
-type Extras = Promise<ProductExtrasQuery | null>;
+/** A product's extras as its page has them: streamed with its document, asked as it opened, or none yet. */
+export type Extras = Promise<ProductExtrasQuery | null> | ProductExtrasQuery | null | undefined;
+
+/**
+ * The extras a product page shows: those its document streamed, else — a page opened in the browser, whose route data
+ * leaves them out — asked as the page opens, and again for each variant chosen (`routes/product-extras.$handle.tsx`).
+ * `options` are the page's options in the address, without the reviews' own.
+ */
+export function useProductExtras(streamed: Extras, handle: string, options: string): Extras {
+  const {load, data} = useFetcher<typeof productExtrasLoader>();
+  const address = `/product-extras/${encodeURIComponent(handle)}${options ? `?${options}` : ''}`;
+  // Once an address: the effect runs again when nothing changed (React's strict mode).
+  const askedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (streamed !== undefined || askedRef.current === address) return;
+    askedRef.current = address;
+    void load(address);
+  }, [streamed, load, address]);
+  return streamed !== undefined ? streamed : data?.extras;
+}
 
 /** A quiet panel of the info column with its title: buying in instalments, the store's own shops. */
 function ExtraPanel({title, children}: {title: string; children: ReactNode}) {

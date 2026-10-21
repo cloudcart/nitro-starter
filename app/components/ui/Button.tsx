@@ -1,5 +1,6 @@
 import type {ComponentProps} from 'react';
-import {Link, type LinkProps} from 'react-router';
+import type {LinkProps} from 'react-router';
+import {KeptLink} from '@cloudcart/nitrogen-react';
 
 /**
  * `primary`: the one main action of a view, filled; `secondary`: every other action, outlined; `inverse`: the main
@@ -55,7 +56,16 @@ export function Button({
   );
 }
 
-/** A link that looks like a button: for an action that goes to another page ("Shop all", "View cart"). */
-export function ButtonLink({variant, fullWidth, className = '', ...props}: ButtonOwnProps & LinkProps) {
-  return <Link className={`${buttonClass(variant, {fullWidth})} ${className}`} {...props} />;
+/**
+ * A link that looks like a button: for an action that goes to another page ("Shop all", "View cart"). A kept page
+ * (`KEPT_PAGES`) it opens from data loaded on the visitor's intent when `prefetch` asks for it; none by default.
+ */
+export function ButtonLink({
+  variant,
+  fullWidth,
+  className = '',
+  prefetch = 'none',
+  ...props
+}: ButtonOwnProps & LinkProps) {
+  return <KeptLink className={`${buttonClass(variant, {fullWidth})} ${className}`} prefetch={prefetch} {...props} />;
 }

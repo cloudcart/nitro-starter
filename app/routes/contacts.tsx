@@ -1,5 +1,6 @@
 import {data, useLoaderData} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
+import {keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/contacts';
 import {errorMeta, metaTranslator, pageMeta, storeName} from '~/lib/meta';
 import {ContactForm} from '~/components/ContactForm';
@@ -13,6 +14,9 @@ import {SHARED_PAGE} from '~/lib/page-cache';
 
 /** The same page for every visitor: served from the page cache (`server.ts`). */
 export const handle = SHARED_PAGE;
+
+/** Shown from the data this tab kept on a step back, or loaded on a link's intent (`KEPT_PAGES`). */
+export const clientLoader = (args: Route.ClientLoaderArgs) => keptPageLoader(args);
 
 /** An action's error shows inside the store's layout, translated (B-201). */
 export const ErrorBoundary = RouteErrorBoundary;

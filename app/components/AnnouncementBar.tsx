@@ -1,5 +1,5 @@
+import {KeptLink} from '@cloudcart/nitrogen-react';
 import {useEffect, useState, useSyncExternalStore} from 'react';
-import {Link} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon} from '~/components/ui/icons';
 import {ANNOUNCEMENTS} from '~/lib/announcements';
@@ -71,9 +71,9 @@ export function AnnouncementBar({
         {/* A message the visitor stepped to is read out; rotating ones are not, so a screen reader is not interrupted. */}
         <p aria-live={rotating ? 'off' : 'polite'} className="flex-1 py-2 text-center">
           {message.to ? (
-            <Link to={message.to} prefetch="intent" className="underline-offset-4 hover:underline">
+            <KeptLink to={message.to} className="underline-offset-4 hover:underline">
               {text}
-            </Link>
+            </KeptLink>
           ) : (
             text
           )}

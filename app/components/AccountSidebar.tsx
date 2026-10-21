@@ -1,4 +1,5 @@
-import {Form, NavLink} from 'react-router';
+import {KeptNavLink} from '@cloudcart/nitrogen-react';
+import {Form} from 'react-router';
 import {type TranslationKey, useTranslation} from '@cloudcart/nitrogen';
 import {useSubmission} from '~/lib/action';
 
@@ -40,16 +41,15 @@ export function AccountSidebar({hasPrivacyPages}: {hasPrivacyPages: boolean}) {
       <ul className="flex gap-2 lg:flex-col lg:gap-1">
         {links.map((link) => (
           <li key={link.to} className="shrink-0">
-            <NavLink
+            <KeptNavLink
               to={link.to}
               end={link.end}
-              prefetch="intent"
               className={({isActive}) =>
                 `block rounded-button px-4 py-2 whitespace-nowrap hover:bg-surface hover:no-underline focus-visible:-outline-offset-2 ${isActive ? 'bg-surface font-medium text-foreground' : 'text-muted'}`
               }
             >
               {t(link.label)}
-            </NavLink>
+            </KeptNavLink>
           </li>
         ))}
         <li className="shrink-0">

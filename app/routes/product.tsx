@@ -26,6 +26,14 @@ export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
 };
 
 /**
+ * In the browser the reviews come after the page, never holding it: a product opened from data this tab kept
+ * (`keptPageLoader` on `product.$handle`) shows at once, and its reviews follow.
+ */
+export function clientLoader({serverLoader}: Route.ClientLoaderArgs) {
+  return {reviews: serverLoader().then((data) => data.reviews)};
+}
+
+/**
  * Only what the reviews section shows: nothing when the store shows no reviews, and the list, with its own star filter
  * and pages beside the variant's options in the URL, only when the merchant shows more than the overall rating. Not
  * awaited: the page renders without it, and a failure stays a failure, which the section says, never "No reviews yet"

@@ -1,5 +1,4 @@
-import {Link} from 'react-router';
-import {Image} from '@cloudcart/nitrogen-react';
+import {Image, KeptLink} from '@cloudcart/nitrogen-react';
 import type {SearchProductFragment} from 'storefrontapi.generated';
 import {StockStatus} from '~/components/StockStatus';
 import {ImagePlaceholder} from '~/components/ui/ImagePlaceholder';
@@ -65,10 +64,9 @@ export function SearchProductCard({product, onNavigate}: {product: SearchProduct
   const image = variant?.image ?? product.featuredImage;
 
   return (
-    <Link
+    <KeptLink
       to={productPath(product.handle)}
       onClick={onNavigate}
-      prefetch="intent"
       className="group flex flex-col gap-2 hover:no-underline"
     >
       <span className="block aspect-card overflow-hidden">
@@ -87,6 +85,6 @@ export function SearchProductCard({product, onNavigate}: {product: SearchProduct
       <span className="line-clamp-2 group-hover:underline">{product.title}</span>
       {variant && <Price price={variant.price} />}
       {variant && !variant.availableForSale && <StockStatus variant={variant} />}
-    </Link>
+    </KeptLink>
   );
 }

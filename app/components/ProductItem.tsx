@@ -1,7 +1,6 @@
 import {type RefObject, useMemo, useRef, useState} from 'react';
-import {Link} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {AddToCartButton, Image} from '@cloudcart/nitrogen-react';
+import {AddToCartButton, Image, KeptLink} from '@cloudcart/nitrogen-react';
 import type {ProductItemFragment} from 'storefrontapi.generated';
 import {Badge} from '~/components/ui/Badge';
 import {ChevronLeftIcon, ChevronRightIcon} from '~/components/ui/icons';
@@ -72,9 +71,8 @@ export function ProductItem({
 
   return (
     <div className="group relative" onPointerEnter={() => pictures.interested()}>
-      <Link
+      <KeptLink
         className="block hover:no-underline"
-        prefetch="intent"
         to={variantUrl}
         // Its page opens at once from what the card shows, while the page loads (T-571).
         onClick={(event) =>
@@ -116,7 +114,7 @@ export function ProductItem({
           {/* The variant the card shows, as its product page says it — a sold-out one too, its dot grey (B-380). */}
           <StockStatus variant={variant} className="mt-1" />
         </div>
-      </Link>
+      </KeptLink>
       {swatches && (
         <Swatches
           option={swatches}

@@ -1,6 +1,5 @@
-import {Link} from 'react-router';
 import {type PaginationProps, useTranslation} from '@cloudcart/nitrogen';
-import {Money, PaginatedResourceSection} from '@cloudcart/nitrogen-react';
+import {Money, PaginatedResourceSection, KeptLink} from '@cloudcart/nitrogen-react';
 import type {OrderCardFragment} from 'storefrontapi.generated';
 import {DateText} from '~/components/DateText';
 import {OrderStatus} from '~/components/OrderStatus';
@@ -34,9 +33,9 @@ export function OrderCard({order}: {order: OrderCardFragment}) {
     <article className="relative flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-card border border-border p-4 hover:bg-surface md:p-5">
       <div className="flex flex-col gap-1">
         <h3 className="text-h5">
-          <Link to={orderPath(order.id)} prefetch="intent" className="after:absolute after:inset-0 hover:no-underline">
+          <KeptLink to={orderPath(order.id)} className="after:absolute after:inset-0 hover:no-underline">
             {t('account.order.number', {number: order.orderNumber})}
-          </Link>
+          </KeptLink>
         </h3>
         <DateText value={order.processedAt} className="text-small text-muted" />
       </div>

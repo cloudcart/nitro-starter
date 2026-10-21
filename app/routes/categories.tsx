@@ -1,6 +1,6 @@
 import {Link, useLoaderData} from 'react-router';
 import {getPaginationVariables, useTranslation} from '@cloudcart/nitrogen';
-import {PaginatedResourceSection} from '@cloudcart/nitrogen-react';
+import {PaginatedResourceSection, keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/categories';
 import type {CategoryItemFragment} from 'storefrontapi.generated';
 import {metaTranslator, pageMeta, storeName} from '~/lib/meta';
@@ -13,6 +13,9 @@ import {SHARED_PAGE} from '~/lib/page-cache';
 
 /** The same page for every visitor: served from the page cache (`server.ts`). */
 export const handle = SHARED_PAGE;
+
+/** Shown from the data this tab kept on a step back, or loaded on a link's intent (`KEPT_PAGES`). */
+export const clientLoader = (args: Route.ClientLoaderArgs) => keptPageLoader(args);
 
 /**
  * A category's picture width in the page, for the browser to pick its size (B-393): two columns, three from 990 px, with

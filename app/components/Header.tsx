@@ -1,5 +1,5 @@
 import {Suspense, useRef} from 'react';
-import {Await, Link, NavLink, useAsyncValue} from 'react-router';
+import {Await, Link, useAsyncValue} from 'react-router';
 import {
   analyticsPageUrl,
   type CartViewPayload,
@@ -8,7 +8,7 @@ import {
   useOptimisticCart,
   useTranslation,
 } from '@cloudcart/nitrogen';
-import {Image} from '@cloudcart/nitrogen-react';
+import {Image, KeptNavLink} from '@cloudcart/nitrogen-react';
 import type {CartApiQueryFragment, HeaderQuery} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {MegaMenu} from '~/components/MegaMenu';
@@ -49,14 +49,14 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}: HeaderProp
     >
       <div className="mx-auto flex h-16 max-w-page items-center gap-6 px-gutter md:px-gutter-md">
         <HeaderMenuMobileToggle />
-        <NavLink prefetch="intent" to="/" end className="shrink-0 text-h4 hover:no-underline">
+        <KeptNavLink to="/" end className="shrink-0 text-h4 hover:no-underline">
           {logo ? (
             // 36 px high, as wide as its proportions make it, served by the image CDN at that height (B-199).
             <Image data={logo} alt={shop.name} width="auto" height={36} loading="eager" className="h-9 w-auto" />
           ) : (
             shop.name
           )}
-        </NavLink>
+        </KeptNavLink>
         <HeaderMenu
           menu={menu}
           viewport="desktop"
@@ -98,7 +98,7 @@ function HeaderActions({isLoggedIn, cart}: Pick<HeaderProps, 'isLoggedIn' | 'car
   return (
     <div className="ml-auto flex items-center">
       <SearchToggle />
-      <NavLink prefetch="intent" to="/account" className={ICON_LINK}>
+      <KeptNavLink to="/account" className={ICON_LINK}>
         <AccountIcon />
         <span className="sr-only">
           <Suspense fallback={t('header.signIn')}>
@@ -107,7 +107,7 @@ function HeaderActions({isLoggedIn, cart}: Pick<HeaderProps, 'isLoggedIn' | 'car
             </Await>
           </Suspense>
         </span>
-      </NavLink>
+      </KeptNavLink>
       <CartToggle cart={cart} />
     </div>
   );

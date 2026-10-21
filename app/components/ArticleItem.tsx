@@ -1,7 +1,6 @@
 import type {ReactNode} from 'react';
-import {Link} from 'react-router';
 import {type PaginationProps, useTranslation} from '@cloudcart/nitrogen';
-import {Image, PaginatedResourceSection} from '@cloudcart/nitrogen-react';
+import {Image, PaginatedResourceSection, KeptLink} from '@cloudcart/nitrogen-react';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {DateText} from '~/components/DateText';
 import {buttonClass} from '~/components/ui/Button';
@@ -20,7 +19,7 @@ const ARTICLE_CARD_SIZES =
 export function ArticleItem({article, loading}: {article: ArticleItemFragment; loading?: 'eager' | 'lazy'}) {
   const {t} = useTranslation();
   return (
-    <Link to={articlePath(article.handle)} prefetch="intent" className="group flex flex-col gap-2 hover:no-underline">
+    <KeptLink to={articlePath(article.handle)} className="group flex flex-col gap-2 hover:no-underline">
       <div className="mb-1 aspect-[3/2] overflow-hidden rounded-card bg-surface">
         {article.image && (
           <Image
@@ -45,7 +44,7 @@ export function ArticleItem({article, loading}: {article: ArticleItemFragment; l
       </p>
       <h2 className="line-clamp-2 text-card group-hover:underline">{article.title}</h2>
       {article.excerpt && <p className="line-clamp-3 text-muted">{article.excerpt}</p>}
-    </Link>
+    </KeptLink>
   );
 }
 

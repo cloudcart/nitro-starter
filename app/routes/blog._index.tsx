@@ -1,5 +1,6 @@
 import {useLoaderData} from 'react-router';
 import {getPaginationVariables, useTranslation} from '@cloudcart/nitrogen';
+import {keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/blog._index';
 import {metaTranslator, pageMeta, storeName} from '~/lib/meta';
 import {ArticleList, blogCategoryLinks} from '~/components/ArticleItem';
@@ -10,6 +11,9 @@ import {SHARED_PAGE} from '~/lib/page-cache';
 
 /** The same page for every visitor: served from the page cache (`server.ts`). */
 export const handle = SHARED_PAGE;
+
+/** Shown from the data this tab kept on a step back, or loaded on a link's intent (`KEPT_PAGES`). */
+export const clientLoader = (args: Route.ClientLoaderArgs) => keptPageLoader(args);
 
 export const meta: Route.MetaFunction = ({location, matches}) => {
   const t = metaTranslator(matches);

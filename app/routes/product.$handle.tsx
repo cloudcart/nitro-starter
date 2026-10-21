@@ -9,17 +9,20 @@ import {
   hashEmail,
   getProductOptions,
   getSelectedProductOptions,
+  isRouteDataRequest,
   useOptimisticVariant,
   useSelectedOptionInUrlParam,
 } from '@cloudcart/nitrogen';
 import type {ProductFragment} from 'storefrontapi.generated';
+import {keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/product.$handle';
 import type {loader as reviewsLoader} from './product';
 import {errorMeta, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
+import {loadProductExtras} from '~/lib/product-extras';
 import {Breadcrumbs, breadcrumbJsonLd, type Crumb} from '~/components/Breadcrumbs';
 import {collectionCrumbs} from '~/components/CollectionView';
 import {buyerUserAgent, type FormError} from '~/components/FormFields';
-import {RelatedProducts} from '~/components/ProductExtras';
+import {type Extras, RelatedProducts, useProductExtras} from '~/components/ProductExtras';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductColumns} from '~/components/ProductLayout';
 import {SwipeablePage} from '~/components/SwipeablePage';
@@ -42,6 +45,9 @@ import {SHARED_PAGE} from '~/lib/page-cache';
 
 /** The same page for every visitor: served from the page cache (`server.ts`). */
 export const handle = SHARED_PAGE;
+
+/** Shown from the data this tab kept on a step back, or loaded on a link's intent (`KEPT_PAGES`). */
+export const clientLoader = (args: Route.ClientLoaderArgs) => keptPageLoader(args);
 
 /** An action's error shows inside the store's layout, translated (B-201). */
 export const ErrorBoundary = RouteErrorBoundary;
@@ -106,13 +112,15 @@ export async function loader(args: Route.LoaderArgs) {
   // The store's settings, which the first screen's forms follow.
   const settings = loadProductPageSettings(args);
 
-  // Start the data below the fold first — it needs nothing from the product query, so it runs beside it…
-  const deferredData = loadDeferredData(args);
+  // The credit plans and store stock, below the fold, only in a document, started first beside the product query: route
+  // data — a link's hover, a swipe, a step — is the product alone, and the page asks its extras as it opens
+  // (`useProductExtras`). They need nothing from the product query…
+  const extras = isRouteDataRequest(args.request) ? undefined : loadProductExtras(args, args.params.handle);
 
-  // …and wait only for what the first screen needs.
+  // …and the page waits only for what the first screen needs.
   const criticalData = await loadCriticalData(args, settings);
 
-  return {...deferredData, ...criticalData};
+  return {extras, ...criticalData};
 }
 
 async function loadCriticalData(
@@ -133,34 +141,6 @@ async function loadCriticalData(
   if (!product?.id) throw missingResource(errors, null);
 
   return {product, settings, isLoggedIn: Boolean(buyer)};
-}
-
-/**
- * Credit plans and store stock: the page renders without them if they fail. The credit plans are for the variant the
- * URL's options pick, asked on that variant in the same query. The reviews are the parent route's (`routes/product.tsx`):
- * they do not follow the variant (B-376). "You may also like" asks for itself as the visitor nears it (T-550).
- */
-function loadDeferredData({context, params, request}: Route.LoaderArgs) {
-  const {storefront, customerAccount} = context;
-  const {handle} = params;
-
-  const extras = customerAccount
-    .getBuyer()
-    .then((buyer) =>
-      storefront.query(PRODUCT_EXTRAS_QUERY, {
-        variables: {
-          handle,
-          selectedOptions: getSelectedProductOptions(request),
-          buyer,
-        },
-      }),
-    )
-    .catch((error: Error) => {
-      console.error(error);
-      return null;
-    });
-
-  return {extras};
 }
 
 /**
@@ -379,6 +359,12 @@ export default function Product() {
   // The products before and after this one in the listing it was opened from: on a phone the page is swiped to them.
   const neighbours = useListingNeighbours(productPath(product.handle));
   const location = useLocation();
+  // Streamed with a document; else asked as the page opens, and for each variant chosen.
+  const extras = useProductExtras(
+    data.extras,
+    product.handle,
+    splitReviewsSearch({searchParams: new URLSearchParams(location.search)}).rest,
+  );
 
   return (
     <ReviewDisplayProvider value={settings.productReviewSettings}>
@@ -388,7 +374,11 @@ export default function Product() {
         preview={(ahead, picture) => <ProductPreview data={ahead as ProductPageData} backdrop={picture} />}
         className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md"
       >
-        <ProductTop data={data} selectedVariant={selectedVariant} backdrop={openedPicture(location.pathname)}>
+        <ProductTop
+          data={{...data, extras}}
+          selectedVariant={selectedVariant}
+          backdrop={openedPicture(location.pathname)}
+        >
           <LinkedProducts key={product.handle} handle={product.handle} />
         </ProductTop>
 
@@ -438,7 +428,8 @@ function ProductTop({
   backdrop,
   children,
 }: {
-  data: ProductPageData;
+  /** The route's data, its extras as the page has them (`useProductExtras`). */
+  data: Omit<ProductPageData, 'extras'> & {extras: Extras};
   selectedVariant: ComponentProps<typeof ProductInfo>['selectedVariant'];
   /** The picture the page was opened from, under its first photograph until that loads (T-571). */
   backdrop?: string;
@@ -776,42 +767,6 @@ const PRODUCT_QUERY = `#graphql
     }
   }
   ${PRODUCT_FRAGMENT}
-` as const;
-
-const PRODUCT_EXTRAS_QUERY = `#graphql
-  query ProductExtras(
-    $handle: String!
-    $selectedOptions: [SelectedOptionInput!]!
-    $buyer: BuyerInput
-  ) @inContext(buyer: $buyer) {
-    product(handle: $handle) {
-      selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {
-        creditOffers {
-          provider {
-            handle
-            title
-            imageUrl
-          }
-          plans {
-            months
-            monthlyPayment {
-              amount
-              currencyCode
-              formatted
-            }
-          }
-        }
-      }
-      stockByStore {
-        store {
-          id
-          name
-          urlHandle
-          city
-        }
-      }
-    }
-  }
 ` as const;
 
 const REVIEW_CREATE_MUTATION = `#graphql

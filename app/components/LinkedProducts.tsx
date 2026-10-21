@@ -1,7 +1,7 @@
 import {useId, useRef, useState} from 'react';
-import {Link, useFetcher} from 'react-router';
+import {useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {AddToCartButton, Image, useAutoLoad} from '@cloudcart/nitrogen-react';
+import {AddToCartButton, Image, useAutoLoad, KeptLink} from '@cloudcart/nitrogen-react';
 import type {LinkedProductFragment, LinkedProductsPageFragment} from 'storefrontapi.generated';
 import {AddToCartOffers} from '~/components/AddToCartOffers';
 import {CardPrice} from '~/components/CardPrice';
@@ -196,7 +196,7 @@ function LinkedProductCard({product}: {product: LinkedProductFragment}) {
   const measure = product.selectedOrFirstAvailableVariant?.unitPriceMeasurement;
   return (
     <div className="flex items-center gap-4 rounded-card bg-surface p-4">
-      <Link to={url} prefetch="intent" tabIndex={-1} aria-hidden="true" className="size-20 shrink-0">
+      <KeptLink to={url} tabIndex={-1} aria-hidden="true" className="size-20 shrink-0">
         {image ? (
           <Image
             data={image}
@@ -210,11 +210,11 @@ function LinkedProductCard({product}: {product: LinkedProductFragment}) {
         ) : (
           <ImagePlaceholder className="size-full" />
         )}
-      </Link>
+      </KeptLink>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <Link to={url} prefetch="intent" className="font-medium wrap-break-word">
+        <KeptLink to={url} className="font-medium wrap-break-word">
           {product.title}
-        </Link>
+        </KeptLink>
         <p>
           <CardPrice
             priceRange={product.priceRange}
@@ -247,9 +247,9 @@ function LinkedProductAdd({product, url}: {product: LinkedProductFragment; url: 
 
   if (needsChoice) {
     return (
-      <Link to={url} prefetch="intent" aria-label={t('product.chooseOptions')} className={round}>
+      <KeptLink to={url} aria-label={t('product.chooseOptions')} className={round}>
         <CartIcon className="size-5" />
-      </Link>
+      </KeptLink>
     );
   }
   return (

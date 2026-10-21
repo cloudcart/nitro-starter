@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import {Link, useFetcher} from 'react-router';
 import {CartForm, type OptimisticCartLine, Translated, useTranslation} from '@cloudcart/nitrogen';
-import {Image, Money} from '@cloudcart/nitrogen-react';
+import {Image, Money, KeptLink} from '@cloudcart/nitrogen-react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {CartActionMessages} from '~/components/CartActionMessages';
 import {Charge} from '~/components/Charge';
@@ -68,14 +68,13 @@ export function CartLineItem({
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-3">
-          <Link
-            prefetch="intent"
+          <KeptLink
             to={lineItemUrl}
             onClick={() => layout === 'aside' && close()}
             className="font-medium hover:underline"
           >
             {product.title}
-          </Link>
+          </KeptLink>
           {line.cost?.totalAmount && (
             <Price price={line.cost.totalAmount} className="shrink-0 font-medium group-has-data-pending/line:shimmer" />
           )}

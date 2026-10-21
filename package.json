@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "codegen": "graphql-codegen --config codegen.ts && react-router typegen",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "lint": "node scripts/check-design-tokens.mjs && node scripts/check-translations.mjs && eslint --max-warnings 0 . && prettier --check .",
+    "lint": "node scripts/check-design-tokens.mjs && node scripts/check-translations.mjs && node scripts/check-kept-pages.mjs && eslint --max-warnings 0 . && prettier --check .",
     "format": "prettier --write .",
     "check": "npm run codegen && npm run typecheck && npm run lint && npm run build",
     "prepare": "simple-git-hooks"

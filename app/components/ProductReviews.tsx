@@ -40,7 +40,7 @@ export const REVIEWS_PAGE_SIZE = 10;
  * An address's search in two: the part the reviews follow — their star filter and pages, all named `reviews_…` — and
  * the rest (B-376).
  */
-export function splitReviewsSearch(url: URL) {
+export function splitReviewsSearch(url: Pick<URL, 'searchParams'>) {
   const reviews = new URLSearchParams();
   const rest = new URLSearchParams();
   for (const [key, value] of url.searchParams)

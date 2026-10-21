@@ -1,27 +1,5 @@
 import {useSyncExternalStore} from 'react';
 
-/** How long kept data is shown for a page beside another: the page itself loads again when it opens. */
-const FRESH_MS = 60_000;
-
-/** The most pages kept: a page and its neighbours, and the ones just left. */
-const KEPT = 8;
-
-/** Route data loaded ahead for a swipe (a neighbour's page shown beside this one), or just left, by path. */
-const loaded = new Map<string, {data: unknown; at: number}>();
-
-/** Keeps a page's route data, loaded ahead or just left: it is not loaded again for a page shown beside another. */
-export function keepPage(path: string, data: unknown) {
-  loaded.delete(path);
-  loaded.set(path, {data, at: Date.now()});
-  while (loaded.size > KEPT) loaded.delete(loaded.keys().next().value!);
-}
-
-/** A page's route data, if it was loaded within the last minute. */
-export function keptPage(path: string): unknown {
-  const kept = loaded.get(path);
-  return kept && Date.now() - kept.at <= FRESH_MS ? kept.data : undefined;
-}
-
 /** This page's place in the tab's history (React Router's `history.state.idx`); none outside its router. */
 export function historyIndex(): number | undefined {
   const index: unknown = typeof window === 'undefined' ? undefined : window.history.state?.idx;

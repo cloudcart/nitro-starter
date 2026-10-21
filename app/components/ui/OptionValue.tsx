@@ -1,6 +1,5 @@
-import {Link} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {Image} from '@cloudcart/nitrogen-react';
+import {Image, KeptLink} from '@cloudcart/nitrogen-react';
 
 /** A value's swatch, as Nitrogen's `getProductOptions` maps it: a colour, a picture, or neither. */
 export type OptionSwatch = {color?: string | null; image?: {previewImage?: {url: string} | null} | null} | null;
@@ -79,17 +78,16 @@ export function OptionValue({
 
   if (to) {
     return (
-      <Link
+      <KeptLink
         to={to}
         className={className}
         title={isSwatch ? name : undefined}
         aria-current={selected ? 'true' : undefined}
-        prefetch="intent"
         preventScrollReset
         replace
       >
         {content}
-      </Link>
+      </KeptLink>
     );
   }
 

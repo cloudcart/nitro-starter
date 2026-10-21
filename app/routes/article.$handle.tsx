@@ -1,6 +1,6 @@
 import {data, useFetcher, useLoaderData} from 'react-router';
 import {generateArticleJsonLd, useTranslation, type Translate} from '@cloudcart/nitrogen';
-import {RichText} from '@cloudcart/nitrogen-react';
+import {RichText, keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/article.$handle';
 import {crumbsJsonLd, errorMeta, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
 import {ARTICLE_HEADER_FRAGMENT, ArticleHeader} from '~/components/ArticleHeader';
@@ -19,6 +19,9 @@ import {SHARED_PAGE} from '~/lib/page-cache';
 
 /** The same page for every visitor: served from the page cache (`server.ts`). */
 export const handle = SHARED_PAGE;
+
+/** Shown from the data this tab kept on a step back, or loaded on a link's intent (`KEPT_PAGES`). */
+export const clientLoader = (args: Route.ClientLoaderArgs) => keptPageLoader(args);
 
 /** An action's error shows inside the store's layout, translated (B-201). */
 export const ErrorBoundary = RouteErrorBoundary;

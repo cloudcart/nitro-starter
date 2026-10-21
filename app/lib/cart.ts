@@ -14,4 +14,12 @@ export const ADD_TO_CART_FETCHER_KEY = 'cart-add';
  * reads), not the page's queries. Anything else, as the router decides.
  */
 export const skipCartAndWishlistRevalidation: ShouldRevalidateFunction = ({formAction, defaultShouldRevalidate}) =>
-  formAction && /^\/(cart(\/|\?|$)|account\/wishlist(\?|$))/.test(formAction) ? false : defaultShouldRevalidate;
+  formAction && isCartOrWishlistForm(formAction) ? false : defaultShouldRevalidate;
+
+/**
+ * Whether a form goes to the cart or the wishlist: it changes the visitor's cart or hearts, which no page the same for
+ * every visitor shows, and never who the visitor is — so the pages a tab kept stay (`useKeptPages` in `root.tsx`).
+ */
+export function isCartOrWishlistForm(formAction: string): boolean {
+  return /^\/(cart(\/|\?|$)|account\/wishlist(\?|$))/.test(formAction);
+}

@@ -1,5 +1,6 @@
+import {KeptLink} from '@cloudcart/nitrogen-react';
 import {type ReactNode, type RefObject, useEffect, useRef, useState} from 'react';
-import {Form, Link, useFetcher} from 'react-router';
+import {Form, useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import type {SearchProductFragment} from 'storefrontapi.generated';
 import {SearchProductCard, SearchProductCardPlaceholder} from '~/components/SearchProductCard';
@@ -263,14 +264,13 @@ export function PredictiveSearchResults({
         <ul aria-label={t('search.suggestions')} className="flex flex-wrap gap-2">
           {chips.map((chip) => (
             <li key={chip.id}>
-              <Link
+              <KeptLink
                 to={chip.to}
                 onClick={onNavigate}
-                prefetch="intent"
                 className="inline-flex h-9 items-center rounded-full bg-surface px-4 text-small hover:bg-border hover:no-underline"
               >
                 {chip.title}
-              </Link>
+              </KeptLink>
             </li>
           ))}
         </ul>
@@ -294,9 +294,9 @@ export function PredictiveSearchResults({
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             {links.map((link) => (
               <li key={link.id}>
-                <Link to={link.to} onClick={onNavigate} prefetch="intent" className="underline underline-offset-4">
+                <KeptLink to={link.to} onClick={onNavigate} className="underline underline-offset-4">
                   {link.title}
-                </Link>
+                </KeptLink>
               </li>
             ))}
           </ul>

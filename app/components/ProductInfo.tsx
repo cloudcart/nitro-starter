@@ -2,18 +2,13 @@ import {type ComponentProps, type ReactNode, useState} from 'react';
 import {Link} from 'react-router';
 import {type MappedProductOptions, useTranslation} from '@cloudcart/nitrogen';
 import {Image} from '@cloudcart/nitrogen-react';
-import type {
-  FormPolicyFragment,
-  ProductExtrasQuery,
-  ProductFragment,
-  ProductPageSettingsQuery,
-} from 'storefrontapi.generated';
+import type {FormPolicyFragment, ProductFragment, ProductPageSettingsQuery} from 'storefrontapi.generated';
 import {EnergyClass} from '~/components/EnergyClass';
 import {BundleForm} from '~/components/BundleForm';
 import {CompareButton} from '~/components/CompareButton';
 import {COMPARE_ENABLED} from '~/lib/features';
 import {ProductDetails} from '~/components/ProductDetails';
-import {CreditOffers, StoreAvailability} from '~/components/ProductExtras';
+import {CreditOffers, type Extras, StoreAvailability} from '~/components/ProductExtras';
 import {ProductForm, usePieceVariants} from '~/components/ProductForm';
 import {StockStatus} from '~/components/StockStatus';
 import {BackInStockForm, FastOrderForm, ProductInquiryForm} from '~/components/ProductRequestForms';
@@ -52,7 +47,7 @@ export function ProductInfo({
   selectedVariant: Variant;
   productOptions: MappedProductOptions[];
   settings: ProductPageSettingsQuery;
-  extras: Promise<ProductExtrasQuery | null>;
+  extras: Extras;
   isLoggedIn: boolean;
   /** Shows a piece's variant in the gallery when the buyer chooses it (T-545). */
   onPieceShown?: ComponentProps<typeof ProductForm>['onPieceShown'];
