@@ -15,15 +15,18 @@ export function shownOptions(options: MappedProductOptions[]) {
 /**
  * The product's options as the store presents each (`ProductOption.type`, B-377): a select for a "select" option,
  * else its values as buttons or swatches, each with its name and the value chosen. An option with a single value is
- * not a choice and is left out. Choosing a value of this product changes the URL's options, which pick the variant;
- * a value of another product goes to it.
+ * not a choice and is left out. Choosing a value of this product changes the URL's options, which pick the variant —
+ * with no request when the page has it whole (T-597); a value of another product goes to it.
  */
 export function ProductOptions({options}: {options: MappedProductOptions[]}) {
   const navigate = useNavigate();
+  // A variant the page has whole (`resolved`) is shown without the loader; another product's, or one the page lacks,
+  // comes through it.
   const choose = (value: OptionValueChoice) =>
     void navigate(`${value.isDifferentProduct ? productPath(value.handle) : ''}?${value.variantUriQuery}`, {
       replace: true,
       preventScrollReset: true,
+      ...(value.resolved && !value.isDifferentProduct && {defaultShouldRevalidate: false}),
     });
 
   return shownOptions(options).map((option) => {

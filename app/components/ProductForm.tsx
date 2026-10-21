@@ -61,7 +61,7 @@ export function ProductForm({
 }: {
   product: Pick<
     ProductFragment,
-    'id' | 'handle' | 'title' | 'customizations' | 'discount' | 'selectedOrFirstAvailableVariant'
+    'id' | 'handle' | 'title' | 'customizations' | 'discount' | 'selectedOrFirstAvailableVariant' | 'adjacentVariants'
   >;
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
@@ -164,9 +164,17 @@ export function ProductForm({
                   : null,
               onChange: (index, variant) => {
                 if (index === 0) {
-                  // Piece #1 is the page's variant: the page goes to it, as an option button does.
+                  // Piece #1 is the page's variant: the page goes to it, as an option button does — with no request
+                  // when the page has it whole (the loaded variant or a neighbour, T-597).
                   const options = variant.selectedOptions.map(({name, value}) => [name, value]);
-                  void navigate(`?${new URLSearchParams(options)}`, {replace: true, preventScrollReset: true});
+                  const whole = [product.selectedOrFirstAvailableVariant, ...product.adjacentVariants].some(
+                    (known) => known?.id === variant.id,
+                  );
+                  void navigate(`?${new URLSearchParams(options)}`, {
+                    replace: true,
+                    preventScrollReset: true,
+                    ...(whole && {defaultShouldRevalidate: false}),
+                  });
                 } else {
                   onPiecesChange(choosePiece(pieces, index, variant.id));
                 }

@@ -4,7 +4,6 @@ import {
   Analytics,
   analyticsInputFromRequest,
   generateProductJsonLd,
-  getAdjacentAndFirstAvailableVariants,
   getMarketingPixels,
   hashEmail,
   getProductOptions,
@@ -37,7 +36,8 @@ import {productPath} from '~/lib/urls';
 import {RouteErrorBoundary} from '~/components/RouteError';
 import {API_ERROR, formFields, integerOf, payloadOf} from '~/lib/action';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
-import {loadProductPageSettings} from '~/lib/product-page';
+import {loadOptionNames, loadProductPageSettings} from '~/lib/product-page';
+import {productAsShown, variantsWhole} from '~/lib/product-variants';
 import {useListingNeighbours} from '~/lib/listing-context';
 import {openedPicture} from '~/lib/opening';
 import {missingResource} from '~/lib/missing';
@@ -129,11 +129,15 @@ async function loadCriticalData(
 ) {
   const {handle} = params;
   const {storefront, customerAccount} = context;
-  const buyer = await customerAccount.getBuyer();
+  // Only the product's options from the address (B-544): its names are asked when the address has parameters.
+  const [buyer, optionNames] = await Promise.all([
+    customerAccount.getBuyer(),
+    loadOptionNames({context, request}, handle),
+  ]);
 
   const [{product, errors}, settings] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
-      variables: {handle, selectedOptions: getSelectedProductOptions(request), buyer},
+      variables: {handle, selectedOptions: getSelectedProductOptions(request, {optionNames}), buyer},
     }),
     pageSettings,
   ]);
@@ -347,11 +351,11 @@ export default function Product() {
   // From the parent route, which a variant change does not reload (B-376).
   const reviews = useRouteLoaderData<typeof reviewsLoader>('routes/product')?.reviews;
 
-  // Shows the variant the visitor picks at once, before the page reloads it.
-  const selectedVariant = useOptimisticVariant(
-    product.selectedOrFirstAvailableVariant,
-    getAdjacentAndFirstAvailableVariants(product),
-  );
+  // Shows the variant the visitor picks at once: one the page has whole with no loader (`resolved`), another before
+  // the page reloads it.
+  const wholeVariants = variantsWhole(product);
+  const selectedVariant = useOptimisticVariant(product.selectedOrFirstAvailableVariant, wholeVariants);
+  const shownProduct = productAsShown(product, selectedVariant, wholeVariants);
 
   // Puts the chosen options in the URL without a navigation, when the URL has none.
   useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
@@ -375,7 +379,7 @@ export default function Product() {
         className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md"
       >
         <ProductTop
-          data={{...data, extras}}
+          data={{...data, product: shownProduct, extras}}
           selectedVariant={selectedVariant}
           backdrop={openedPicture(location.pathname)}
         >
@@ -661,8 +665,12 @@ const PRODUCT_FRAGMENT = `#graphql
         ...ProductQuantityTier
       }
     }
-    adjacentVariants(selectedOptions: $selectedOptions) {
+    # As whole as the chosen variant: one of them is shown without the loader (T-597); in any case (B-543).
+    adjacentVariants(selectedOptions: $selectedOptions, caseInsensitiveMatch: true) {
       ...ProductVariant
+      quantityDiscounts {
+        ...ProductQuantityTier
+      }
     }
     customizations {
       id

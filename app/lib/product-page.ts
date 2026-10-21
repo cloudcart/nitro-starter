@@ -1,3 +1,4 @@
+import {getSelectedProductOptions} from '@cloudcart/nitrogen';
 import type {Route} from '../routes/+types/product.$handle';
 import {ORDER_CONSENTS_FRAGMENT, POLICY_FRAGMENT} from '~/lib/fragments';
 import {REVIEWS_SECTION_DISPLAY_FRAGMENT} from '~/components/ProductReviews';
@@ -14,6 +15,34 @@ export function loadProductPageSettings({context}: Pick<Route.LoaderArgs, 'conte
     cache: storefront.CacheSettings(),
   });
 }
+
+/**
+ * The product's option names, for `getSelectedProductOptions`: asked only when the address has parameters, so a
+ * campaign's (`utm_source`, `gclid`) are left out and the page asks the bare address's queries (B-544). Admin-edited:
+ * cached as the store's settings. Both of the page's loaders ask it (the product and its extras): one call in flight.
+ */
+export async function loadOptionNames(
+  {context, request}: Pick<Route.LoaderArgs, 'context' | 'request'>,
+  handle: string,
+): Promise<string[] | undefined> {
+  if (getSelectedProductOptions(request).length === 0) return undefined;
+  const {storefront} = context;
+  const {product} = await storefront.query(PRODUCT_OPTION_NAMES_QUERY, {
+    variables: {handle},
+    cache: storefront.CacheSettings(),
+  });
+  return product?.options.map((option) => option.name) ?? [];
+}
+
+const PRODUCT_OPTION_NAMES_QUERY = `#graphql
+  query ProductOptionNames($handle: String!) {
+    product(handle: $handle) {
+      options {
+        name
+      }
+    }
+  }
+` as const;
 
 const PRODUCT_PAGE_SETTINGS_QUERY = `#graphql
   fragment ProductFastOrder on FastOrderSettings {
