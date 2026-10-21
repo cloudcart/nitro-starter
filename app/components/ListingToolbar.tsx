@@ -1,7 +1,9 @@
 import {useId, useSyncExternalStore} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {setParam, SORT_OPTIONS, type SortLabel} from '~/lib/filters';
+import {hiddenPairs, pairId, setParam, SORT_OPTIONS, type SortLabel} from '~/lib/filters';
+import {useRefinementNavigation} from '~/lib/listing-history';
+import {Button} from '~/components/ui/Button';
 import {TextSelect} from '~/components/ui/Field';
 import {ColumnsIcon, SortIcon} from '~/components/ui/icons';
 
@@ -71,15 +73,21 @@ export function SortSelect({defaultSort = 'featured'}: {defaultSort?: SortLabel}
   const id = useId();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const refinement = useRefinementNavigation();
   const sort = searchParams.get('sort') ?? '';
 
+  // A GET form: without JavaScript the order applies by its button, keeping the filters (T-600).
   return (
-    <div className="flex items-center gap-2">
+    <form method="get" className="flex items-center gap-2">
+      {hiddenPairs(searchParams, {keys: ['sort']}).map(([key, value]) => (
+        <input key={pairId(key, value)} type="hidden" name={key} value={value} />
+      ))}
       <label htmlFor={id} className="sr-only text-small text-muted md:not-sr-only">
         {t('listing.sortBy')}
       </label>
       <TextSelect
         id={id}
+        name="sort"
         value={sort}
         phoneIcon={
           <>
@@ -92,10 +100,18 @@ export function SortSelect({defaultSort = 'featured'}: {defaultSort?: SortLabel}
           label: t(`listing.sort.${option.value ? option.label : defaultSort}`),
         }))}
         onChange={(event) =>
-          void navigate(`?${setParam(searchParams, 'sort', event.target.value || null)}`, {preventScrollReset: true})
+          void navigate(`?${setParam(searchParams, 'sort', event.target.value || null)}`, {
+            preventScrollReset: true,
+            ...refinement,
+          })
         }
       />
-    </div>
+      <noscript>
+        <Button type="submit" variant="secondary">
+          {t('filters.apply')}
+        </Button>
+      </noscript>
+    </form>
   );
 }
 

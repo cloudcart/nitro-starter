@@ -1,5 +1,13 @@
-import {type ReactNode, type RefObject, useId, useLayoutEffect, useRef, useState} from 'react';
-import {Link, useLocation, useNavigate, useNavigation, useRouteLoaderData, useSearchParams} from 'react-router';
+import {type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState} from 'react';
+import {
+  Link,
+  type LinkProps,
+  useLocation,
+  useNavigate,
+  useNavigation,
+  useRouteLoaderData,
+  useSearchParams,
+} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {Image, moneyWithFormat} from '@cloudcart/nitrogen-react';
 import type {CurrencyCode} from '@cloudcart/nitrogen/storefront-api-types';
@@ -8,8 +16,10 @@ import {
   clearFilterParams,
   filterInputToParam,
   hasFilterParams,
+  hiddenPairs,
   isFilterActive,
   paramPosition,
+  pairId,
   setParam,
   toggleFilterParam,
 } from '~/lib/filters';
@@ -21,6 +31,7 @@ import {Dropdown} from '~/components/ui/Dropdown';
 import {CloseIcon, FilterIcon, MoreIcon} from '~/components/ui/icons';
 import {CountBadge} from '~/components/ui/Badge';
 import type {RootLoader} from '~/root';
+import {useRefinementNavigation} from '~/lib/listing-history';
 
 /*
  * The listing's facets, as the API returns them for the products shown, without counts. Choosing a value adds it
@@ -36,6 +47,9 @@ const FILTER_PILL = `${PILL_FRAME} gap-2 px-4 text-small whitespace-nowrap`;
 
 /** How many values a facet shows before "Show all". */
 const VISIBLE_VALUES = 8;
+
+/** How long the price waits after the last key before it applies: a price is typed in several digits (T-600). */
+const PRICE_TYPING_DELAY_MS = 500;
 
 /** The facets the listing offers, in the merchant's order. Property ranges cannot be applied through the API yet. */
 export function usableFilters(filters: Filter[]) {
@@ -53,7 +67,9 @@ export function activeFilterCount(filters: Filter[], searchParams: URLSearchPara
  * its values is chosen, and the first `openFirst` open from the start.
  */
 function FilterList({filters, openFirst = 0}: {filters: Filter[]; openFirst?: number}) {
+  const {t} = useTranslation();
   const {searchParams, go} = useFilterUrl();
+  const priced = filters.some((filter) => filter.type === 'PRICE_RANGE');
   // The facets open from the start.
   const openIds = new Set(
     filters
@@ -62,8 +78,21 @@ function FilterList({filters, openFirst = 0}: {filters: Filter[]; openFirst?: nu
       .map((filter) => filter.id),
   );
 
+  // With JavaScript a value applies as it changes, and a submission is the price's (Enter, its button, a pause in
+  // typing); without, the form is the listing's address (T-600).
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const next = withPrice(searchParams, new FormData(event.currentTarget));
+    if (next) go(next);
+  }
+
   return (
-    <>
+    <form method="get" onSubmit={submit}>
+      {hiddenPairs(searchParams, {keys: priced ? ['minPrice', 'maxPrice'] : [], pairs: carriedPairs(filters)}).map(
+        ([key, value]) => (
+          <input key={pairId(key, value)} type="hidden" name={key} value={value} />
+        ),
+      )}
       {filters.map((filter) => {
         if (filter.type === 'BOOLEAN') {
           const yes = yesValue(filter);
@@ -71,6 +100,7 @@ function FilterList({filters, openFirst = 0}: {filters: Filter[]; openFirst?: nu
             <CheckRow
               key={filter.id}
               label={filter.label}
+              field={fieldOf(yes.input)}
               checked={isFilterActive(searchParams, yes.input)}
               onChange={() => go(toggleFilterParam(searchParams, yes.input))}
             />
@@ -92,8 +122,40 @@ function FilterList({filters, openFirst = 0}: {filters: Filter[]; openFirst?: nu
           </AccordionItem>
         );
       })}
-    </>
+      <noscript>
+        <Button type="submit" className="mt-4">
+          {t('filters.apply')}
+        </Button>
+      </noscript>
+    </form>
   );
+}
+
+/** A facet value's field in the filters' form: its address parameter's name and value (`filterInputToParam`). */
+function fieldOf(input: string) {
+  const param = filterInputToParam(input);
+  return param ? {name: param.key, value: param.value} : {};
+}
+
+/** The address pairs the filters' form names with fields of its own: a facet's values, a yes-or-no facet's "yes". */
+function carriedPairs(filters: Filter[]) {
+  const values = filters.flatMap((filter) =>
+    filter.type === 'PRICE_RANGE' ? [] : filter.type === 'BOOLEAN' ? [yesValue(filter)] : filter.values,
+  );
+  const pairs = new Set<string>();
+  for (const value of values) {
+    const param = value && filterInputToParam(value.input);
+    if (param) pairs.add(pairId(param.key, param.value));
+  }
+  return pairs;
+}
+
+/** The address with the form's price bounds, both in one navigation; null when the address has them already. */
+function withPrice(searchParams: URLSearchParams, form: FormData) {
+  const bound = (key: string) => String(form.get(key) ?? '').trim() || null;
+  const [min, max] = [bound('minPrice'), bound('maxPrice')];
+  if (min === searchParams.get('minPrice') && max === searchParams.get('maxPrice')) return null;
+  return setParam(setParam(searchParams, 'minPrice', min), 'maxPrice', max);
 }
 
 /**
@@ -113,13 +175,9 @@ export function FilterSidebar({filters, className = ''}: {filters: Filter[]; cla
           {t('filters.title')}
         </h2>
         {hasFilterParams(searchParams) && (
-          <Link
-            to={`?${clearFilterParams(searchParams)}`}
-            preventScrollReset
-            className="text-small underline underline-offset-4"
-          >
+          <RefineLink to={`?${clearFilterParams(searchParams)}`} className="text-small underline underline-offset-4">
             {t('filters.clearAll')}
-          </Link>
+          </RefineLink>
         )}
       </div>
       <FilterList filters={filters} openFirst={4} />
@@ -140,13 +198,9 @@ export function FilterPanel({filters, totalCount}: {filters: Filter[]; totalCoun
       </div>
       <div className="flex shrink-0 items-center gap-4 border-t border-border p-5">
         {hasFilterParams(searchParams) && (
-          <Link
-            to={`?${clearFilterParams(searchParams)}`}
-            preventScrollReset
-            className="text-small underline underline-offset-4"
-          >
+          <RefineLink to={`?${clearFilterParams(searchParams)}`} className="text-small underline underline-offset-4">
             {t('filters.clearAll')}
-          </Link>
+          </RefineLink>
         )}
         <Button onClick={close} className="flex-1">
           {totalCount != null ? t('filters.viewCount', {count: totalCount}) : t('filters.viewProducts')}
@@ -215,13 +269,12 @@ export function ActiveFilters({filters, className = ''}: {filters: Filter[]; cla
   const visible = shown === null ? chips : chips.slice(0, shown);
   const hidden = shown === null ? [] : chips.slice(shown);
   const clearAll = (
-    <Link
+    <RefineLink
       to={`?${clearFilterParams(searchParams)}`}
-      preventScrollReset
       className="shrink-0 px-2 text-small whitespace-nowrap underline underline-offset-4"
     >
       {t('filters.clearAll')}
-    </Link>
+    </RefineLink>
   );
 
   return (
@@ -246,15 +299,14 @@ export function ActiveFilters({filters, className = ''}: {filters: Filter[]; cla
           <ul aria-label={t('filters.more', {count: hidden.length})} className="flex flex-col">
             {hidden.map((chip) => (
               <li key={chip.label}>
-                <Link
+                <RefineLink
                   to={`?${chip.params}`}
-                  preventScrollReset
                   aria-label={t('filters.remove', {label: chip.label})}
                   className="flex min-h-11 items-center justify-between gap-4 rounded-button px-3 text-small hover:bg-surface"
                 >
                   {chip.label}
                   <CloseIcon className="size-4 shrink-0" />
-                </Link>
+                </RefineLink>
               </li>
             ))}
           </ul>
@@ -381,15 +433,14 @@ const CHIP_SIZE = 'size-6.5';
 function FilterChip({label, params}: {label: string; params: URLSearchParams}) {
   const {t} = useTranslation();
   return (
-    <Link
+    <RefineLink
       to={`?${params}`}
-      preventScrollReset
       aria-label={t('filters.remove', {label})}
       className="inline-flex h-6.5 items-center gap-1.5 rounded-button bg-surface px-3 text-small whitespace-nowrap hover:bg-border"
     >
       {label}
       <CloseIcon className="size-4" />
-    </Link>
+    </RefineLink>
   );
 }
 
@@ -454,12 +505,22 @@ function useFilterParams() {
   return next && next.pathname === pathname ? new URLSearchParams(next.search) : current;
 }
 
-/** The filters (`useFilterParams`), and a way to change them that keeps the page where it is. */
+/**
+ * The filters (`useFilterParams`), and a way to change them that keeps the page where it is — one history entry for
+ * them all (`useRefinementNavigation`).
+ */
 function useFilterUrl() {
   const searchParams = useFilterParams();
   const navigate = useNavigate();
-  const go = (params: URLSearchParams) => void navigate(`?${params}`, {preventScrollReset: true});
+  const refinement = useRefinementNavigation();
+  const go = (params: URLSearchParams) => void navigate(`?${params}`, {preventScrollReset: true, ...refinement});
   return {searchParams, go};
+}
+
+/** A link that changes the listing's filters, keeping the page where it is: one history entry for them all. */
+function RefineLink(props: Omit<LinkProps, 'replace' | 'state' | 'preventScrollReset'>) {
+  const refinement = useRefinementNavigation();
+  return <Link {...props} preventScrollReset {...refinement} />;
 }
 
 /** A yes-or-no facet's "yes" value: {"onSale": true} and the like. */
@@ -513,12 +574,19 @@ function ListValues({filter}: {filter: Filter}) {
       {values.map((value) => (
         <label key={value.id} className="flex min-h-9 cursor-pointer items-center gap-3 text-body">
           <Checkbox
+            {...fieldOf(value.input)}
             checked={isFilterActive(searchParams, value.input)}
             onChange={() => go(toggleFilterParam(searchParams, value.input))}
           />
           <span className="flex-1 truncate">{value.label}</span>
         </label>
       ))}
+      {/* A chosen value out of sight goes with the form all the same. */}
+      {!expanded &&
+        filter.values
+          .slice(VISIBLE_VALUES)
+          .filter((value) => isFilterActive(searchParams, value.input))
+          .map((value) => <input key={value.id} type="hidden" {...fieldOf(value.input)} />)}
       {filter.values.length > VISIBLE_VALUES && (
         <button
           type="button"
@@ -539,15 +607,20 @@ function Swatches({filter}: {filter: Filter}) {
   return (
     <div className="flex max-w-64 flex-wrap gap-2">
       {filter.values.map((value) => (
-        <button
+        // A box under the swatch, so the form carries it without JavaScript (T-600).
+        <label
           key={value.id}
-          type="button"
           title={value.label}
-          aria-label={value.label}
-          aria-pressed={isFilterActive(searchParams, value.input)}
-          onClick={() => go(toggleFilterParam(searchParams, value.input))}
-          className="size-10 overflow-hidden rounded-full border-2 border-control p-0.5 hover:border-muted aria-pressed:border-foreground"
+          className="relative size-10 cursor-pointer overflow-hidden rounded-full border-2 border-control p-0.5 hover:border-muted has-checked:border-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
         >
+          <input
+            type="checkbox"
+            {...fieldOf(value.input)}
+            aria-label={value.label}
+            checked={isFilterActive(searchParams, value.input)}
+            onChange={() => go(toggleFilterParam(searchParams, value.input))}
+            className="sr-only"
+          />
           {value.swatchImage ? (
             <Image
               src={value.swatchImage}
@@ -563,7 +636,7 @@ function Swatches({filter}: {filter: Filter}) {
               style={{backgroundColor: value.swatchColor ?? 'var(--color-border)'}}
             />
           )}
-        </button>
+        </label>
       ))}
     </div>
   );
@@ -575,7 +648,7 @@ function Swatches({filter}: {filter: Filter}) {
  */
 function PriceRange({filter}: {filter: Filter}) {
   const {t} = useTranslation();
-  const {searchParams, go} = useFilterUrl();
+  const {searchParams} = useFilterUrl();
   const min = searchParams.get('minPrice') ?? '';
   const max = searchParams.get('maxPrice') ?? '';
   // Typed a plain string by the generated types; it is the API's currency code.
@@ -597,16 +670,17 @@ function PriceRange({filter}: {filter: Filter}) {
         ? (moneyWithFormat(value, currency, {...format, symbolPosition: 'NONE'}).formatted ?? String(value))
         : String(value);
 
-  function apply(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const bound = (key: string) => String(form.get(key) ?? '').trim() || null;
-    // Both bounds change in one navigation.
-    go(setParam(setParam(searchParams, 'minPrice', bound('minPrice')), 'maxPrice', bound('maxPrice')));
-  }
+  // A pause in typing submits the filters' form, which applies the price (`withPrice`), as Enter and the button do.
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+  const applyAfterTyping = (event: React.ChangeEvent<HTMLInputElement>) => {
+    clearTimeout(timerRef.current);
+    const form = event.currentTarget.form;
+    timerRef.current = setTimeout(() => form?.requestSubmit(), PRICE_TYPING_DELAY_MS);
+  };
 
   return (
-    <form onSubmit={apply} key={`${min}-${max}`} className="flex flex-col gap-3">
+    <div key={`${min}-${max}`} className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <PriceField
           name="minPrice"
@@ -615,6 +689,7 @@ function PriceRange({filter}: {filter: Filter}) {
           label={t('filters.minPrice')}
           currency={currency}
           symbol={symbol}
+          onChange={applyAfterTyping}
         />
         <span aria-hidden="true" className="text-muted">
           –
@@ -626,12 +701,13 @@ function PriceRange({filter}: {filter: Filter}) {
           label={t('filters.maxPrice')}
           currency={currency}
           symbol={symbol}
+          onChange={applyAfterTyping}
         />
       </div>
       <Button type="submit" variant="secondary" className="self-start">
         {t('filters.apply')}
       </Button>
-    </form>
+    </div>
   );
 }
 
@@ -646,6 +722,7 @@ function PriceField({
   label,
   currency,
   symbol,
+  onChange,
 }: {
   name: string;
   defaultValue: string;
@@ -653,6 +730,7 @@ function PriceField({
   label: string;
   currency?: string | null;
   symbol?: {text: string; before: boolean} | null;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   const currencyId = useId();
   const mark = currency ? (
@@ -668,6 +746,7 @@ function PriceField({
       step="any"
       min={0}
       defaultValue={defaultValue}
+      onChange={onChange}
       placeholder={placeholder}
       aria-label={label}
       aria-describedby={mark ? currencyId : undefined}
@@ -680,16 +759,19 @@ function PriceField({
 
 function CheckRow({
   label,
+  field,
   checked,
   onChange,
 }: {
   label: ReactNode;
+  /** The box's name and value in a form. */
+  field?: {name?: string; value?: string};
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
     <label className="flex min-h-11 cursor-pointer items-center gap-3 border-b border-border py-3 font-medium">
-      <Checkbox checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <Checkbox {...field} checked={checked} onChange={(event) => onChange(event.target.checked)} />
       <span className="flex-1">{label}</span>
     </label>
   );
