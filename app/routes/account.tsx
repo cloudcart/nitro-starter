@@ -2,12 +2,8 @@ import {Outlet, useLoaderData} from 'react-router';
 import type {Route} from './+types/account';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {AccountSidebar} from '~/components/AccountSidebar';
-import {privatePageHeaders} from '~/lib/headers';
 
 export const meta: Route.MetaFunction = () => [{name: 'robots', content: 'noindex'}];
-
-/** Every page of the account. */
-export const headers = privatePageHeaders;
 
 export function shouldRevalidate() {
   return true;

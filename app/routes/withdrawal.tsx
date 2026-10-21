@@ -11,7 +11,6 @@ import {RouteErrorBoundary} from '~/components/RouteError';
 import {API_ERROR, formFields, integerOf, payloadOf, useSubmission} from '~/lib/action';
 import {RETURN_USER_ERROR_FRAGMENT} from '~/lib/fragments';
 import {ifSignedIn} from '~/lib/customer';
-import {privatePageHeaders} from '~/lib/headers';
 
 /** An action's error shows inside the store's layout, translated (B-201). */
 export const ErrorBoundary = RouteErrorBoundary;
@@ -21,9 +20,6 @@ export const ErrorBoundary = RouteErrorBoundary;
  * Analytics reports it masked and the marketing pixels get nothing from it (B-449, B-390's rule).
  */
 export const handle = {analytics: {private: true}} satisfies AnalyticsRouteHandle;
-
-/** A signed-in customer's name and e-mail fill the form: no cache keeps the page (B-188, B-312). */
-export const headers = privatePageHeaders;
 
 export const meta: Route.MetaFunction = ({error, matches}) =>
   error ? errorMeta(matches) : privateMeta(metaTranslator(matches)('withdrawal.title'));

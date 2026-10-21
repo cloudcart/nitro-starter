@@ -15,7 +15,6 @@ import {CartRecommendations} from '~/components/CartRecommendations';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT} from '~/components/ReviewDisplay';
 import {RouteErrorBoundary} from '~/components/RouteError';
-import {privatePageHeaders} from '~/lib/headers';
 
 /**
  * The cart the action answers with is the one the page shows next, with no request for it (`useLatestCart`): noted
@@ -29,12 +28,11 @@ export const ErrorBoundary = RouteErrorBoundary;
 export const meta: Route.MetaFunction = ({error, matches}) =>
   error ? errorMeta(matches) : privateMeta(metaTranslator(matches)('cart.title'));
 
-/** The buyer's own cart: never kept by a cache (B-449); after a change, with the action's headers (its cookie). */
-export const headers: HeadersFunction = (args) => {
-  const headers = new Headers(args.actionHeaders);
-  new Headers(privatePageHeaders(args) as HeadersInit).forEach((value, name) => headers.set(name, value));
-  return headers;
-};
+/**
+ * After a change, with the action's headers (its cookie). The buyer's own cart is kept from every cache by Nitrogen's
+ * request handler: the page reads it (B-449, T-599).
+ */
+export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
 
 /** Every cart change in the app — `CartForm`s anywhere — is handled here. */
 export async function action({request, context}: Route.ActionArgs) {

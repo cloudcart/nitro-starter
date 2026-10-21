@@ -6,13 +6,9 @@ import {metaTranslator, privateMeta} from '~/lib/meta';
 import {ReturnStatus} from '~/components/ReturnStatus';
 import {productPath} from '~/lib/urls';
 import {DateText} from '~/components/DateText';
-import {privatePageHeaders} from '~/lib/headers';
 import {missingResource} from '~/lib/missing';
 
 // A page that throws is titled by the root's `meta`.
-/** The return's own data: whoever holds the reference sees the buyer's name and items. */
-export const headers = privatePageHeaders;
-
 /** The reference is a key: analytics reports the page with it masked, and the marketing pixels get nothing (B-390). */
 export const handle = {analytics: {private: true}} satisfies AnalyticsRouteHandle;
 
@@ -25,6 +21,8 @@ export const meta: Route.MetaFunction = ({data, matches}) =>
  * keeps it out of `withdrawal.tsx`, the form, which has no outlet.
  */
 export async function loader({params, context}: Route.LoaderArgs) {
+  // The return's own data: whoever holds the reference sees the buyer's name and items — no cache keeps the answer.
+  context.personal.mark('a return by its reference');
   const {returnByReference, errors} = await context.storefront.query(RETURN_QUERY, {
     variables: {reference: params.reference},
     cache: context.storefront.CacheNone(),
