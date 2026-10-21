@@ -7,7 +7,6 @@ import {
   getMarketingPixels,
   hashEmail,
   getProductOptions,
-  getSelectedProductOptions,
   isRouteDataRequest,
   useOptimisticVariant,
   useSelectedOptionInUrlParam,
@@ -36,7 +35,7 @@ import {productPath} from '~/lib/urls';
 import {RouteErrorBoundary} from '~/components/RouteError';
 import {API_ERROR, formFields, integerOf, payloadOf} from '~/lib/action';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
-import {loadOptionNames, loadProductPageSettings} from '~/lib/product-page';
+import {loadProductPageSettings, loadSelectedOptions} from '~/lib/product-page';
 import {productAsShown, variantsWhole} from '~/lib/product-variants';
 import {useListingNeighbours} from '~/lib/listing-context';
 import {openedPicture} from '~/lib/opening';
@@ -129,15 +128,15 @@ async function loadCriticalData(
 ) {
   const {handle} = params;
   const {storefront, customerAccount} = context;
-  // Only the product's options from the address (B-544): its names are asked when the address has parameters.
-  const [buyer, optionNames] = await Promise.all([
+  // The variant the address names by its id, else only the product's options from the address (B-544, T-602).
+  const [buyer, selectedOptions] = await Promise.all([
     customerAccount.getBuyer(),
-    loadOptionNames({context, request}, handle),
+    loadSelectedOptions({context, request}, handle),
   ]);
 
   const [{product, errors}, settings] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
-      variables: {handle, selectedOptions: getSelectedProductOptions(request, {optionNames}), buyer},
+      variables: {handle, selectedOptions, buyer},
     }),
     pageSettings,
   ]);

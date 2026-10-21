@@ -1,6 +1,5 @@
-import {getSelectedProductOptions} from '@cloudcart/nitrogen';
 import type {Route} from '../routes/+types/product.$handle';
-import {loadOptionNames} from '~/lib/product-page';
+import {loadSelectedOptions} from '~/lib/product-page';
 
 /**
  * A product's extras for the variant the address's options pick: the credit plans for its price and the store's shops
@@ -11,10 +10,10 @@ import {loadOptionNames} from '~/lib/product-page';
  */
 export function loadProductExtras({context, request}: Pick<Route.LoaderArgs, 'context' | 'request'>, handle: string) {
   const {storefront, customerAccount} = context;
-  return Promise.all([customerAccount.getBuyer(), loadOptionNames({context, request}, handle)])
-    .then(([buyer, optionNames]) =>
+  return Promise.all([customerAccount.getBuyer(), loadSelectedOptions({context, request}, handle)])
+    .then(([buyer, selectedOptions]) =>
       storefront.query(PRODUCT_EXTRAS_QUERY, {
-        variables: {handle, selectedOptions: getSelectedProductOptions(request, {optionNames}), buyer},
+        variables: {handle, selectedOptions, buyer},
       }),
     )
     .catch((error: Error) => {

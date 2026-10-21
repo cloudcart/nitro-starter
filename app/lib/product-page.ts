@@ -1,4 +1,4 @@
-import {getSelectedProductOptions} from '@cloudcart/nitrogen';
+import {getSelectedProductOptions, loadAddressVariantOptions} from '@cloudcart/nitrogen';
 import type {Route} from '../routes/+types/product.$handle';
 import {ORDER_CONSENTS_FRAGMENT, POLICY_FRAGMENT} from '~/lib/fragments';
 import {REVIEWS_SECTION_DISPLAY_FRAGMENT} from '~/components/ProductReviews';
@@ -14,6 +14,23 @@ export function loadProductPageSettings({context}: Pick<Route.LoaderArgs, 'conte
   return storefront.query(PRODUCT_PAGE_SETTINGS_QUERY, {
     cache: storefront.CacheSettings(),
   });
+}
+
+/**
+ * The options the product page loads: the variant the address names by its id — `?cv=`, as the platform's feeds and
+ * campaign messages link one — else the options the address names, the product's own only (B-544). The variant is
+ * asked beside the option names, and chosen in place, with no redirect (T-602).
+ */
+export async function loadSelectedOptions(
+  {context, request}: Pick<Route.LoaderArgs, 'context' | 'request'>,
+  handle: string,
+) {
+  const optionNames = loadOptionNames({context, request}, handle);
+  const [names, variantOptions] = await Promise.all([
+    optionNames,
+    loadAddressVariantOptions({storefront: context.storefront, request, handle, optionNames}),
+  ]);
+  return variantOptions ?? getSelectedProductOptions(request, {optionNames: names});
 }
 
 /**
