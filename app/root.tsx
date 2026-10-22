@@ -118,7 +118,11 @@ export async function loader(args: Route.LoaderArgs) {
     // The analytics' shop — its id, language and currency — from the header's answer: nothing asked again (B-453).
     shop: shopAnalyticsFrom(criticalData.header),
     // The browser reports to the storefront's own /api/sf (Nitrogen's default), never across origins to the store.
-    consent: {storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN},
+    // CloudCart Analytics' own address only for the platform's tests (Nitrogen's default is production's).
+    consent: {
+      storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
+      cloudCartAnalyticsUrl: env.PUBLIC_CLOUDCART_ANALYTICS_URL,
+    },
   };
 }
 
@@ -191,6 +195,8 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
     pixels,
     // For the pixels to match their events to the signed-in customer: a hash, never the e-mail.
     customerEmailHash: customerAccount.getEmailHash() ?? null,
+    // The sign-in's request for CloudCart Analytics, for the browser to send, once.
+    cloudCartAnalytics: customerAccount.takeCloudCartAnalytics(),
   };
 }
 
@@ -280,6 +286,7 @@ function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>
         wishlist={data.wishlist}
         pixels={data.pixels}
         customerEmailHash={data.customerEmailHash}
+        cloudCartAnalytics={data.cloudCartAnalytics}
       >
         <PageLayout {...data} cart={cart} hasCookieConsent={Boolean(data.cookieConsent)}>
           {children}

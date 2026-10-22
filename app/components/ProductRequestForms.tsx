@@ -23,7 +23,7 @@ export type ProductFormResult = {
   errors?: FormError[];
   orderNumber?: string | null;
   /** A placed fast order, for the browser's pixels: the id the API reported it under, the order and the e-mail's hash. */
-  purchase?: Pick<FastOrderCompletePayload, 'eventId' | 'order' | 'emailHash'>;
+  purchase?: Pick<FastOrderCompletePayload, 'eventId' | 'order' | 'emailHash' | 'cloudCartAnalytics'>;
 };
 
 /**

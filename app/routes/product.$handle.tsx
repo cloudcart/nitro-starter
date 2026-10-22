@@ -312,6 +312,8 @@ export async function action({request, context}: Route.ActionArgs) {
                 },
                 // For Google Ads' enhanced conversions: a hash, never the e-mail.
                 emailHash: buyer ? customerAccount.getEmailHash() : email ? await hashEmail(email) : undefined,
+                // The order's report to CloudCart Analytics, for the browser to send.
+                cloudCartAnalytics: fastOrderSubmit.cloudCartAnalytics,
               }
             : undefined,
       });
@@ -832,6 +834,11 @@ const FAST_ORDER_SUBMIT_MUTATION = `#graphql
       status
       # The purchase's id for the browser's pixels, the one the API reported it under server-side.
       analyticsEventId
+      # The order's report to CloudCart Analytics, which the browser sends with fast_order_completed.
+      cloudCartAnalytics {
+        name
+        body
+      }
       order {
         id
         orderNumber

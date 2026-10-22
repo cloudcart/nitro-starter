@@ -132,8 +132,9 @@ export async function action({request, params, context}: Route.ActionArgs) {
   }
 
   if (errors.length) return data({errors}, {status: 400});
-  // As the platform's storefront does after an address is added or edited (not removed or made the default).
-  if (intent === 'create' || intent === 'update') customerAccount.identifyVisitor();
+  // As the platform's storefront does after an address is added or edited (not removed or made the default): its
+  // request for CloudCart Analytics is kept for the next page, so it is awaited before the answer.
+  if (intent === 'create' || intent === 'update') await customerAccount.identifyVisitor();
   return redirect(`/account/address/${kind}`);
 }
 
