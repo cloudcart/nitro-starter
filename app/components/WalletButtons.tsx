@@ -53,8 +53,9 @@ export function WalletButtons({
           setPaid(true);
         }}
         classNames={{
-          // Paypercut draws the buttons in its own frames: their corners come from this property, the theme's buttons'.
-          root: 'flex flex-col gap-2 [--cc-cloudcart-pay-express-button-radius:var(--radius-button)] data-[layout=side-by-side]:flex-row',
+          // Paypercut draws the buttons in its own frames: their corners and height come from these properties, the
+          // theme's buttons' (`rounded-button`, and `buttonClass`'s `h-11`).
+          root: 'flex flex-col gap-2 [--cc-cloudcart-pay-express-button-height:--spacing(11)] [--cc-cloudcart-pay-express-button-radius:var(--radius-button)] data-[layout=side-by-side]:flex-row',
           wallet: 'relative min-w-0 flex-1',
         }}
       />
