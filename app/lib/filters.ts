@@ -193,6 +193,25 @@ export function hasFilterParams(searchParams: URLSearchParams) {
   return [...searchParams.keys()].some((key) => !NON_FILTER_PARAMS.includes(key));
 }
 
+/**
+ * The address's pairs a GET form carries as hidden fields, so that without JavaScript it submits the listing as it is
+ * with its own fields changed (T-600): every pair but pagination, the keys the form's fields name (`keys`) and the
+ * pairs they do (`pairs`, by `pairId`).
+ */
+export function hiddenPairs(
+  searchParams: URLSearchParams,
+  {keys = [], pairs = new Set<string>()}: {keys?: string[]; pairs?: Set<string>},
+) {
+  return [...withoutPagination(searchParams)].filter(
+    ([key, value]) => !keys.includes(key) && !pairs.has(pairId(key, value)),
+  );
+}
+
+/** One address pair as a set's key. */
+export function pairId(key: string, value: string) {
+  return JSON.stringify([key, value]);
+}
+
 function withoutPagination(searchParams: URLSearchParams) {
   const params = new URLSearchParams(searchParams);
   params.delete('cursor');
