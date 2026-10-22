@@ -141,7 +141,8 @@ export async function loader({context}: Route.LoaderArgs) {
         })
     : Promise.resolve(NO_RECOMMENDATIONS);
 
-  return {cart: current, recommendations};
+  // Whether someone is signed in, from the session: CloudCart Pay's buttons may need it (T-622).
+  return {cart: current, recommendations, isLoggedIn: await customerAccount.isLoggedIn()};
 }
 
 /** How many products "You may also like" shows. */
@@ -150,12 +151,12 @@ const NO_RECOMMENDATIONS = {products: [], reviewDisplay: null};
 
 export default function Cart() {
   const {t} = useTranslation();
-  const {cart, recommendations} = useLoaderData<typeof loader>();
+  const {cart, recommendations, isLoggedIn} = useLoaderData<typeof loader>();
 
   return (
     <div className="mx-auto max-w-page px-gutter py-10 md:px-gutter-md">
       <h1 className="mb-8 text-title">{t('cart.title')}</h1>
-      <CartMain layout="page" cart={cart} />
+      <CartMain layout="page" cart={cart} signedIn={isLoggedIn} />
       <CartCrossSell hasLines={Boolean(cart?.totalQuantity)} />
       <CartRecommendations recommendations={recommendations} placeholders={cart?.totalQuantity ? RECOMMENDED : 0} />
       <Analytics.CartView />

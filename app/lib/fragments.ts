@@ -97,9 +97,18 @@ export const CART_QUERY_FRAGMENT = `#graphql
       subtotalAmount {
         ...Money
       }
+      totalAmount {
+        ...Money
+      }
       totalSavedAmount {
         ...Money
       }
+    }
+    # How CloudCart Pay's Apple Pay and Google Pay buttons pay for the whole cart; null where they cannot (T-622).
+    cloudCartPayExpress {
+      shippingRequired
+      billingRequired
+      guestAllowed
     }
     discountApplications {
       key

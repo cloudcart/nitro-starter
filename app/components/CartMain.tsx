@@ -16,6 +16,8 @@ export type CartLayout = 'page' | 'aside';
 export type CartMainProps = {
   cart: CartApiQueryFragment | null;
   layout: CartLayout;
+  /** Whether a customer is signed in, for CloudCart Pay's buttons in the summary. */
+  signedIn: boolean;
 };
 
 /** How many lines (or bundles) the cart page shows on its first screen. */
@@ -27,7 +29,7 @@ const FIRST_SCREEN_LINES = 3;
  *
  * A bundle's products are separate lines that share `bundle.id`; they are shown together under the bundle's title.
  */
-export function CartMain({layout, cart: originalCart}: CartMainProps) {
+export function CartMain({layout, cart: originalCart, signedIn}: CartMainProps) {
   const {t} = useTranslation();
   // Applies pending cart actions, so the buyer sees each change at once.
   const cart = useOptimisticCart(originalCart);
@@ -68,7 +70,7 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
       <div className="group/cart flex h-full flex-col">
         <CartAddRefusal layout={layout} />
         {list || <CartEmpty layout={layout} />}
-        {lines.length > 0 && <CartSummary cart={cart} layout={layout} />}
+        {lines.length > 0 && <CartSummary cart={cart} layout={layout} signedIn={signedIn} />}
       </div>
     );
   }
@@ -84,7 +86,7 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
         <CartAddRefusal layout={layout} />
         {list || <CartEmpty layout={layout} />}
       </div>
-      {lines.length > 0 && <CartSummary cart={cart} layout={layout} />}
+      {lines.length > 0 && <CartSummary cart={cart} layout={layout} signedIn={signedIn} />}
     </div>
   );
 }

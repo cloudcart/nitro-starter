@@ -1,6 +1,6 @@
 import {type ReactNode, useId, useLayoutEffect, useState} from 'react';
 import type {Fetcher} from 'react-router';
-import {CartForm, type OptimisticCart, useTranslation} from '@cloudcart/nitrogen';
+import {CartForm, type CloudCartPayExpressCartRules, type OptimisticCart, useTranslation} from '@cloudcart/nitrogen';
 import {Money, type MoneyType, RichText} from '@cloudcart/nitrogen-react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {CartActionMessages} from '~/components/CartActionMessages';
@@ -10,10 +10,13 @@ import {Countdown} from '~/components/ui/Countdown';
 import {Input} from '~/components/ui/Field';
 import {CloseIcon, DiscountIcon} from '~/components/ui/icons';
 import {STICKY_BAR, STICKY_BAR_ROW} from '~/components/ui/StickyBar';
+import {WalletButtons} from '~/components/WalletButtons';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
   layout: CartLayout;
+  /** Whether a customer is signed in: CloudCart Pay's buttons may need one. */
+  signedIn: boolean;
 };
 
 /** The fetcher key of the discount-code forms, so the code field shows what the store answered. */
@@ -22,10 +25,11 @@ const DISCOUNT_FETCHER_KEY = 'cart-discount-codes';
 /**
  * The cart's summary. On the cart page: the store's own order summary (`Cart.totals`, its rows in its order with its
  * labels); the discounts the platform applied that have no row of their own — the lines' — each with its countdown;
- * what the buyer saves; the discount codes; the store's messages; and the way to CloudCart's checkout (`checkoutUrl`).
- * In the drawer only the store's subtotal and the way to checkout (T-553).
+ * what the buyer saves; the discount codes; the store's messages; and the way to CloudCart's checkout (`checkoutUrl`),
+ * with CloudCart Pay's Apple Pay and Google Pay buttons under it where the merchant shows them in the cart (T-622). In
+ * the drawer only the store's subtotal and the ways to pay (T-553).
  */
-export function CartSummary({cart, layout}: CartSummaryProps) {
+export function CartSummary({cart, layout, signedIn}: CartSummaryProps) {
   const {t} = useTranslation();
   const headingId = useId();
   const rows = cart?.totals ?? [];
@@ -38,6 +42,16 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
     <a href={cart.checkoutUrl} target="_self" className={buttonClass('primary', {fullWidth: true})}>
       {t('cart.checkout')}
     </a>
+  );
+  // The store's total for the whole cart; the buttons hide themselves unless the merchant shows them in the cart.
+  const total = money(cart?.cost?.totalAmount);
+  const wallets = total && (
+    <WalletButtons
+      rules={walletRules(cart?.cloudCartPayExpress)}
+      signedIn={signedIn}
+      merchandise={{cart: true}}
+      amount={total}
+    />
   );
 
   // The page's checkout button, watched for the bar below 990 px.
@@ -55,6 +69,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
         </h2>
         <SummaryRows rows={rows.filter((row) => row.group === 'subtotal')} subtotal={subtotal} />
         {checkout}
+        {wallets}
       </section>
     );
   }
@@ -111,6 +126,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       )}
       <CartDiscountCodes discountCodes={cart?.discountCodes} />
       <div ref={setCheckoutElement}>{checkout}</div>
+      {wallets}
       {checkout && (
         // Below 990 px, where the summary follows every line: the subtotal and the checkout kept at the screen's
         // bottom while the summary's own button is off it (B-395).
@@ -192,6 +208,16 @@ function SummaryRows({
 function money(value: Partial<MoneyType> | null | undefined): MoneyType | null {
   return value?.amount && value.currencyCode
     ? {amount: value.amount, currencyCode: value.currencyCode, formatted: value.formatted}
+    : null;
+}
+
+/** The cart's rules for CloudCart Pay's buttons, once whole: a cart still on its way may have only part of them. */
+function walletRules(
+  value: Partial<CloudCartPayExpressCartRules> | null | undefined,
+): CloudCartPayExpressCartRules | null {
+  const {shippingRequired, billingRequired, guestAllowed} = value ?? {};
+  return shippingRequired != null && billingRequired != null && guestAllowed != null
+    ? {shippingRequired, billingRequired, guestAllowed}
     : null;
 }
 

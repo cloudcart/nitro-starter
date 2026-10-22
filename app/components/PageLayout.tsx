@@ -37,7 +37,7 @@ export function PageLayout({
     <Aside.Provider>
       <NavigationProgress />
       <SkipLink />
-      <CartAside cart={cart} />
+      <CartAside cart={cart} isLoggedIn={isLoggedIn} />
       <SearchModal />
       <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
       {header && <AnnouncementBar shopName={header.shop.name} />}
@@ -70,13 +70,20 @@ function SkipLink() {
   );
 }
 
-function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
+function CartAside({cart, isLoggedIn}: Pick<PageLayoutProps, 'cart' | 'isLoggedIn'>) {
   const {t} = useTranslation();
 
   return (
     <Aside type="cart" heading={t('cart.title')}>
       <Suspense fallback={<p className="p-5 text-muted">{t('cart.loading')}</p>}>
-        <Await resolve={cart}>{(cart) => <CartMain cart={cart} layout="aside" />}</Await>
+        {/* Whether someone is signed in comes from the session, with the cart: CloudCart Pay's buttons may need it. */}
+        <Await resolve={cart}>
+          {(cart) => (
+            <Await resolve={isLoggedIn}>
+              {(signedIn) => <CartMain cart={cart} layout="aside" signedIn={signedIn} />}
+            </Await>
+          )}
+        </Await>
       </Suspense>
     </Aside>
   );

@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {useRouteLoaderData} from 'react-router';
 import {
+  type CloudCartPayExpressCartRules,
   type CloudCartPayExpressMerchandise,
   type CloudCartPayExpressProductRules,
   useTranslation,
@@ -13,9 +14,10 @@ import type {RootLoader} from '~/root';
 const loadPaypercut = () => import('~/lib/paypercut.client').then((sdk) => sdk.Paypercut);
 
 /**
- * CloudCart Pay's Apple Pay and Google Pay buttons under the add to cart, as the store's own product page shows them:
- * as the merchant set them up (the root's `cloudCartPayExpress`), for what the form holds now. The store's refusal —
- * a customization left out, no courier for the address, a declined card — shows under them (T-619).
+ * CloudCart Pay's Apple Pay and Google Pay buttons under the add to cart, as the store's own product page shows them,
+ * and under the cart's checkout for the whole cart (T-622): as the merchant set them up (the root's
+ * `cloudCartPayExpress`), for what the form or the cart holds now. The store's refusal — a customization left out, no
+ * courier for the address, a declined card — shows under them (T-619).
  */
 export function WalletButtons({
   rules,
@@ -23,12 +25,12 @@ export function WalletButtons({
   merchandise,
   amount,
 }: {
-  /** `product.cloudCartPayExpress`. */
-  rules: CloudCartPayExpressProductRules | null | undefined;
+  /** `product.cloudCartPayExpress`, or `cart.cloudCartPayExpress`. */
+  rules: CloudCartPayExpressProductRules | CloudCartPayExpressCartRules | null | undefined;
   signedIn: boolean;
-  /** The line or bundle the form holds; null while the buyer must still choose. */
+  /** The line or bundle the form holds, null while the buyer must still choose; `{cart: true}` in the cart. */
   merchandise: CloudCartPayExpressMerchandise | null;
-  /** The price the page shows. */
+  /** The price the page shows: the product's, or the cart's total. */
   amount: Pick<MoneyV2, 'amount' | 'currencyCode'>;
 }) {
   const {t} = useTranslation();
