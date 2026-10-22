@@ -676,6 +676,12 @@ const PRODUCT_FRAGMENT = `#graphql
         ...ProductQuantityTier
       }
     }
+    # How CloudCart Pay's Apple Pay and Google Pay buttons buy it; null when they cannot (T-619).
+    cloudCartPayExpress {
+      shippingRequired
+      billingRequired
+      guestAllowed
+    }
     customizations {
       id
       type

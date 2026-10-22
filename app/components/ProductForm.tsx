@@ -15,6 +15,7 @@ import {type PieceVariant, QuantityTiers} from '~/components/QuantityTiers';
 import {Button, buttonClass} from '~/components/ui/Button';
 import {Price} from '~/components/ui/Price';
 import {StockStatus} from '~/components/StockStatus';
+import {WalletButtons} from '~/components/WalletButtons';
 import {QuantityStepper} from '~/components/ui/QuantityStepper';
 import {STICKY_BAR, STICKY_BAR_ROW} from '~/components/ui/StickyBar';
 import type {action as cartAction} from '~/routes/cart';
@@ -58,10 +59,18 @@ export function ProductForm({
   pieces,
   onPiecesChange,
   onPieceShown,
+  signedIn,
 }: {
   product: Pick<
     ProductFragment,
-    'id' | 'handle' | 'title' | 'customizations' | 'discount' | 'selectedOrFirstAvailableVariant' | 'adjacentVariants'
+    | 'id'
+    | 'handle'
+    | 'title'
+    | 'customizations'
+    | 'discount'
+    | 'selectedOrFirstAvailableVariant'
+    | 'adjacentVariants'
+    | 'cloudCartPayExpress'
   >;
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
@@ -73,6 +82,8 @@ export function ProductForm({
   onPiecesChange: (pieces: PieceChoice) => void;
   /** Shows a piece's variant in the gallery when the buyer chooses it (the user, T-545). */
   onPieceShown?: (variant: PieceVariant) => void;
+  /** Whether a customer is signed in: CloudCart Pay's buttons may need one (T-619). */
+  signedIn: boolean;
 }) {
   const {t} = useTranslation();
   const [answers, setAnswers] = useState<CustomizationAnswers>({});
@@ -210,6 +221,24 @@ export function ProductForm({
               {t('product.addToCart')}
             </AddToCartButton>
           </div>
+          {/* CloudCart Pay's Apple Pay and Google Pay buttons buy one line: none while the pieces are of several
+              variants (T-619). */}
+          <WalletButtons
+            rules={product.cloudCartPayExpress}
+            signedIn={signedIn}
+            merchandise={
+              mixed
+                ? null
+                : {
+                    line: {
+                      merchandiseId: line.merchandiseId,
+                      quantity: line.quantity,
+                      customizations: line.customizations,
+                    },
+                  }
+            }
+            amount={selectedVariant.price}
+          />
           {missing.length > 0 && (
             <p className="text-small text-muted">
               {t('product.requiredMissing', {

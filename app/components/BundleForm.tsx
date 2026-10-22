@@ -3,6 +3,7 @@ import {Link} from 'react-router';
 import {CartForm, useTranslation} from '@cloudcart/nitrogen';
 import {Image, Money} from '@cloudcart/nitrogen-react';
 import type {ProductFragment} from 'storefrontapi.generated';
+import type {MoneyV2} from '@cloudcart/nitrogen/storefront-api-types';
 import {ADD_TO_CART_FETCHER_KEY} from '~/lib/cart';
 import {productPath} from '~/lib/urls';
 import {useAside} from './Aside';
@@ -10,6 +11,7 @@ import {CartActionMessages} from '~/components/CartActionMessages';
 import {Button} from '~/components/ui/Button';
 import {Select} from '~/components/ui/Field';
 import {QuantityStepper} from '~/components/ui/QuantityStepper';
+import {WalletButtons} from '~/components/WalletButtons';
 
 type Bundle = NonNullable<ProductFragment['bundle']>;
 type BundleItem = Bundle['products'][number];
@@ -19,7 +21,21 @@ type BundleItem = Bundle['products'][number];
  * that adds them together. In the cart they stay together under the bundle.
  * The server prices it; what is shown here only describes the merchant's rule.
  */
-export function BundleForm({productId, bundle}: {productId: string; bundle: Bundle}) {
+export function BundleForm({
+  productId,
+  bundle,
+  price,
+  walletRules,
+  signedIn,
+}: {
+  productId: string;
+  bundle: Bundle;
+  /** The bundle's price the page shows, which CloudCart Pay's buttons open with (T-619). */
+  price: Pick<MoneyV2, 'amount' | 'currencyCode'> | undefined;
+  /** `product.cloudCartPayExpress`. */
+  walletRules: ProductFragment['cloudCartPayExpress'];
+  signedIn: boolean;
+}) {
   const {t} = useTranslation();
   const {open} = useAside();
   const [quantity, setQuantity] = useState(1);
@@ -108,6 +124,24 @@ export function BundleForm({productId, bundle}: {productId: string; bundle: Bund
           </>
         )}
       </CartForm>
+      {price && (
+        <WalletButtons
+          rules={walletRules}
+          signedIn={signedIn}
+          merchandise={
+            complete
+              ? {
+                  bundle: {
+                    bundleId: productId,
+                    quantity,
+                    items: bundle.products.map((_item, index) => ({merchandiseId: choices[String(index)]!})),
+                  },
+                }
+              : null
+          }
+          amount={price}
+        />
+      )}
     </div>
   );
 }

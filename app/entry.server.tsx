@@ -2,7 +2,9 @@ import {isbot} from 'isbot';
 import {renderToReadableStream} from 'react-dom/server';
 import {type EntryContext, type RouterContextProvider, ServerRouter} from 'react-router';
 import {
+  cloudCartPayExpressSources,
   createContentSecurityPolicy,
+  getCloudCartPayExpressSettings,
   getMarketingPixels,
   marketingPixelScriptSources,
   nitrogenContext,
@@ -16,19 +18,31 @@ export default async function handleRequest(
   reactRouterContext: EntryContext,
   context: RouterContextProvider,
 ) {
-  // The pixels this store runs: the root loader's call, already answered, so no request of its own.
-  const pixels = await getMarketingPixels({storefront: context.get(nitrogenContext.storefront)}).catch(() => null);
+  // The pixels this store runs, and its CloudCart Pay buttons: the root loader's call, already answered, so no request
+  // of its own.
+  const storefront = context.get(nitrogenContext.storefront);
+  const [pixels, cloudCartPayExpress] = await Promise.all([
+    getMarketingPixels({storefront}).catch(() => null),
+    getCloudCartPayExpressSettings({storefront}).catch(() => null),
+  ]);
 
   /**
    * Scripts run only with the page's nonce, or from the hosts of the marketing
    * pixels this store runs (Google, Meta, TikTok; none for a store without
-   * them, B-317). Images, media, frames
-   * and fonts may come from any HTTPS address: product descriptions and pages
-   * hold the merchant's own embeds (videos, maps) and images from their CDN.
+   * them, B-317), and of the Apple Pay and Google Pay scripts CloudCart Pay's
+   * buttons load, on every page of a store that shows them: a page reached by
+   * a client-side navigation keeps the first page's policy (T-619). Images,
+   * media, frames and fonts may come from any HTTPS address: product
+   * descriptions and pages hold the merchant's own embeds (videos, maps) and
+   * images from their CDN.
    */
   const {nonce, header} = createContentSecurityPolicy({
     directives: {
-      scriptSrc: ["'self'", ...marketingPixelScriptSources(pixels)],
+      scriptSrc: [
+        "'self'",
+        ...marketingPixelScriptSources(pixels),
+        ...cloudCartPayExpressSources(cloudCartPayExpress).scriptSrc,
+      ],
       connectSrc: ["'self'", 'https:', ...(import.meta.env.DEV ? ['ws://localhost:*', 'ws://127.0.0.1:*'] : [])],
       imgSrc: ["'self'", 'data:', 'https:'],
       mediaSrc: ["'self'", 'https:'],

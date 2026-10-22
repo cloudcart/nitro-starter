@@ -291,6 +291,12 @@
     "ratingWithCount": {
       "one": "Rated {rating} out of 5, {count} review",
       "other": "Rated {rating} out of 5, {count} reviews"
+    },
+    "wallet": {
+      "subtotal": "Goods",
+      "shipping": "Delivery",
+      "error": "Paying with the wallet did not work. Try again in a moment.",
+      "processing": "Your payment went through. Opening your order…"
     }
   },
   "quantity": {

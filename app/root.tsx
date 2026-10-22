@@ -14,6 +14,7 @@ import {
   answeredWithCart,
   clearLatestCart,
   createTranslator,
+  getCloudCartPayExpressSettings,
   getConsentFromCookieHeader,
   getCookieConsent,
   getMarketingPixels,
@@ -134,13 +135,15 @@ export async function loader(args: Route.LoaderArgs) {
 async function loadCriticalData({context, request}: Route.LoaderArgs) {
   const {storefront} = context;
 
-  const [header, cookieConsent] = await Promise.all([
+  const [header, cookieConsent, cloudCartPayExpress] = await Promise.all([
     // The menu with the shop's name, logo and domain, which the merchant edits: at most a minute old.
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheSettings(),
       variables: {headerMenuHandle: 'main'},
     }),
     getCookieConsent({storefront}),
+    // CloudCart Pay's Apple Pay and Google Pay buttons, for the product page: from the cookie banner's own call (T-619).
+    getCloudCartPayExpressSettings({storefront}),
   ]);
 
   const translations = await getTranslations(header.localization.language.isoCode);
@@ -148,7 +151,7 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
   // paints with the page, not after hydration.
   const consentChoice = getConsentFromCookieHeader(request.headers.get('Cookie'), cookieConsent?.cookieName);
 
-  return {header, cookieConsent, consentChoice, translations};
+  return {header, cookieConsent, cloudCartPayExpress, consentChoice, translations};
 }
 
 /**

@@ -139,11 +139,18 @@ export function ProductInfo({
       {product.bundle ? (
         <>
           <StockStatus variant={selectedVariant} />
-          <BundleForm productId={product.id} bundle={product.bundle} />
+          <BundleForm
+            productId={product.id}
+            bundle={product.bundle}
+            price={selectedVariant?.price}
+            walletRules={product.cloudCartPayExpress}
+            signedIn={isLoggedIn}
+          />
         </>
       ) : (
         <ProductForm
           product={product}
+          signedIn={isLoggedIn}
           productOptions={productOptions}
           selectedVariant={selectedVariant}
           quantity={quantity}
