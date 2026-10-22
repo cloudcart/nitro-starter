@@ -1,3 +1,4 @@
+import {keptSectionLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/related-products';
 import {RELATED_PAGE_MAX, RELATED_PRODUCTS_FRAGMENT} from '~/components/ProductExtras';
 import {integerOf} from '~/lib/action';
@@ -23,9 +24,11 @@ export function loader(args: Route.LoaderArgs) {
   return inBackground(load(args), {related: null});
 }
 
-/** In the browser as well: a request that fails there answers the same empty answer (B-460). */
-export function clientLoader({serverLoader}: Route.ClientLoaderArgs) {
-  return inBackground(serverLoader(), {related: null});
+/**
+ * In the browser as well: a request that fails there answers the same empty answer (B-460). A step back or forward gives the answer this page already had (`keptSectionLoader`), with no request (B-556).
+ */
+export function clientLoader(args: Route.ClientLoaderArgs) {
+  return inBackground(keptSectionLoader(args), {related: null});
 }
 
 /** The answer itself; `loader` answers its failure as the empty one. */

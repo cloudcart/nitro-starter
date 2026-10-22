@@ -17,7 +17,7 @@ export type Extras = Promise<ProductExtrasQuery | null> | ProductExtrasQuery | n
 /**
  * The extras a product page shows: those its document streamed, else — a page opened in the browser, whose route data
  * leaves them out — asked as the page opens, and again for each variant chosen (`routes/product-extras.$handle.tsx`).
- * `options` are the page's options in the address, without the reviews' own.
+ * `options` are the shown variant's options, as a query (`Color=Red&Size=M`).
  */
 export function useProductExtras(streamed: Extras, handle: string, options: string): Extras {
   const {load, data} = useFetcher<typeof productExtrasLoader>();

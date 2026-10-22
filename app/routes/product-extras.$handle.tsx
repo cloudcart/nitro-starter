@@ -1,3 +1,4 @@
+import {keptSectionLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/product-extras.$handle';
 import {inBackground} from '~/lib/background';
 import {SHARED_PAGE} from '~/lib/page-cache';
@@ -19,7 +20,9 @@ export async function loader(args: Route.LoaderArgs) {
   return {extras: await loadProductExtras(args, args.params.handle)};
 }
 
-/** In the browser as well: a request that fails there answers no extras, and the page shows none (B-460). */
-export function clientLoader({serverLoader}: Route.ClientLoaderArgs) {
-  return inBackground(serverLoader(), {extras: null});
+/**
+ * In the browser as well: a request that fails there answers no extras, and the page shows none (B-460). A step back or forward gives the answer this page already had (`keptSectionLoader`), with no request (B-556).
+ */
+export function clientLoader(args: Route.ClientLoaderArgs) {
+  return inBackground(keptSectionLoader(args), {extras: null});
 }

@@ -8,6 +8,7 @@ import {
   hashEmail,
   getProductOptions,
   isRouteDataRequest,
+  mapSelectedProductOptionToObject,
   useOptimisticVariant,
   useSelectedOptionInUrlParam,
 } from '@cloudcart/nitrogen';
@@ -364,11 +365,13 @@ export default function Product() {
   // The products before and after this one in the listing it was opened from: on a phone the page is swiped to them.
   const neighbours = useListingNeighbours(productPath(product.handle));
   const location = useLocation();
-  // Streamed with a document; else asked as the page opens, and for each variant chosen.
+  // Streamed with a document; else asked as the page opens, and for each variant chosen — by the shown variant's
+  // options, not the address's: the page writes them into its address after it opens, so the address it is shown at
+  // again (a step back or forward) asks what it asked before (B-556).
   const extras = useProductExtras(
     data.extras,
     product.handle,
-    splitReviewsSearch({searchParams: new URLSearchParams(location.search)}).rest,
+    new URLSearchParams(mapSelectedProductOptionToObject(selectedVariant.selectedOptions)).toString(),
   );
 
   return (

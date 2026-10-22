@@ -1,5 +1,6 @@
 import {Outlet, type ShouldRevalidateFunction} from 'react-router';
 import {getPaginationVariables} from '@cloudcart/nitrogen';
+import {keptRouteData} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/product';
 import {
   REVIEWS_NAMESPACE,
@@ -27,10 +28,12 @@ export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
 
 /**
  * In the browser the reviews come after the page, never holding it: a product opened from data this tab kept
- * (`keptPageLoader` on `product.$handle`) shows at once, and its reviews follow.
+ * (`keptPageLoader` on `product.$handle`) shows at once, and its reviews follow. A step back or forward gives back the
+ * reviews the page had (`keptRouteData`, by this route's id), with no request (B-556).
  */
-export function clientLoader({serverLoader}: Route.ClientLoaderArgs) {
-  return {reviews: serverLoader().then((data) => data.reviews)};
+export function clientLoader({url, serverLoader}: Route.ClientLoaderArgs) {
+  const fromServer = () => ({reviews: serverLoader().then((data) => data.reviews)});
+  return keptRouteData<ReturnType<typeof fromServer>>('routes/product', {url}) ?? fromServer();
 }
 
 /**
