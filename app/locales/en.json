@@ -250,7 +250,13 @@
       "downloads": "Downloads",
       "energyClass": "Energy class {label}",
       "energyLabel": "Energy label",
-      "productSheet": "Product information sheet"
+      "productSheet": "Product information sheet",
+      "garanLabelAlt": "Durability guarantee of {term} years",
+      "garanOpen": "See the durability guarantee label",
+      "garanHeading": "Durability guarantee",
+      "garanInfo": "About the commercial guarantee of durability",
+      "garanNoticeAlt": "Every product carries the statutory two-year guarantee of conformity",
+      "garanNoticeLink": "Your legal guarantee"
     },
     "related": {
       "alsoLike": "You may also like",

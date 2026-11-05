@@ -7,6 +7,7 @@ import {
   useTranslation,
 } from '@cloudcart/nitrogen';
 import {CloudCartPayExpress} from '@cloudcart/nitrogen-react';
+import {GaranNotice} from '~/components/GaranNotice';
 import type {MoneyV2} from '@cloudcart/nitrogen/storefront-api-types';
 import type {RootLoader} from '~/root';
 
@@ -61,6 +62,8 @@ export function WalletButtons({
           wallet: 'relative min-w-0 flex-1',
         }}
       />
+      {/* These buttons pay on the spot, without the store's checkout and its notice (T-640). */}
+      <GaranNotice />
       {error && !paid && (
         <p role="alert" className="text-small text-error">
           {error}

@@ -4,6 +4,7 @@ import {type MappedProductOptions, useTranslation} from '@cloudcart/nitrogen';
 import {Image} from '@cloudcart/nitrogen-react';
 import type {FormPolicyFragment, ProductFragment, ProductPageSettingsQuery} from 'storefrontapi.generated';
 import {EnergyClass} from '~/components/EnergyClass';
+import {GaranLabel} from '~/components/GaranLabel';
 import {BundleForm} from '~/components/BundleForm';
 import {CompareButton} from '~/components/CompareButton';
 import {COMPARE_ENABLED} from '~/lib/features';
@@ -126,6 +127,8 @@ export function ProductInfo({
           />
         )}
         <EnergyClass energyClass={product.energyClass} />
+        {/* The guarantee of the variant the buyer is looking at; the product's own when none is chosen (T-640). */}
+        <GaranLabel label={selectedVariant?.garanLabel ?? product.garanLabel} />
         {discount?.countdownOnDetail && discount.endsAt && (
           <Countdown
             endsAt={discount.endsAt}

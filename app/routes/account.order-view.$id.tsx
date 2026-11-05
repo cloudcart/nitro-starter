@@ -5,6 +5,7 @@ import type {Route} from './+types/account.order-view.$id';
 import {metaTranslator, privateMeta} from '~/lib/meta';
 import type {CustomerOrderQuery} from 'storefrontapi.generated';
 import {ADDRESS_CARD_FRAGMENT, AddressCard} from '~/components/AddressCard';
+import {GaranLabel} from '~/components/GaranLabel';
 import {DataTable} from '~/components/DataTable';
 import {OrderStatus} from '~/components/OrderStatus';
 import {ReturnStatus} from '~/components/ReturnStatus';
@@ -172,6 +173,7 @@ function OrderLineProduct({line}: {line: OrderLine}) {
               .join(t('format.separator'))}
           </span>
         )}
+        <GaranLabel label={line.garanLabel} className="mt-1" />
       </div>
     </div>
   );
@@ -213,6 +215,16 @@ const ORDER_QUERY = `#graphql
               name
               value
             }
+          }
+          # What the line bought is guaranteed for, with the ordered variant's model identifier (T-640).
+          garanLabel {
+            years
+            labelImageUrl
+            nestedImageUrl
+            modelIdentifier
+            displayType
+            infoUrl
+            alt
           }
           discountedTotalPrice {
             ...OrderMoney

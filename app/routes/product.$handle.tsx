@@ -501,12 +501,25 @@ const PRODUCT_VARIANT_FRAGMENT = `#graphql
     currencyCode
     formatted
   }
+  fragment GaranLabel on GaranLabel {
+    years
+    labelImageUrl
+    nestedImageUrl
+    modelIdentifier
+    displayType
+    infoUrl
+    alt
+  }
   fragment ProductVariant on ProductVariant {
     availableForSale
     barcode
     currentlyNotInStock
     statusType
     statusName
+    # This variant's own label: only the model identifier on it differs between variants (T-640, B-580).
+    garanLabel {
+      ...GaranLabel
+    }
     quantityAvailable
     minimumQuantity
     compareAtPrice {
@@ -768,6 +781,11 @@ const PRODUCT_FRAGMENT = `#graphql
       imageUrl
       documentUrl
       productSheetUrl
+    }
+    # The guarantee of the product as a whole: the chosen variant's own label is on the variant below, and
+    # this one is what a product with no variant to choose shows (T-640).
+    garanLabel {
+      ...GaranLabel
     }
     seo {
       description

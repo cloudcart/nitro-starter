@@ -428,6 +428,13 @@ const HEADER_QUERY = `#graphql
         }
       }
     }
+    # The EU legal-guarantee notice, where an order is placed without the store's own checkout — the fast
+    # order and the wallet buttons (T-640). Null when the store does not run the GARAN app.
+    garanNotice {
+      imageUrl
+      infoUrl
+      language
+    }
     # How the store writes money, for an amount the page writes itself: the chosen price range (T-556).
     currencyFormat {
       symbol

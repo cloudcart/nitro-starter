@@ -13,6 +13,7 @@ import type {OrderConsent} from '~/lib/fragments';
 import {ConsentCheckboxes, Field, type FormError, FormStatus, PolicyCheckboxes, TextArea} from './FormFields';
 import {RichText} from '@cloudcart/nitrogen-react';
 import {Button} from '~/components/ui/Button';
+import {GaranNotice} from '~/components/GaranNotice';
 import {growOpen} from '~/lib/motion';
 
 /** What the product page's action answers for each of these forms. */
@@ -327,6 +328,9 @@ export function FastOrderForm({
         errors={result?.errors}
         fields={['firstName', 'lastName', ...(isLoggedIn ? [] : ['email']), 'phone', 'acceptedConsentIds']}
       />
+      {/* This form places the order itself, so the legal-guarantee notice belongs here: the store's own
+          checkout, which shows it, is never reached (T-640). */}
+      <GaranNotice />
       <Button type="submit" loading={fetcher.state !== 'idle'}>
         {settings.finishButtonTitle}
       </Button>
