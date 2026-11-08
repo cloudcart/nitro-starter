@@ -35,6 +35,11 @@ const FILTER_FIELDS = {
   productMetafield: 'object',
   brandModel: 'object',
   category: 'object',
+  // The merchant's own marketing rows, each named by its id: the values come from
+  // `ProductConnection.marketingFilters`, so a page passes them on as they arrive.
+  productLabel: 'string',
+  productBanner: 'string',
+  productDiscount: 'string',
 } as const satisfies Record<keyof ProductFilter, 'boolean' | 'string' | 'object'>;
 
 /**
