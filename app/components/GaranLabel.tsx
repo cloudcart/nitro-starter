@@ -21,7 +21,14 @@ export function GaranLabel({label, className = ''}: {label?: GaranLabelFragment 
   if (!label?.labelImageUrl) return null;
 
   const alt = label.alt ?? t('product.details.garanLabelAlt', {term: label.years});
-  const full = (
+  const info = label.infoUrl && (
+    <a href={label.infoUrl} target="_blank" rel="noreferrer" className="inline-link text-small">
+      {t('product.details.garanInfo')}
+    </a>
+  );
+  // The label is an image, so the link and the QR code drawn inside it cannot be clicked — the picture itself
+  // leads where the QR code does, as the store's own storefront makes it. The code stays scannable.
+  const picture = (
     <img
       src={label.labelImageUrl}
       alt={alt}
@@ -30,11 +37,21 @@ export function GaranLabel({label, className = ''}: {label?: GaranLabelFragment 
       className="h-auto w-full max-w-garan-label"
     />
   );
+  const full = label.infoUrl ? (
+    <a href={label.infoUrl} target="_blank" rel="noreferrer" aria-label={t('product.details.garanInfo')}>
+      {picture}
+    </a>
+  ) : (
+    picture
+  );
 
   return (
     <div className={`flex flex-col items-start gap-1 ${className}`}>
       {label.displayType === 'FULL' || !label.nestedImageUrl ? (
-        full
+        <>
+          {full}
+          {info}
+        </>
       ) : (
         <>
           <button
@@ -49,11 +66,7 @@ export function GaranLabel({label, className = ''}: {label?: GaranLabelFragment 
           <Dialog open={open} onClose={() => setOpen(false)} heading={t('product.details.garanHeading')}>
             <div className="flex flex-col items-center gap-3 p-5">
               {full}
-              {label.infoUrl && (
-                <a href={label.infoUrl} target="_blank" rel="noreferrer" className="inline-link text-small">
-                  {t('product.details.garanInfo')}
-                </a>
-              )}
+              {info}
             </div>
           </Dialog>
         </>
