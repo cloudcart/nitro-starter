@@ -5,7 +5,7 @@ import {metaTranslator, privateMeta} from '~/lib/meta';
 import {ProductListing} from '~/components/ProductListing';
 import {SearchForm} from '~/components/SearchForm';
 import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
-import {LISTING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
+import {LISTING_FILTER_FRAGMENT, MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {
   getEmptyPredictiveSearchResult,
   type PredictiveSearchReturn,
@@ -156,6 +156,9 @@ export const SEARCH_QUERY = `#graphql
       productFilters {
         ...ListingFilter
       }
+      marketingFilters {
+        ...MarketingFilter
+      }
       nodes {
         ... on Product {
           ...ProductItem
@@ -189,6 +192,7 @@ export const SEARCH_QUERY = `#graphql
   }
   ${PRODUCT_ITEM_FRAGMENT}
   ${LISTING_FILTER_FRAGMENT}
+  ${MARKETING_FILTER_FRAGMENT}
   ${PRODUCT_REVIEW_DISPLAY_FRAGMENT}
 ` as const;
 
@@ -203,6 +207,7 @@ async function regularSearch({
     products: {
       totalCount: 0,
       productFilters: [],
+      marketingFilters: [],
       nodes: [],
       pageInfo: {hasPreviousPage: false, hasNextPage: false, startCursor: null, endCursor: null},
     },
