@@ -255,6 +255,8 @@
       "garanOpen": "See the durability guarantee label",
       "garanHeading": "Durability guarantee",
       "garanInfo": "About the commercial guarantee of durability",
+      "garanNoticeTrigger": "Your legal guarantee rights",
+      "garanNoticeHeading": "Legal guarantee of conformity",
       "garanNoticeAlt": "Every product carries the statutory two-year guarantee of conformity",
       "garanNoticeLink": "Your legal guarantee"
     },

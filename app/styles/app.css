@@ -170,8 +170,6 @@
   --container-totals: 24rem;
   /* The EU durability-guarantee label, shown in full: the artwork is tall, so it keeps to a column's width. */
   --container-garan-label: 18rem;
-  /* The legal-guarantee notice beside its link, where an order is placed without the store's checkout. */
-  --container-garan-notice: 11rem;
   /* The offer dialog's choice of variant; a tier card from which its price and its saving share a line. */
   --container-offer-select: 20rem;
   --container-tier-line: 20rem;
