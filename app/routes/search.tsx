@@ -5,7 +5,7 @@ import {metaTranslator, privateMeta} from '~/lib/meta';
 import {ProductListing} from '~/components/ProductListing';
 import {SearchForm} from '~/components/SearchForm';
 import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
-import {LISTING_FILTER_FRAGMENT, MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
+import {MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {
   getEmptyPredictiveSearchResult,
   type PredictiveSearchReturn,
@@ -191,7 +191,6 @@ export const SEARCH_QUERY = `#graphql
     }
   }
   ${PRODUCT_ITEM_FRAGMENT}
-  ${LISTING_FILTER_FRAGMENT}
   ${MARKETING_FILTER_FRAGMENT}
   ${PRODUCT_REVIEW_DISPLAY_FRAGMENT}
 ` as const;
