@@ -6,7 +6,7 @@ import {crumbsJsonLd, listingUrl, metaTranslator, seoMeta, storeName} from '~/li
 import {ListingHeader} from '~/components/ListingHeader';
 import {ProductListing} from '~/components/ProductListing';
 import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
-import {LISTING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
+import {MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {productTagPath} from '~/lib/urls';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT, ReviewDisplayProvider} from '~/components/ReviewDisplay';
 import {ListingDescription} from '~/components/ListingDescription';
@@ -112,6 +112,9 @@ const PRODUCT_TAG_QUERY = `#graphql
         filters {
           ...ListingFilter
         }
+        marketingFilters {
+          ...MarketingFilter
+        }
         nodes {
           ...ProductItem
         }
@@ -125,6 +128,6 @@ const PRODUCT_TAG_QUERY = `#graphql
     }
   }
   ${PRODUCT_ITEM_FRAGMENT}
-  ${LISTING_FILTER_FRAGMENT}
+  ${MARKETING_FILTER_FRAGMENT}
   ${PRODUCT_REVIEW_DISPLAY_FRAGMENT}
 ` as const;

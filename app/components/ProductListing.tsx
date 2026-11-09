@@ -2,7 +2,7 @@ import {type ReactNode, useRef} from 'react';
 import {useLocation, useNavigation, useSearchParams} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {PaginatedResourceSection} from '@cloudcart/nitrogen-react';
-import type {ListingFilterFragment, ProductItemFragment} from 'storefrontapi.generated';
+import type {ListingFilterFragment, MarketingFilterFragment, ProductItemFragment} from 'storefrontapi.generated';
 import {Aside} from '~/components/Aside';
 import {
   DensityToggle,
@@ -35,8 +35,24 @@ type ProductConnection = {
   nodes: ProductItemFragment[];
   pageInfo: {hasPreviousPage: boolean; hasNextPage: boolean; startCursor?: string | null; endCursor?: string | null};
   filters?: ListingFilterFragment[];
+  /** The merchant's own labels, banners and campaigns among these products — filter groups like any other. */
+  marketingFilters?: MarketingFilterFragment[];
   totalCount?: number | null;
 };
+
+/**
+ * The listing's own facets, then the merchant's marketing groups after them.
+ *
+ * Both lists number their groups from zero, each within itself, and the sidebar sorts every group it is given by
+ * that number — so handing the two over as they come wove the labels and the campaigns in between the merchant's
+ * own filters. The marketing groups carry on from the last facet instead.
+ */
+function withMarketingLast(facets?: ListingFilterFragment[], marketing?: MarketingFilterFragment[]) {
+  const own = facets ?? [];
+  const after = own.reduce((highest, filter) => Math.max(highest, filter.position ?? 0), -1) + 1;
+
+  return [...own, ...(marketing ?? []).map((group, index) => ({...group, position: after + index}))];
+}
 
 /** Pages loaded by themselves as the visitor scrolls, before "Load more" waits for a click and the footer shows. */
 const AUTO_LOAD_PAGES = 3;
@@ -55,7 +71,7 @@ const AUTO_LOAD_MARGIN = '200% 0px';
  */
 export function ProductListing({
   products,
-  filters = products.filters ?? [],
+  filters = withMarketingLast(products.filters, products.marketingFilters),
   defaultSort,
   after,
 }: {

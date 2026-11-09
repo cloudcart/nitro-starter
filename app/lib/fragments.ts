@@ -272,6 +272,21 @@ export const LISTING_FILTER_FRAGMENT = `#graphql
   }
 ` as const;
 
+// The merchant's own marketing rows a listing holds — their product labels, product banners and discount
+// campaigns — as filter groups of the same type, so the sidebar renders them unchanged. These DO ask for
+// `count`: how many products are behind each is the reason the field exists, and sf counts them in the one
+// request it makes for the field, whether or not the query says `count`. Asking here leaves the sidebar's
+// own facets uncounted, since sf reads that from the `filters` field's own selection (T-643).
+export const MARKETING_FILTER_FRAGMENT = `#graphql
+  fragment MarketingFilter on Filter {
+    ...ListingFilter
+    values {
+      count
+    }
+  }
+  ${LISTING_FILTER_FRAGMENT}
+` as const;
+
 // What a buyer accepts when placing an order, as the store's checkout asks it.
 export const ORDER_CONSENTS_FRAGMENT = `#graphql
   fragment OrderConsents on CheckoutLegalSettings {

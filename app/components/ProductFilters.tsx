@@ -11,7 +11,7 @@ import {
 import {useTranslation} from '@cloudcart/nitrogen';
 import {Image, moneyWithFormat} from '@cloudcart/nitrogen-react';
 import type {CurrencyCode} from '@cloudcart/nitrogen/storefront-api-types';
-import type {ListingFilterFragment} from 'storefrontapi.generated';
+import type {ListingFilterFragment, MarketingFilterFragment} from 'storefrontapi.generated';
 import {
   clearFilterParams,
   filterInputToParam,
@@ -34,12 +34,15 @@ import type {RootLoader} from '~/root';
 import {useRefinementNavigation} from '~/lib/listing-history';
 
 /*
- * The listing's facets, as the API returns them for the products shown, without counts. Choosing a value adds it
+ * The listing's facets, as the API returns them for the products shown — the merchant's marketing groups with
+ * the number of products behind each value, the rest without counts. Choosing a value adds it
  * to the URL, and the page loads the products again with it: from 990 px in a column beside the products, below in
  * a drawer; the same list in both (Q-38).
  */
 
-type Filter = ListingFilterFragment;
+// A listing's own facets and the merchant's marketing groups are the same type in the API; only the
+// second asks for `count`, so a value's count is read where it is there (T-643).
+type Filter = ListingFilterFragment | MarketingFilterFragment;
 
 /** The frame of the button that opens the filters' drawer below 990 px, round its name or its icon alone. */
 const PILL_FRAME = 'inline-flex min-h-11 items-center rounded-button border border-border hover:border-foreground';
@@ -579,6 +582,9 @@ function ListValues({filter}: {filter: Filter}) {
             onChange={() => go(toggleFilterParam(searchParams, value.input))}
           />
           <span className="flex-1 truncate">{value.label}</span>
+          {'count' in value && typeof value.count === 'number' && (
+            <span className="shrink-0 text-muted text-small tabular-nums">{value.count}</span>
+          )}
         </label>
       ))}
       {/* A chosen value out of sight goes with the form all the same. */}
