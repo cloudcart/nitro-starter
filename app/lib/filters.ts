@@ -40,7 +40,25 @@ const FILTER_FIELDS = {
   productLabel: 'string',
   productBanner: 'string',
   productDiscount: 'string',
-} as const satisfies Record<keyof ProductFilter, 'boolean' | 'string' | 'object'>;
+  // Offers chosen together, widening each other: a list of alternatives, each of them offers only (see `isOffers`).
+  anyOf: 'offers',
+} as const satisfies Record<keyof ProductFilter, 'boolean' | 'string' | 'object' | 'offers'>;
+
+/** The fields an `anyOf` alternative may name: the API refuses any other (`ProductFilter.anyOf`). */
+const OFFER_FIELDS = new Set<string>(['productLabel', 'productBanner', 'productDiscount']);
+
+/** An `anyOf` value the API takes: a non-empty list of alternatives, each naming one or more offers by id. */
+function isOffers(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((alternative: unknown) => {
+      if (typeof alternative !== 'object' || alternative === null || Array.isArray(alternative)) return false;
+      const fields = Object.entries(alternative);
+      return fields.length > 0 && fields.every(([field, id]) => OFFER_FIELDS.has(field) && typeof id === 'string');
+    })
+  );
+}
 
 /**
  * A raw `filter` parameter as a `ProductFilter`, or null when it is not one: an object whose every field is the
@@ -59,6 +77,7 @@ function rawFilter(value: string): ProductFilter | null {
     entries.length > 0 &&
     entries.every(([field, fieldValue]) => {
       const type = FILTER_FIELDS[field as keyof ProductFilter] as string | undefined;
+      if (type === 'offers') return isOffers(fieldValue);
       return type === 'object'
         ? typeof fieldValue === 'object' && fieldValue !== null && !Array.isArray(fieldValue)
         : type !== undefined && typeof fieldValue === type;
