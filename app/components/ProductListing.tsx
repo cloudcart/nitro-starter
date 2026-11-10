@@ -74,6 +74,9 @@ export function ProductListing({
   filters = withMarketingLast(products.filters, products.marketingFilters),
   defaultSort,
   after,
+  sortable = true,
+  openOptionsOf,
+  onProductOpen,
 }: {
   products: ProductConnection;
   filters?: ListingFilterFragment[];
@@ -81,6 +84,12 @@ export function ProductListing({
   defaultSort?: SortLabel;
   /** What goes under the products, in their column: the merchant's description of the listing. */
   after?: ReactNode;
+  /** Whether the sort is offered: not on an Aura search whose merchant offers none (T-645). */
+  sortable?: boolean;
+  /** The options of the variant a card shows, for its link to open on it: a search's named variant (T-645). */
+  openOptionsOf?: (product: ProductItemFragment) => ReadonlyArray<{name: string; value: string}> | undefined;
+  /** Called as the visitor opens a product, with its place in the listing from 1: a search's click report (T-645). */
+  onProductOpen?: (product: ProductItemFragment, position: number) => void;
 }) {
   const {t} = useTranslation();
   const [searchParams] = useSearchParams();
@@ -112,7 +121,7 @@ export function ProductListing({
           <ActiveFilters filters={usable} className="order-last basis-full lg:order-none lg:flex-1 lg:basis-0" />
           {/* On a phone the sort's icon stands beside the view buttons, as close as they stand to each other (T-572). */}
           <div ref={restRef} className="ml-auto flex items-center gap-4 max-md:gap-0">
-            <SortSelect defaultSort={defaultSort} />
+            {sortable && <SortSelect defaultSort={defaultSort} />}
             <DensityToggle value={density} onChange={setDensity} />
           </div>
         </div>
@@ -144,6 +153,8 @@ export function ProductListing({
                   loading={index < 8 ? 'eager' : undefined}
                   priority={index < LISTING_FIRST_ROW[density]}
                   sizes={LISTING_CARD_SIZES[density]}
+                  openOptions={openOptionsOf?.(product)}
+                  onOpen={onProductOpen && (() => onProductOpen(product, index + 1))}
                 />
               )}
             </PaginatedResourceSection>

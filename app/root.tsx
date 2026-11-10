@@ -444,6 +444,15 @@ const HEADER_QUERY = `#graphql
       decimalSeparator
       thousandsSeparator
     }
+    # Aura Search's look, as the merchant set it: the suggestions' marked words and prices, the results page's sort,
+    # and whether its reports are recorded (T-645). Null without Aura Search: the standard search, as it is.
+    auraSearch {
+      highlightMatches
+      showPrice
+      showCompareAtPrice
+      showSort
+      tracksEvents
+    }
   }
   query Header($headerMenuHandle: String!) {
     shop {

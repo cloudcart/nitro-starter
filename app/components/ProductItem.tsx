@@ -40,6 +40,8 @@ export function ProductItem({
   priority = false,
   sizes = CARD_SIZES,
   titleAs: Title = 'h3',
+  openOptions,
+  onOpen,
 }: {
   product: ProductItemFragment;
   loading?: 'eager' | 'lazy';
@@ -49,6 +51,13 @@ export function ProductItem({
   sizes?: string;
   /** The title's element: a heading under its section's h2, or plain text where no heading belongs (B-448). */
   titleAs?: 'h3' | 'p';
+  /**
+   * The options of the variant the card shows, for the link to open on it while no value is pointed at: a search's
+   * named variant — the white shoe for "бели обувки" — rather than the product's first available (T-645).
+   */
+  openOptions?: ReadonlyArray<{name: string; value: string}>;
+  /** Called as the link opens the product: a search's click report (T-645). */
+  onOpen?: () => void;
 }) {
   const {t} = useTranslation();
   const swatches = swatchOption(product);
@@ -59,7 +68,11 @@ export function ProductItem({
   const variant = chosen?.firstSelectableVariant ?? product.selectedOrFirstAvailableVariant;
   const variantUrl = useVariantUrl(
     product.handle,
-    useMemo(() => (shown && swatches ? [{name: swatches.name, value: shown.name}] : undefined), [shown, swatches]),
+    useMemo(
+      () =>
+        shown && swatches ? [{name: swatches.name, value: shown.name}] : openOptions ? [...openOptions] : undefined,
+      [shown, swatches, openOptions],
+    ),
   );
   // The store's own discount: its percentage, and whether the merchant hides the price before it.
   const {discount} = product;
@@ -78,7 +91,8 @@ export function ProductItem({
         className="block hover:no-underline"
         to={variantUrl}
         // Its page opens at once from what the card shows, while the page loads (T-571).
-        onClick={(event) =>
+        onClick={(event) => {
+          onOpen?.();
           noteProduct(
             event.currentTarget,
             {
@@ -90,8 +104,8 @@ export function ProductItem({
               compareAtPrice: shownCompareAtPrice(opened?.compareAtPrice, discount),
             },
             event.currentTarget.querySelector<HTMLImageElement>('img[data-card-opens]')?.currentSrc || undefined,
-          )
-        }
+          );
+        }}
       >
         <div className="relative aspect-card overflow-hidden">
           <CardPictures

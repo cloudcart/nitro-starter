@@ -1,5 +1,5 @@
 import {useLoaderData} from 'react-router';
-import {Analytics, getPaginationVariables, useTranslation} from '@cloudcart/nitrogen';
+import {Analytics, getPaginationVariables, useSearchReport, useTranslation} from '@cloudcart/nitrogen';
 import type {Route} from './+types/search';
 import {metaTranslator, privateMeta} from '~/lib/meta';
 import {ProductListing} from '~/components/ProductListing';
@@ -11,6 +11,7 @@ import {
   type PredictiveSearchReturn,
   type RegularSearchReturn,
   SEARCH_PARAM,
+  useSearchLook,
 } from '~/lib/search';
 import {Input} from '~/components/ui/Field';
 import {Button, ButtonLink} from '~/components/ui/Button';
@@ -62,9 +63,26 @@ export function clientLoader({serverLoader, request}: Route.ClientLoaderArgs) {
 export default function SearchPage() {
   const {t} = useTranslation();
   const data = useLoaderData<typeof loader>();
-  if (data.type === 'predictive') return null;
-  const {term, result, error, reviewDisplay} = data;
+  const look = useSearchLook();
+  const regular = data.type === 'regular' ? data : null;
+  // An Aura search is reported as the web storefront's results page reports it: one impression as it shows, then
+  // each product opened from it, with its place (T-645). A failed search is none.
+  const report = useSearchReport({
+    query: regular?.term,
+    engine: regular && !regular.error ? regular.result.items.products.engine : null,
+    tracksEvents: look.aura?.tracksEvents,
+    impression: true,
+  });
+  if (!regular) return null;
+  const {term, result, error, reviewDisplay} = regular;
   const products = result.items.products;
+  const openOptions = new Map(
+    products.nodes.flatMap((node) =>
+      'selectedOrFirstAvailableVariant' in node && node.selectedOrFirstAvailableVariant
+        ? [[node.id, node.selectedOrFirstAvailableVariant.selectedOptions] as const]
+        : [],
+    ),
+  );
 
   return (
     <div className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md">
@@ -107,7 +125,15 @@ export default function SearchPage() {
             articles={result.items.articles.nodes.flatMap((node) => (node.__typename === 'Article' ? [node] : []))}
           />
           <ReviewDisplayProvider value={reviewDisplay}>
-            <ProductListing products={{...products, filters: products.productFilters}} defaultSort="relevance" />
+            <ProductListing
+              products={{...products, filters: products.productFilters}}
+              defaultSort="relevance"
+              // On a store with Aura Search, the sort only when its merchant offers one, as the web storefront does.
+              sortable={look.showSort}
+              // Each card opens on the variant it shows: the one the search words name (T-645).
+              openOptionsOf={(product) => openOptions.get(product.id)}
+              onProductOpen={(product, position) => report.click(product.id, position)}
+            />
           </ReviewDisplayProvider>
         </div>
       )}
@@ -152,6 +178,8 @@ export const SEARCH_QUERY = `#graphql
       sortKey: $sortKey
       reverse: $reverse
     ) {
+      # Aura Search or the standard search: only Aura's is reported (T-645).
+      engine
       totalCount
       productFilters {
         ...ListingFilter
@@ -162,6 +190,13 @@ export const SEARCH_QUERY = `#graphql
       nodes {
         ... on Product {
           ...ProductItem
+          # The options of the variant the card shows — the one the search words name — so it opens on it (T-645).
+          selectedOrFirstAvailableVariant(selectedOptions: [], ignoreUnknownOptions: true) {
+            selectedOptions {
+              name
+              value
+            }
+          }
         }
       }
       pageInfo {
@@ -204,6 +239,7 @@ async function regularSearch({
   const term = String(url.searchParams.get(SEARCH_PARAM) || '').trim();
   const empty = {
     products: {
+      engine: 'basic',
       totalCount: 0,
       productFilters: [],
       marketingFilters: [],
@@ -246,6 +282,8 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
       ...ProductReviewDisplay
     }
     predictiveSearch(query: $term, limit: $limit, limitScope: EACH) {
+      # Aura Search or the standard search: only Aura's is reported (T-645).
+      engine
       products {
         ...SearchProduct
         # The search page's own cards: "View all" opens the page on these products at once (T-574).

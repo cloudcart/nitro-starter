@@ -1,9 +1,9 @@
 import {KeptLink} from '@cloudcart/nitrogen-react';
 import {type ReactNode, type RefObject, useEffect, useRef, useState} from 'react';
 import {Form, useFetcher} from 'react-router';
-import {useTranslation} from '@cloudcart/nitrogen';
+import {useSearchReport, useTranslation} from '@cloudcart/nitrogen';
 import type {SearchProductFragment} from 'storefrontapi.generated';
-import {SearchProductCard, SearchProductCardPlaceholder} from '~/components/SearchProductCard';
+import {SearchProductCard, SearchProductCardPlaceholder, SearchText} from '~/components/SearchProductCard';
 import {ButtonLink} from '~/components/ui/Button';
 import {CloseIcon, SearchIcon} from '~/components/ui/icons';
 import {RECENTLY_VIEWED, useProductList} from '~/lib/product-lists';
@@ -14,7 +14,9 @@ import {
   SEARCH_PARAM,
   type PredictiveSearchReturn,
   rememberSearch,
+  type SearchLook,
   searchUrl,
+  useSearchLook,
 } from '~/lib/search';
 import {articlePath, collectionPath, pagePath, vendorPath} from '~/lib/urls';
 
@@ -229,6 +231,14 @@ export function PredictiveSearchResults({
   const result = answer ? answer.result : getEmptyPredictiveSearchResult();
   const answeredTerm = answer?.term ?? '';
   const {products, productsFound, collections, vendors, pages, articles} = result.items;
+  const look = useSearchLook();
+  // Each Aura answer is a search for the merchant's reports, and each product opened from it a click with its place,
+  // as the web storefront's search-as-you-type reports them (T-645). No impression: the web reports none for it.
+  const report = useSearchReport({
+    query: answeredTerm,
+    engine: answer && !answer.error ? result.items.engine : null,
+    tracksEvents: look.aura?.tracksEvents,
+  });
 
   // A failed search is not an empty one (B-425).
   const failed = Boolean(answer?.error && !loading);
@@ -269,7 +279,7 @@ export function PredictiveSearchResults({
                 onClick={onNavigate}
                 className="inline-flex h-9 items-center rounded-full bg-surface px-4 text-small hover:bg-border hover:no-underline"
               >
-                {chip.title}
+                <SearchText text={chip.title} query={look.highlightMatches ? answeredTerm : ''} />
               </KeptLink>
             </li>
           ))}
@@ -280,6 +290,9 @@ export function PredictiveSearchResults({
         <FadedProducts
           products={products}
           onNavigate={onNavigate}
+          query={answeredTerm}
+          look={look}
+          onOpen={(product, position) => report.click(product.id, position)}
           viewAll={
             <ButtonLink to={searchUrl(answeredTerm)} onClick={onNavigate} prefetch="intent">
               {productsFound == null ? t('search.viewAll') : t('search.viewAllCount', {count: productsFound})}
@@ -314,10 +327,17 @@ function FadedProducts({
   products,
   onNavigate,
   viewAll,
+  query,
+  look,
+  onOpen,
 }: {
   products: Items['products'];
   onNavigate: () => void;
   viewAll: ReactNode;
+  query: string;
+  look: SearchLook;
+  /** Called as a product opens, with its place among the products from 1. */
+  onOpen: (product: SearchProductFragment, position: number) => void;
 }) {
   const {t} = useTranslation();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -340,7 +360,7 @@ function FadedProducts({
         ref={boxRef}
         className={`max-h-search-results overflow-hidden has-focus-visible:max-h-none ${cut ? 'fade-bottom' : ''}`}
       >
-        <ProductGrid products={products} onNavigate={onNavigate} />
+        <ProductGrid products={products} onNavigate={onNavigate} query={query} look={look} onOpen={onOpen} />
       </div>
       <div className={`flex justify-center ${cut ? 'relative -mt-16' : 'mt-6'}`}>{viewAll}</div>
     </section>
@@ -388,13 +408,34 @@ function ProductRow({
   );
 }
 
-/** The search's cards: two to a row on a phone, four from the main breakpoint. */
-function ProductGrid({products, onNavigate}: {products: SearchProductFragment[]; onNavigate: () => void}) {
+/**
+ * The search's cards: two to a row on a phone, four from the main breakpoint. The products found take the merchant's
+ * look and report each open; the rows the search opens with take neither.
+ */
+function ProductGrid({
+  products,
+  onNavigate,
+  query,
+  look,
+  onOpen,
+}: {
+  products: SearchProductFragment[];
+  onNavigate: () => void;
+  query?: string;
+  look?: SearchLook;
+  onOpen?: (product: SearchProductFragment, position: number) => void;
+}) {
   return (
     <ul className="grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-4">
-      {products.map((product) => (
+      {products.map((product, index) => (
         <li key={product.id}>
-          <SearchProductCard product={product} onNavigate={onNavigate} />
+          <SearchProductCard
+            product={product}
+            onNavigate={onNavigate}
+            query={query}
+            look={look}
+            onOpen={onOpen && (() => onOpen(product, index + 1))}
+          />
         </li>
       ))}
     </ul>

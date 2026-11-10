@@ -1,4 +1,6 @@
+import {useRouteLoaderData} from 'react-router';
 import type {PredictiveSearchQuery, ProductReviewDisplayFragment, RegularSearchQuery} from 'storefrontapi.generated';
+import type {RootLoader} from '~/root';
 
 type ResultWithItems<Type extends 'predictive' | 'regular', Items> = {
   type: Type;
@@ -29,6 +31,7 @@ export function getEmptyPredictiveSearchResult(): PredictiveSearchReturn['result
   return {
     total: 0,
     items: {
+      engine: 'basic',
       articles: [],
       collections: [],
       products: [],
@@ -36,6 +39,38 @@ export function getEmptyPredictiveSearchResult(): PredictiveSearchReturn['result
       vendors: [],
       pages: [],
     },
+  };
+}
+
+/** How the search shows what it found: the merchant's Aura Search settings, or the standard search's look. */
+export type SearchLook = {
+  /** Aura Search's settings, for its reports (`useSearchReport`); null without Aura Search. */
+  aura: {tracksEvents: boolean} | null;
+  /** The searched words marked in the suggestions' titles and chips. */
+  highlightMatches: boolean;
+  /** A product suggestion's price. */
+  showPrice: boolean;
+  /** A product suggestion's price before the discount, beside it. */
+  showCompareAtPrice: boolean;
+  /** The sort on the search page. */
+  showSort: boolean;
+};
+
+/**
+ * How the search shows its results (T-645). A store that runs Aura Search, as its merchant set it up (the root's
+ * `shop.auraSearch`, read with the shop's other settings); a store without it, the standard search as it always was:
+ * no marked words, the price alone, and the sort.
+ */
+export function useSearchLook(): SearchLook {
+  const aura = useRouteLoaderData<RootLoader>('root')?.header.shop.auraSearch ?? null;
+  if (!aura) return {aura: null, highlightMatches: false, showPrice: true, showCompareAtPrice: false, showSort: true};
+
+  return {
+    aura: {tracksEvents: aura.tracksEvents},
+    highlightMatches: aura.highlightMatches,
+    showPrice: aura.showPrice,
+    showCompareAtPrice: aura.showCompareAtPrice,
+    showSort: aura.showSort,
   };
 }
 
