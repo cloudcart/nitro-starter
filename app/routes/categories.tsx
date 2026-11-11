@@ -104,7 +104,7 @@ export default function Categories() {
 const CATEGORIES_QUERY = `#graphql
   fragment CategoryItem on Collection {
     ...CollectionCard
-    children(first: 20) {
+    children(first: 20, withProducts: true) {
       nodes {
         id
         title

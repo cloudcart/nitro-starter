@@ -75,7 +75,7 @@ const COLLECTION_QUERY = `#graphql
         title
         onlineStoreUrl
       }
-      children(first: 50) {
+      children(first: 50, withProducts: true) {
         nodes {
           title
           onlineStoreUrl
