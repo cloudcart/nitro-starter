@@ -7,6 +7,7 @@ import {metaTranslator, rootData, seoMeta, storeOrigin} from '~/lib/meta';
 import type {HomeProductsQuery} from 'storefrontapi.generated';
 import {COLLECTION_CARD_FRAGMENT, CollectionGrid} from '~/components/CollectionGrid';
 import {Hero} from '~/components/Hero';
+import {PersonalRecommendations} from '~/components/PersonalRecommendations';
 import {ProductGrid, ProductGridPlaceholder} from '~/components/ProductGrid';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {HOME_PRODUCT_GRIDS} from '~/lib/home';
@@ -92,10 +93,19 @@ export default function Homepage() {
         className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md"
       />
       <ProductGrids products={data.products} />
+      <PersonalRecommendations
+        intent="PERSONALIZED"
+        title={(personal) => t(personal ? 'home.forYou' : 'home.bestSellers')}
+        placeholders={HOME_RECOMMENDED}
+        className="mx-auto max-w-page px-gutter pb-14 md:px-gutter-md"
+      />
       <Analytics.HomeView />
     </div>
   );
 }
+
+/** How many products "Recommended for you" shows: two rows of four (the `PERSONALIZED` list, `/recommendations`). */
+const HOME_RECOMMENDED = 8;
 
 function ProductGrids({products}: {products: Promise<HomeProductsQuery | null>}) {
   const {t} = useTranslation();

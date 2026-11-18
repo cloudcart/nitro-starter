@@ -1,5 +1,6 @@
+import {useEffect} from 'react';
 import {useLoaderData} from 'react-router';
-import {generateCollectionJsonLd} from '@cloudcart/nitrogen';
+import {generateCollectionJsonLd, recordListingView} from '@cloudcart/nitrogen';
 import {keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/category.$handle';
 import {listingUrl, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
@@ -48,5 +49,7 @@ export async function loader(args: Route.LoaderArgs) {
 
 export default function Category() {
   const {collection, reviewDisplay} = useLoaderData<typeof loader>();
+  // The category opened: a listing view for the visitor's recommendations (T-667).
+  useEffect(() => recordListingView({categoryIds: [collection.id]}), [collection.id]);
   return <CollectionView collection={collection} reviewDisplay={reviewDisplay} />;
 }

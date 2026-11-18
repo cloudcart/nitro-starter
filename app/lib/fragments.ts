@@ -43,6 +43,15 @@ export const CART_QUERY_FRAGMENT = `#graphql
         handle
         title
         vendor
+        # A cart add's signal for the visitor's recommendations: the product's categories and brand (T-667).
+        vendorDetails {
+          id
+        }
+        collections(first: 5) {
+          nodes {
+            id
+          }
+        }
         # The line's picture when its variant has none of its own (B-359).
         featuredImage {
           url

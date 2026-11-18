@@ -11,9 +11,7 @@ import type {Route} from './+types/cart';
 import {errorMeta, metaTranslator, privateMeta} from '~/lib/meta';
 import {CartCrossSell} from '~/components/CartCrossSell';
 import {CartMain} from '~/components/CartMain';
-import {CartRecommendations} from '~/components/CartRecommendations';
-import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
-import {PRODUCT_REVIEW_DISPLAY_FRAGMENT} from '~/components/ReviewDisplay';
+import {PersonalRecommendations} from '~/components/PersonalRecommendations';
 import {RouteErrorBoundary} from '~/components/RouteError';
 
 /**
@@ -114,70 +112,37 @@ export async function action({request, context}: Route.ActionArgs) {
   );
 }
 
-/**
- * The cart — the same call as the root's, which the storefront client shares — and, deferred, products like its
- * first one. The store's cross-sell is read once by the page itself (`/cart/offer`).
- */
+/** The cart — the same call as the root's, which the storefront client shares. The cross-sell is read once by the page itself (`/cart/offer`). */
 export async function loader({context}: Route.LoaderArgs) {
-  const {cart, storefront, customerAccount} = context;
-  const current = await cart.get();
-  const productId = current?.lines.nodes[0]?.merchandise.product.id;
-
-  const recommendations = productId
-    ? storefront
-        .query(CART_RECOMMENDATIONS_QUERY, {
-          variables: {productId, first: RECOMMENDED, buyer: await customerAccount.getBuyer()},
-          // Product cards: catalogue data (B-408).
-          cache: storefront.CacheShort(),
-        })
-        .then(({product, productReviewSettings}) => ({
-          products: product?.relatedProducts.nodes ?? [],
-          // The merchant's rating settings, for the cards (`ReviewDisplayProvider`).
-          reviewDisplay: productReviewSettings,
-        }))
-        .catch((error: unknown) => {
-          console.error(error);
-          return NO_RECOMMENDATIONS;
-        })
-    : Promise.resolve(NO_RECOMMENDATIONS);
-
+  const {cart, customerAccount} = context;
   // Whether someone is signed in, from the session: CloudCart Pay's buttons may need it (T-622).
-  return {cart: current, recommendations, isLoggedIn: await customerAccount.isLoggedIn()};
+  return {cart: await cart.get(), isLoggedIn: await customerAccount.isLoggedIn()};
 }
 
-/** How many products "You may also like" shows. */
+/** How many products "You may also like" shows: the `CART` list the browser asks for (T-667). */
 const RECOMMENDED = 4;
-const NO_RECOMMENDATIONS = {products: [], reviewDisplay: null};
 
 export default function Cart() {
   const {t} = useTranslation();
-  const {cart, recommendations, isLoggedIn} = useLoaderData<typeof loader>();
+  const {cart, isLoggedIn} = useLoaderData<typeof loader>();
+  const cartProductIds = [...new Set(cart?.lines.nodes.map((line) => line.merchandise.product.id) ?? [])];
 
   return (
     <div className="mx-auto max-w-page px-gutter py-10 md:px-gutter-md">
       <h1 className="mb-8 text-title">{t('cart.title')}</h1>
       <CartMain layout="page" cart={cart} signedIn={isLoggedIn} />
       <CartCrossSell hasLines={Boolean(cart?.totalQuantity)} />
-      <CartRecommendations recommendations={recommendations} placeholders={cart?.totalQuantity ? RECOMMENDED : 0} />
+      {cartProductIds.length > 0 && (
+        <PersonalRecommendations
+          key={cartProductIds.join(',')}
+          intent="CART"
+          cartProductIds={cartProductIds}
+          title={() => t('cart.alsoLike')}
+          placeholders={RECOMMENDED}
+          className="mt-16"
+        />
+      )}
       <Analytics.CartView />
     </div>
   );
 }
-
-const CART_RECOMMENDATIONS_QUERY = `#graphql
-  query CartRecommendations($productId: ID!, $first: Int!, $buyer: BuyerInput) @inContext(buyer: $buyer) {
-    productReviewSettings {
-      ...ProductReviewDisplay
-    }
-    # As the product page's "You may also like": the product's category, without its linked products (B-421).
-    product(id: $productId) {
-      relatedProducts(first: $first, linked: false) {
-        nodes {
-          ...ProductItem
-        }
-      }
-    }
-  }
-  ${PRODUCT_ITEM_FRAGMENT}
-  ${PRODUCT_REVIEW_DISPLAY_FRAGMENT}
-` as const;

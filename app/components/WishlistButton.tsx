@@ -1,6 +1,7 @@
 import {Suspense} from 'react';
 import {Await, Link, useFetcher, useLocation, useRouteLoaderData} from 'react-router';
-import {useTranslation} from '@cloudcart/nitrogen';
+import {type SignalProduct, useTranslation} from '@cloudcart/nitrogen';
+import {useVisitorSignals} from '@cloudcart/nitrogen-react';
 import type {RootLoader} from '~/root';
 import type {FormError} from '~/components/FormFields';
 import {HeartFilledIcon, HeartIcon} from '~/components/ui/icons';
@@ -25,7 +26,16 @@ const buttonClass = (place: keyof typeof BUTTON_CLASSES) =>
  * Adds a product to the signed-in customer's wishlist, or removes it. A
  * signed-out visitor is taken to sign in.
  */
-export function WishlistButton({productId, place = 'card'}: {productId: string; place?: keyof typeof BUTTON_CLASSES}) {
+/** The heart of a product; `signal`, the product page's, makes an add a signal for the visitor's recommendations (T-667). */
+export function WishlistButton({
+  productId,
+  place = 'card',
+  signal,
+}: {
+  productId: string;
+  place?: keyof typeof BUTTON_CLASSES;
+  signal?: SignalProduct;
+}) {
   const {t} = useTranslation();
   const root = useRouteLoaderData<RootLoader>('root');
   // Signed in, the visitor comes back to this page (B-455).
@@ -36,7 +46,12 @@ export function WishlistButton({productId, place = 'card'}: {productId: string; 
       <Await resolve={root?.wishlist} errorElement={<Heart filled={false} place={place} />}>
         {(wishlist) =>
           wishlist ? (
-            <WishlistToggle productId={productId} inWishlist={wishlist.includes(productId)} place={place} />
+            <WishlistToggle
+              productId={productId}
+              inWishlist={wishlist.includes(productId)}
+              place={place}
+              signal={signal}
+            />
           ) : (
             <Link
               to={signInPath(location.pathname + location.search)}
@@ -56,12 +71,15 @@ function WishlistToggle({
   productId,
   inWishlist,
   place,
+  signal,
 }: {
   productId: string;
   inWishlist: boolean;
   place: keyof typeof BUTTON_CLASSES;
+  signal?: SignalProduct;
 }) {
   const {t} = useTranslation();
+  const {record} = useVisitorSignals();
   const fetcher = useFetcher<{inWishlist?: boolean; errors?: FormError[]}>();
   // While the change is on its way, show its outcome.
   const pending = fetcher.formData?.get('intent');
@@ -79,6 +97,9 @@ function WishlistToggle({
         aria-label={filled ? t('wishlist.remove') : t('wishlist.add')}
         className={buttonClass(place)}
         disabled={fetcher.state !== 'idle'}
+        onClick={() => {
+          if (!filled) record('wishlistAdd', [signal ?? {id: productId}]);
+        }}
       >
         {filled ? <HeartFilledIcon className="size-5" /> : <HeartIcon className="size-5" />}
       </button>

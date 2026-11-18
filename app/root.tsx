@@ -1,4 +1,6 @@
+import {Suspense, useMemo} from 'react';
 import {
+  Await,
   isRouteErrorResponse,
   Links,
   Meta,
@@ -30,9 +32,13 @@ import {
   PrivacyBanner,
   PrivacyBannerScript,
   SubscribePopups,
+  type RecommendationsAheadRequest,
   type SubscribePopupsProps,
+  useCartSignals,
+  useCustomerSignals,
   useFrameFocusVisible,
   useKeptPages,
+  usePrepareRecommendations,
   useValidityMessages,
   VisitorDataScript,
 } from '@cloudcart/nitrogen-react';
@@ -56,7 +62,8 @@ import appStyles from '~/styles/app.css?url';
 import fontCyrillic from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-cyrillic-wght-normal.woff2?url';
 import fontLatin from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url';
 import {ifSignedIn} from '~/lib/customer';
-import {rootWithVisitorData, useRootWithVisitorData, VISITOR_PATH} from '~/lib/visitor';
+import {rootWithVisitorData, type Streamed, useRootWithVisitorData, VISITOR_PATH} from '~/lib/visitor';
+import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {loadVisitorData, noVisitorData} from '~/lib/visitor.server';
 import {validityMessage} from '~/lib/validity';
 
@@ -302,9 +309,60 @@ function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>
         <StorePopups forms={data.subscribeForms} consent={data.cookieConsent} />
         <PolicyConsentRequest />
         <StoreValidityMessages />
+        <VisitorSignals isLoggedIn={data.isLoggedIn} cart={cart} />
       </Analytics.Provider>
     </TranslationsProvider>
   );
+}
+
+/**
+ * What the visitor's browser keeps for their recommendations (T-667): the cart's adds and removals, a signed-in
+ * customer's products (asked once a session, forgotten at sign-out), and the home page's and the cart's lists made
+ * ahead while the browser is idle.
+ */
+function VisitorSignals({
+  isLoggedIn,
+  cart,
+}: {
+  isLoggedIn: Streamed<boolean>;
+  cart: Streamed<CartApiQueryFragment | null>;
+}) {
+  useCartSignals();
+
+  return (
+    <Suspense fallback={null}>
+      <Await resolve={isLoggedIn} errorElement={null}>
+        {(signedIn) => <CustomerSignals signedIn={signedIn} />}
+      </Await>
+      <Await resolve={cart} errorElement={null}>
+        {(current) => (
+          <RecommendationsAhead
+            cartProductIds={current?.lines.nodes.map((line) => line.merchandise.product.id) ?? []}
+          />
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+function CustomerSignals({signedIn}: {signedIn: boolean}) {
+  useCustomerSignals({signedIn, url: '/recommendation-signals'});
+  return null;
+}
+
+const PERSONALIZED_AHEAD: RecommendationsAheadRequest = {kind: 'PERSONALIZED', url: '/recommendations'};
+
+function RecommendationsAhead({cartProductIds}: {cartProductIds: string[]}) {
+  const cartKey = [...new Set(cartProductIds)].join(',');
+  const requests = useMemo<RecommendationsAheadRequest[]>(
+    () => [
+      PERSONALIZED_AHEAD,
+      ...(cartKey ? [{kind: 'CART', url: '/recommendations', cartProductIds: cartKey.split(',')}] : []),
+    ],
+    [cartKey],
+  );
+  usePrepareRecommendations(requests);
+  return null;
 }
 
 /** The store's words, not the browser's, for a form the browser will not send (B-454). */

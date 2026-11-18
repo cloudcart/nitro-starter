@@ -1,4 +1,4 @@
-import {type ComponentProps, type ReactNode, useState} from 'react';
+import {type ComponentProps, type ReactNode, useEffect, useEffectEvent, useState} from 'react';
 import {data, type ShouldRevalidateFunction, useLoaderData, useLocation, useRouteLoaderData} from 'react-router';
 import {
   Analytics,
@@ -9,11 +9,12 @@ import {
   getProductOptions,
   isRouteDataRequest,
   mapSelectedProductOptionToObject,
+  signalProductOf,
   useOptimisticVariant,
   useSelectedOptionInUrlParam,
 } from '@cloudcart/nitrogen';
 import type {ProductFragment} from 'storefrontapi.generated';
-import {keptPageLoader} from '@cloudcart/nitrogen-react';
+import {keptPageLoader, useVisitorSignals} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/product.$handle';
 import type {loader as reviewsLoader} from './product';
 import {errorMeta, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
@@ -362,6 +363,14 @@ export default function Product() {
   // Puts the chosen options in the URL without a navigation, when the URL has none.
   useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
 
+  // The visitor's signals for their recommendations (T-667): this product viewed, with the variant shown first; a
+  // variant chosen on the page is not another view.
+  const {record} = useVisitorSignals();
+  const recordView = useEffectEvent(() =>
+    record('productView', [signalProductOf(product, selectedVariant.selectedOptions)]),
+  );
+  useEffect(() => recordView(), [product.id]);
+
   // The products before and after this one in the listing it was opened from: on a phone the page is swiped to them.
   const neighbours = useListingNeighbours(productPath(product.handle));
   const location = useLocation();
@@ -610,6 +619,8 @@ const PRODUCT_FRAGMENT = `#graphql
     encodedVariantExistence
     encodedVariantAvailability
     vendorDetails {
+      # With the categories and the option values' ids, the visitor's signals for their recommendations (T-667).
+      id
       title
       handle
       image {
@@ -661,6 +672,7 @@ const PRODUCT_FRAGMENT = `#graphql
       # How the store presents it: a select, buttons or swatches (B-377).
       type
       optionValues {
+        id
         name
         firstSelectableVariant {
           ...ProductVariant

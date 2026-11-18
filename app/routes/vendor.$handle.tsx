@@ -1,5 +1,12 @@
+import {useEffect} from 'react';
 import {useLoaderData} from 'react-router';
-import {Analytics, getPaginationVariables, useTranslation, type Translate} from '@cloudcart/nitrogen';
+import {
+  Analytics,
+  getPaginationVariables,
+  recordListingView,
+  useTranslation,
+  type Translate,
+} from '@cloudcart/nitrogen';
 import {Image, keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/vendor.$handle';
 import {crumbsJsonLd, listingUrl, metaTranslator, seoMeta, storeName} from '~/lib/meta';
@@ -70,6 +77,8 @@ export async function loader({context, params, request, url}: Route.LoaderArgs) 
 export default function Vendor() {
   const {t} = useTranslation();
   const {vendor, reviewDisplay} = useLoaderData<typeof loader>();
+  // The brand opened: a listing view for the visitor's recommendations (T-667).
+  useEffect(() => recordListingView({vendorId: vendor.id}), [vendor.id]);
 
   return (
     <div className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md">

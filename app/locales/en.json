@@ -412,7 +412,9 @@
     },
     "featured": "Featured",
     "newest": "New arrivals",
-    "collections": "Shop by category"
+    "collections": "Shop by category",
+    "forYou": "Recommended for you",
+    "bestSellers": "Best sellers"
   },
   "content": {
     "blog": "Blog"

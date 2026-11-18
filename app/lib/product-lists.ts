@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useSyncExternalStore} from 'react';
+import {PRODUCT_LIST_EVENT, RECENTLY_VIEWED_KEY, VISITOR_SIGNALS_LIMITS} from '@cloudcart/nitrogen';
 
 /*
  * Lists the visitor keeps in their own browser, as Shopify storefronts do:
@@ -6,7 +7,8 @@ import {useCallback, useMemo, useSyncExternalStore} from 'react';
  * the store until a page asks for the products themselves.
  */
 
-export const RECENTLY_VIEWED = {key: 'nitrogen:recently-viewed', max: 30};
+/** The viewed products: Nitrogen's visitor signals keep them (the product page records a view), the search panel lists them. */
+export const RECENTLY_VIEWED = {key: RECENTLY_VIEWED_KEY, max: VISITOR_SIGNALS_LIMITS.viewed};
 export const COMPARE = {key: 'nitrogen:compare', max: 3};
 
 type ListConfig = {key: string; max: number};
@@ -37,7 +39,7 @@ function write(key: string, ids: string[]) {
   try {
     window.localStorage.setItem(key, JSON.stringify(ids));
     // Other components on the page using the same list follow the change.
-    window.dispatchEvent(new CustomEvent('nitrogen:product-list', {detail: key}));
+    window.dispatchEvent(new CustomEvent(PRODUCT_LIST_EVENT, {detail: key}));
   } catch {
     // Storage is unavailable (private mode, blocked): the list simply is not kept.
   }
@@ -75,10 +77,10 @@ function subscribe(key: string, changed: () => void): () => void {
   const sync = (event: Event) => {
     if ((event as CustomEvent).detail === key || event.type === 'storage') changed();
   };
-  window.addEventListener('nitrogen:product-list', sync);
+  window.addEventListener(PRODUCT_LIST_EVENT, sync);
   window.addEventListener('storage', sync);
   return () => {
-    window.removeEventListener('nitrogen:product-list', sync);
+    window.removeEventListener(PRODUCT_LIST_EVENT, sync);
     window.removeEventListener('storage', sync);
   };
 }

@@ -2,7 +2,7 @@ import {type ReactNode, Suspense, useEffect, useId, useRef, useState} from 'reac
 import {Await, Link, useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {Image, Money, useAutoLoad} from '@cloudcart/nitrogen-react';
-import type {ProductExtrasQuery, RelatedProductsPageFragment} from 'storefrontapi.generated';
+import type {ProductExtrasQuery} from 'storefrontapi.generated';
 import {PRODUCT_GRID_CLASSES} from '~/components/ProductGrid';
 import {ProductItem, ProductItemPlaceholder} from '~/components/ProductItem';
 import {SectionHeading} from '~/components/SectionHeading';
@@ -127,66 +127,53 @@ export function StoreAvailability({extras}: {extras: Extras}) {
   );
 }
 
-/** The most products a page of "You may also like" holds: two rows of four, a desktop's. */
-export const RELATED_PAGE_MAX = 8;
+/** The most products "You may also like" shows: four steps of two rows of four, a desktop's (T-667). */
+export const RELATED_MAX = 32;
 
-/** How many pages "You may also like" loads by itself after its first, before "Load more" waits for a click. */
+/** How many times "You may also like" shows two more rows by itself, before "Load more" waits for a click. */
 const RELATED_AUTO_PAGES = 3;
-
-/** A page of "You may also like", as the `related-products` route gives it. */
-export const RELATED_PRODUCTS_FRAGMENT = `#graphql
-  fragment RelatedProductsPage on ProductConnection {
-    nodes {
-      ...ProductItem
-    }
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-  }
-` as const;
 
 /** Two rows of card placeholders at any width: the 5th and 6th from three a row, the 7th and 8th from four. */
 const PLACEHOLDERS = ['', '', '', '', 'hidden md:block', 'hidden md:block', 'hidden lg:block', 'hidden lg:block'];
 
 /**
- * "You may also like", endless: the API's `relatedProducts` without the linked products, which the info column's
- * carousel shows (T-550) — the category's, two, three or four to a row. Nothing is asked until the visitor nears it
- * (the user: resources are spent on what the visitor goes to see): two rows of card placeholders hold its place, so
- * nothing below moves when the products come. Then two rows at a time, as many as the grid lays out: three pages by
- * themselves as the visitor nears the end, then "Load more" waits for a click, so the footer can be reached. Nothing
- * when the category has no other product.
+ * "You may also like": the products nearest to this one by the meaning of its text (`SIMILAR`), without its linked
+ * products, which the info column's carousel shows (T-550, T-667) — its category's for a product without a text vector.
+ * Nothing is asked until the visitor nears it (the user: resources are spent on what the visitor goes to see): two rows
+ * of card placeholders hold its place, so nothing below moves when the products come. One answer, up to `RELATED_MAX`,
+ * shown two rows at a time, as many as the grid lays out: three more steps by themselves as the visitor nears the end,
+ * then "Load more" waits for a click, so the footer can be reached. Nothing when there is no product to show.
  */
 export function RelatedProducts({handle}: {handle: string}) {
   const {t} = useTranslation();
   const titleId = useId();
   const fetcher = useFetcher<typeof relatedProductsLoader>();
-  // The pages loaded, each added once as the fetcher brings it; `from` is the answer last added.
-  const [loaded, setLoaded] = useState<{pages: RelatedProductsPageFragment[]; from: unknown}>({pages: [], from: null});
-  if (fetcher.data && fetcher.data !== loaded.from) {
-    const page = fetcher.data.related;
-    setLoaded({pages: page ? [...loaded.pages, page] : loaded.pages, from: fetcher.data});
-  }
-
-  const answered = loaded.from !== null;
-  const products = loaded.pages.flatMap((page) => page.nodes);
-  const {hasNextPage, endCursor} = loaded.pages.at(-1)?.pageInfo ?? {hasNextPage: false, endCursor: null};
-  const busy = fetcher.state !== 'idle';
+  const [rows, setRows] = useState(0);
+  const answered = fetcher.data !== undefined;
+  const all = fetcher.data?.related ?? [];
   const gridRef = useRef<HTMLUListElement>(null);
-  const load = () => {
-    // Two rows at the columns the grid has at this width.
+  // Two more rows at the columns the grid has at this width.
+  const showMore = () => {
     const grid = gridRef.current;
-    const columns = grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length : 0;
-    const params = new URLSearchParams({handle, first: String(Math.min(2 * (columns || 4), RELATED_PAGE_MAX))});
-    if (endCursor) params.set('after', endCursor);
-    void fetcher.load(`/related-products?${params}`);
+    const columns = (grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length : 0) || 4;
+    setRows((shown) => shown + 2 * columns);
   };
+  const products = all.slice(0, rows);
+  const hasMore = answered && products.length < all.length;
+  const busy = fetcher.state !== 'idle';
 
-  // The first page as the section nears the viewport; the next ones as "Load more" does.
+  // The answer as the section nears the viewport; then two more rows as "Load more" does.
   const sectionRef = useRef<HTMLElement>(null);
-  useAutoLoad(sectionRef, {load, limit: 1, paused: answered || busy});
+  useAutoLoad(sectionRef, {
+    load: () => {
+      showMore();
+      void fetcher.load(`/related-products?${new URLSearchParams({handle})}`);
+    },
+    limit: 1,
+    paused: answered || busy,
+  });
   const moreRef = useRef<HTMLButtonElement>(null);
-  const {restart} = useAutoLoad(moreRef, {load, limit: RELATED_AUTO_PAGES, paused: !answered || busy || !hasNextPage});
+  const {restart} = useAutoLoad(moreRef, {load: showMore, limit: RELATED_AUTO_PAGES, paused: !hasMore});
 
   if (answered && !products.length) return null;
 
@@ -207,18 +194,17 @@ export function RelatedProducts({handle}: {handle: string}) {
               </li>
             ))}
       </ul>
-      {hasNextPage && (
+      {hasMore && (
         <div className="mt-10 flex justify-center">
           <Button
             ref={moreRef}
             variant="secondary"
-            loading={busy}
             onClick={() => {
               restart();
-              load();
+              showMore();
             }}
           >
-            {busy ? t('listing.loading') : t('listing.loadMore')}
+            {t('listing.loadMore')}
           </Button>
         </div>
       )}
