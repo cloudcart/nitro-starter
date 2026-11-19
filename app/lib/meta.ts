@@ -1,7 +1,7 @@
 import {createTranslator, getSeoMeta, type SeoConfig, type Translate} from '@cloudcart/nitrogen';
 import type {MetaDescriptor} from 'react-router';
 import {breadcrumbJsonLd, type Crumb} from '~/components/Breadcrumbs';
-import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
+import {getFiltersFromParams, getSortFromParams, listingParams} from '~/lib/filters';
 import type {RootLoader} from '~/root';
 
 type RootData = Awaited<ReturnType<RootLoader>>;
@@ -58,18 +58,40 @@ const PAGE_OF_RESULTS = ['cursor', 'direction'];
 /**
  * A listing's canonical address: `path` on the store's own domain with the page of results the URL asks for, so each
  * page is its own canonical (Google: "Don't use the first page of a paginated sequence as the canonical page"). A
- * filtered or sorted view points at the listing's first page: its cursor belongs to the filtered list (B-261).
+ * filtered or sorted view points at the listing's first page: its cursor belongs to the filtered list (B-261) — unless
+ * the store lets search engines index it (`indexable`, `listingSeo`), when it is its own canonical: its filters and
+ * sort (`listingParams`) with its page of results.
  */
-export function listingUrl(matches: MetaMatches, path: string, search: string) {
+export function listingUrl(matches: MetaMatches, path: string, search: string, indexable = false) {
   const params = new URLSearchParams(search);
   const narrowed = getFiltersFromParams(params).length > 0 || getSortFromParams(params).sortKey !== undefined;
-  const page = new URLSearchParams();
-  for (const key of narrowed ? [] : PAGE_OF_RESULTS) {
+  const page = new URLSearchParams(narrowed && indexable ? listingParams(params) : []);
+  for (const key of narrowed && !indexable ? [] : PAGE_OF_RESULTS) {
     const value = params.get(key);
     if (value) page.set(key, value);
   }
   const query = page.toString();
   return `${storeOrigin(matches)}${path}${query ? `?${query}` : ''}`;
+}
+
+/**
+ * A product listing's canonical address and robots, by the store's SEO setting "Deindex filtered and sorted pages"
+ * (`listingIndexing`, asked in the listing's own query with its filters and sort): a view the store does not let
+ * search engines index is `noindex` and points at the listing's first page; one it does is its own canonical. Without
+ * the answer, the listing's canonical as `listingUrl` gives it and no `noindex`.
+ *
+ *   seoMeta(matches, {title, ...listingSeo(matches, path, location.search, data.indexing)})
+ */
+export function listingSeo(
+  matches: MetaMatches,
+  path: string,
+  search: string,
+  indexing: {indexable: boolean} | null | undefined,
+): {url: string; robots?: SeoConfig['robots']} {
+  return {
+    url: listingUrl(matches, path, search, indexing?.indexable === true),
+    ...(indexing && !indexing.indexable && {robots: {noIndex: true}}),
+  };
 }
 
 /**

@@ -9,7 +9,7 @@ import {
 } from '@cloudcart/nitrogen';
 import {Image, keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/vendor.$handle';
-import {crumbsJsonLd, listingUrl, metaTranslator, seoMeta, storeName} from '~/lib/meta';
+import {crumbsJsonLd, listingSeo, metaTranslator, seoMeta, storeName} from '~/lib/meta';
 import type {Crumb} from '~/components/Breadcrumbs';
 import {ListingHeader} from '~/components/ListingHeader';
 import {ProductListing} from '~/components/ProductListing';
@@ -41,7 +41,7 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
       vendor.seo.description ||
       vendor.description.slice(0, 160) ||
       t('seo.vendor', {vendor: vendor.title, store: storeName(matches)}),
-    url: listingUrl(matches, path, location.search),
+    ...listingSeo(matches, path, location.search, data.indexing),
     image: vendor.image ?? undefined,
     jsonLd: crumbsJsonLd(matches, vendorCrumbs(vendor.title, t), path),
   });
@@ -58,7 +58,7 @@ export const shouldRevalidate = skipCartAndWishlistRevalidation;
 export async function loader({context, params, request, url}: Route.LoaderArgs) {
   const {sortKey, reverse} = getSortFromParams(url.searchParams);
 
-  const {vendor, productReviewSettings, errors} = await context.storefront.query(VENDOR_QUERY, {
+  const {vendor, productReviewSettings, indexing, errors} = await context.storefront.query(VENDOR_QUERY, {
     variables: {
       handle: params.handle,
       ...getPaginationVariables(request, {pageBy: 24}),
@@ -71,7 +71,7 @@ export async function loader({context, params, request, url}: Route.LoaderArgs) 
 
   if (!vendor) throw missingResource(errors, `Brand ${params.handle} not found`);
 
-  return {vendor, reviewDisplay: productReviewSettings};
+  return {vendor, reviewDisplay: productReviewSettings, indexing};
 }
 
 export default function Vendor() {
@@ -130,6 +130,10 @@ const VENDOR_QUERY = `#graphql
   ) @inContext(buyer: $buyer) {
     productReviewSettings {
       ...ProductReviewDisplay
+    }
+    # Whether search engines may index this view, by the store's SEO setting (T-671).
+    indexing: listingIndexing(filters: $filters, sortKey: $sortKey) {
+      indexable
     }
     vendor(handle: $handle) {
       id

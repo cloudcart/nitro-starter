@@ -2,7 +2,7 @@ import {useLoaderData} from 'react-router';
 import {Analytics, getPaginationVariables} from '@cloudcart/nitrogen';
 import {keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/tags.$handle';
-import {crumbsJsonLd, listingUrl, metaTranslator, seoMeta, storeName} from '~/lib/meta';
+import {crumbsJsonLd, listingSeo, metaTranslator, seoMeta, storeName} from '~/lib/meta';
 import {ListingHeader} from '~/components/ListingHeader';
 import {ProductListing} from '~/components/ProductListing';
 import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
@@ -32,7 +32,7 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
       tag.seo.description ||
       tag.description.slice(0, 160) ||
       metaTranslator(matches)('seo.productTag', {tag: tag.title, store: storeName(matches)}),
-    url: listingUrl(matches, path, location.search),
+    ...listingSeo(matches, path, location.search, data.indexing),
     jsonLd: crumbsJsonLd(matches, [{title: tag.title}], path),
   });
 };
@@ -46,6 +46,7 @@ export async function loader({context, params, request, url}: Route.LoaderArgs) 
   const {
     productTag: tag,
     productReviewSettings,
+    indexing,
     errors,
   } = await context.storefront.query(PRODUCT_TAG_QUERY, {
     variables: {
@@ -60,7 +61,7 @@ export async function loader({context, params, request, url}: Route.LoaderArgs) 
 
   if (!tag) throw missingResource(errors, `Tag ${params.handle} not found`);
 
-  return {tag, reviewDisplay: productReviewSettings};
+  return {tag, reviewDisplay: productReviewSettings, indexing};
 }
 
 export default function ProductTag() {
@@ -96,6 +97,10 @@ const PRODUCT_TAG_QUERY = `#graphql
   ) @inContext(buyer: $buyer) {
     productReviewSettings {
       ...ProductReviewDisplay
+    }
+    # Whether search engines may index this view, by the store's SEO setting (T-671).
+    indexing: listingIndexing(filters: $filters, sortKey: $sortKey) {
+      indexable
     }
     productTag(handle: $handle) {
       id

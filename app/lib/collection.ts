@@ -19,7 +19,7 @@ export async function loadCollection(
   const {storefront, customerAccount} = context;
   const {sortKey, reverse} = getSortFromParams(url.searchParams);
 
-  const {collection, productReviewSettings, errors} = await storefront.query(COLLECTION_QUERY, {
+  const {collection, productReviewSettings, indexing, errors} = await storefront.query(COLLECTION_QUERY, {
     variables: {
       handle,
       kind: kind === 'category' ? 'CATEGORY' : 'SMART_COLLECTION',
@@ -34,7 +34,7 @@ export async function loadCollection(
   if (!collection) throw missingResource(errors, `Collection ${handle} not found`);
 
   // The merchant's rating settings, for the cards (`ReviewDisplayProvider`).
-  return {collection, reviewDisplay: productReviewSettings};
+  return {collection, reviewDisplay: productReviewSettings, indexing};
 }
 
 const COLLECTION_QUERY = `#graphql
@@ -52,6 +52,10 @@ const COLLECTION_QUERY = `#graphql
   ) @inContext(buyer: $buyer) {
     productReviewSettings {
       ...ProductReviewDisplay
+    }
+    # Whether search engines may index this view, by the store's SEO setting (T-671).
+    indexing: listingIndexing(filters: $filters, sortKey: $sortKey) {
+      indexable
     }
     collection(handle: $handle, kind: $kind) {
       id

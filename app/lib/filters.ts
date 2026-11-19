@@ -243,6 +243,18 @@ function withoutPagination(searchParams: URLSearchParams) {
   return params;
 }
 
+/**
+ * The address's pairs that make the listing's view: each filter the products query reads from it and a sort it offers,
+ * in the address's order. Pagination, a search term and any other parameter (a click tracker, a filter that does not
+ * parse) are left out: a view the store lets search engines index is its own canonical with these alone.
+ */
+export function listingParams(searchParams: URLSearchParams) {
+  return [...searchParams].filter(([key, value]) => {
+    const pair = new URLSearchParams([[key, value]]);
+    return getFiltersFromParams(pair).length > 0 || (key === 'sort' && getSortFromParams(pair).sortKey !== undefined);
+  });
+}
+
 /** The sort orders the listing offers, each named by its text in `listing.sort`. The first is the store's own order. */
 export const SORT_OPTIONS: Array<{value: string; label: SortLabel; sortKey?: ProductSortKeys; reverse?: boolean}> = [
   {value: '', label: 'featured'},

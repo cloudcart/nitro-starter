@@ -2,7 +2,7 @@ import {useLoaderData} from 'react-router';
 import {generateCollectionJsonLd} from '@cloudcart/nitrogen';
 import {keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/selection.$handle';
-import {listingUrl, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
+import {listingSeo, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
 import {breadcrumbJsonLd} from '~/components/Breadcrumbs';
 import {collectionCrumbs, CollectionView} from '~/components/CollectionView';
 import {loadCollection} from '~/lib/collection';
@@ -21,7 +21,7 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
   if (!data) return [];
   const {collection} = data;
   const origin = storeOrigin(matches);
-  const url = listingUrl(matches, collectionPath(collection), location.search);
+  const {url, robots} = listingSeo(matches, collectionPath(collection), location.search, data.indexing);
 
   return seoMeta(matches, {
     title: collection.seo.title || collection.title,
@@ -30,6 +30,7 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
       collection.description?.slice(0, 160) ||
       metaTranslator(matches)('seo.collection', {collection: collection.title, store: storeName(matches)}),
     url,
+    robots,
     image: collection.image ?? undefined,
     jsonLd: [
       // Without the collection's picture, which the page does not show (B-456); it stays the shared picture.
