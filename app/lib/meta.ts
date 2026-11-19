@@ -121,9 +121,12 @@ export function pageMeta(
 }
 
 /**
- * A private, form or utility page's `meta`: its title, kept out of search results. Each such route returns it from
- * its own `meta`: React Router shows the deepest route's, so a parent's `noindex` never reaches its children (B-263).
+ * A private, form or utility page's `meta`: its title, kept out of search results — `noindex, nofollow`, as the
+ * platform's storefront writes it for the cart, the account and signing in. A list of products kept out (search
+ * results, "All products") passes `follow`: `noindex, follow`, so its links still lead to the products. Each such route
+ * returns it from its own `meta`: React Router shows the deepest route's, so a parent's `noindex` never reaches its
+ * children (B-263).
  */
-export function privateMeta(title: string): MetaDescriptor[] {
-  return [{title}, {name: 'robots', content: 'noindex'}];
+export function privateMeta(title: string, {follow = false}: {follow?: boolean} = {}): MetaDescriptor[] {
+  return [{title}, {name: 'robots', content: follow ? 'noindex, follow' : 'noindex, nofollow'}];
 }

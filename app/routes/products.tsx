@@ -19,7 +19,8 @@ export const handle = SHARED_PAGE;
 export const clientLoader = (args: Route.ClientLoaderArgs) => keptPageLoader(args);
 
 // Not indexed, as on the store's own pages: every product is already reached through its categories.
-export const meta: Route.MetaFunction = ({matches}) => privateMeta(metaTranslator(matches)('listing.allProducts'));
+export const meta: Route.MetaFunction = ({matches}) =>
+  privateMeta(metaTranslator(matches)('listing.allProducts'), {follow: true});
 
 export const shouldRevalidate = skipCartAndWishlistRevalidation;
 

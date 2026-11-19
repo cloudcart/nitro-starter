@@ -29,7 +29,7 @@ import {inBackground} from '~/lib/background';
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const term = data && 'term' in data ? data.term : '';
   const t = metaTranslator(matches);
-  return privateMeta(term ? t('search.metaTitle', {term}) : t('search.title'));
+  return privateMeta(term ? t('search.metaTitle', {term}) : t('search.title'), {follow: true});
 };
 
 export const shouldRevalidate = skipCartAndWishlistRevalidation;

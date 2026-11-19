@@ -222,7 +222,7 @@ export const meta: Route.MetaFunction = ({data, error}) => {
     isRouteErrorResponse(error) && error.status === 404
       ? (t?.('notFound.title') ?? 'Page not found')
       : (t?.('error.title') ?? 'Something went wrong');
-  return [{title}, {name: 'robots', content: 'noindex'}];
+  return [{title}, {name: 'robots', content: 'noindex, nofollow'}];
 };
 
 export function Layout({children}: {children?: React.ReactNode}) {

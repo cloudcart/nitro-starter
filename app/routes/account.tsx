@@ -3,7 +3,7 @@ import type {Route} from './+types/account';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {AccountSidebar} from '~/components/AccountSidebar';
 
-export const meta: Route.MetaFunction = () => [{name: 'robots', content: 'noindex'}];
+export const meta: Route.MetaFunction = () => [{name: 'robots', content: 'noindex, nofollow'}];
 
 export function shouldRevalidate() {
   return true;
