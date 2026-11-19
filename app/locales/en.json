@@ -416,7 +416,8 @@
     "collections": "Shop by category",
     "forYou": "Recommended for you",
     "bestSellers": "Best sellers",
-    "trending": "Trending now"
+    "trending": "Trending now",
+    "vendors": "Shop by brand"
   },
   "content": {
     "blog": "Blog"

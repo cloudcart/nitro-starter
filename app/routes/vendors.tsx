@@ -1,13 +1,13 @@
 import {useLoaderData} from 'react-router';
 import {getPaginationVariables, useTranslation} from '@cloudcart/nitrogen';
-import {Image, PaginatedResourceSection, keptPageLoader, KeptLink} from '@cloudcart/nitrogen-react';
+import {PaginatedResourceSection, keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/vendors';
 import {metaTranslator, pageMeta, storeName} from '~/lib/meta';
-import type {VendorItemFragment} from 'storefrontapi.generated';
+import type {VendorCardFragment} from 'storefrontapi.generated';
+import {VENDOR_CARD_FRAGMENT, VendorCard} from '~/components/VendorCard';
 import {ListingHeader} from '~/components/ListingHeader';
 import {ButtonLink, buttonClass} from '~/components/ui/Button';
 import {EmptyState} from '~/components/ui/EmptyState';
-import {vendorPath} from '~/lib/urls';
 import {SHARED_PAGE} from '~/lib/page-cache';
 
 /** The same page for every visitor: served from the page cache (`server.ts`). */
@@ -54,7 +54,7 @@ export default function Vendors() {
           }
         />
       ) : (
-        <PaginatedResourceSection<VendorItemFragment>
+        <PaginatedResourceSection<VendorCardFragment>
           connection={vendors}
           resourcesClassName="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6"
           paginationClassName={`my-8 ${buttonClass('secondary', {fullWidth: true})}`}
@@ -63,30 +63,8 @@ export default function Vendors() {
           loadingLabel={t('listing.loading')}
         >
           {({node: vendor, index}) => (
-            <KeptLink
-              key={vendor.id}
-              to={vendorPath(vendor.handle)}
-              className="flex flex-col items-center gap-3 rounded-card border border-border p-4 text-center hover:border-foreground hover:no-underline"
-            >
-              <div className="flex h-16 w-full items-center justify-center">
-                {vendor.image ? (
-                  <Image
-                    data={vendor.image}
-                    // The vendor's name is beside the logo, so the logo adds nothing to read.
-                    alt=""
-                    width={160}
-                    // The first row or two are the first screen (B-443).
-                    loading={index < 6 ? 'eager' : 'lazy'}
-                    className="max-h-16 w-auto object-contain"
-                  />
-                ) : (
-                  <span aria-hidden="true" className="text-h3 text-border">
-                    {vendor.title.slice(0, 1)}
-                  </span>
-                )}
-              </div>
-              <span className="font-medium">{vendor.title}</span>
-            </KeptLink>
+            // The first row or two are the first screen (B-443).
+            <VendorCard key={vendor.id} vendor={vendor} loading={index < 6 ? 'eager' : 'lazy'} />
           )}
         </PaginatedResourceSection>
       )}
@@ -95,21 +73,10 @@ export default function Vendors() {
 }
 
 const VENDORS_QUERY = `#graphql
-  fragment VendorItem on Vendor {
-    id
-    title
-    handle
-    image {
-      url
-      altText
-      width
-      height
-    }
-  }
   query Vendors($first: Int, $last: Int, $startCursor: String, $endCursor: String) {
     vendorsConnection(first: $first, last: $last, before: $startCursor, after: $endCursor) {
       nodes {
-        ...VendorItem
+        ...VendorCard
       }
       pageInfo {
         hasPreviousPage
@@ -119,4 +86,5 @@ const VENDORS_QUERY = `#graphql
       }
     }
   }
+  ${VENDOR_CARD_FRAGMENT}
 ` as const;

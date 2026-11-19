@@ -1,14 +1,15 @@
 import {Suspense} from 'react';
 import {Await, useLoaderData, useRouteLoaderData} from 'react-router';
 import {Analytics, generateOrganizationJsonLd, useTranslation} from '@cloudcart/nitrogen';
-import {keptPageLoader} from '@cloudcart/nitrogen-react';
+import {keptPageLoader, useOrderByInterest} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/_index';
 import {metaTranslator, rootData, seoMeta, storeOrigin} from '~/lib/meta';
-import type {HomeProductsQuery} from 'storefrontapi.generated';
+import type {CollectionCardFragment, HomeProductsQuery} from 'storefrontapi.generated';
 import {COLLECTION_CARD_FRAGMENT, CollectionGrid} from '~/components/CollectionGrid';
 import {Hero} from '~/components/Hero';
 import {PersonalRecommendations} from '~/components/PersonalRecommendations';
 import {ProductGrid, ProductGridPlaceholder} from '~/components/ProductGrid';
+import {VENDOR_CARD_FRAGMENT, VendorGrid} from '~/components/VendorCard';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {HOME_PRODUCT_GRIDS} from '~/lib/home';
 import type {RootLoader} from '~/root';
@@ -86,19 +87,15 @@ export default function Homepage() {
   return (
     <div>
       <Hero shopName={shop?.name ?? ''} />
-      <CollectionGrid
-        title={t('home.collections')}
-        collections={data.collections}
-        to="/categories"
-        className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md"
-      />
-      <ProductGrids products={data.products} />
+      {/* The visitor's own list first, under the hero (T-670): the store's best sellers while nothing is known. */}
       <PersonalRecommendations
         intent="PERSONALIZED"
         title={(personal) => t(personal ? 'home.forYou' : 'home.bestSellers')}
         placeholders={HOME_RECOMMENDED}
-        className="mx-auto max-w-page px-gutter pb-14 md:px-gutter-md"
+        className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md"
       />
+      <HomeCategories collections={data.collections} />
+      <ProductGrids products={data.products} />
       <Trending products={data.products} />
       <Analytics.HomeView />
     </div>
@@ -107,6 +104,27 @@ export default function Homepage() {
 
 /** How many products "Recommended for you" shows: two rows of four (the `PERSONALIZED` list, `/recommendations`). */
 const HOME_RECOMMENDED = 8;
+
+const collectionId = (collection: {id: string}) => collection.id;
+
+/**
+ * "Shop by category": the top-level categories in the visitor's order of interest (T-670) — a category whose
+ * subcategories they met first — the merchant's order on the server and for a visitor the browser knows nothing about.
+ * Up to 50 come with the page, the same for every visitor; the grid shows the first 8.
+ */
+function HomeCategories({collections}: {collections: CollectionCardFragment[]}) {
+  const {t} = useTranslation();
+  const ordered = useOrderByInterest(collections, 'category', collectionId);
+
+  return (
+    <CollectionGrid
+      title={t('home.collections')}
+      collections={[...ordered]}
+      to="/categories"
+      className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md"
+    />
+  );
+}
 
 /**
  * "Trending": the store's products rising in the last 7 days against their 30 (`TRENDING` without a fallback, T-669),
@@ -153,6 +171,8 @@ function ProductGrids({products}: {products: Promise<HomeProductsQuery | null>})
           response ? (
             <ReviewDisplayProvider value={response.productReviewSettings}>
               <div className="mx-auto flex max-w-page flex-col gap-16 px-gutter py-14 md:px-gutter-md">
+                {/* "Shop by brand", in the visitor's order of interest (T-670); none for a store without brands. */}
+                <VendorGrid title={t('home.vendors')} vendors={response.vendors.nodes} to="/vendors" />
                 {HOME_PRODUCT_GRIDS.map(({list, title, to}) => (
                   <ProductGrid key={list} title={t(title)} products={response[list].nodes} to={to} />
                 ))}
@@ -186,7 +206,8 @@ const HOME_COLLECTIONS_QUERY = `#graphql
         }
       }
     }
-    collections(first: 8, topLevel: true, withProducts: true, sortKey: MANUAL) {
+    # Up to 50, so the visitor's order of interest can bring forward a category past the merchant's first 8 (T-670).
+    collections(first: 50, topLevel: true, withProducts: true, sortKey: MANUAL) {
       nodes {
         ...CollectionCard
       }
@@ -213,7 +234,14 @@ const HOME_PRODUCTS_QUERY = `#graphql
     trending: productRecommendations(intent: TRENDING, first: 8, fallback: false) {
       ...ProductItem
     }
+    # The brands, ordered in the browser by the visitor's interest (T-670): one page for every visitor.
+    vendors: vendorsConnection(first: 100) {
+      nodes {
+        ...VendorCard
+      }
+    }
   }
   ${PRODUCT_ITEM_FRAGMENT}
   ${PRODUCT_REVIEW_DISPLAY_FRAGMENT}
+  ${VENDOR_CARD_FRAGMENT}
 ` as const;

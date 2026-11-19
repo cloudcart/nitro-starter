@@ -50,6 +50,10 @@ export const CART_QUERY_FRAGMENT = `#graphql
         collections(first: 5) {
           nodes {
             id
+            # Its ancestors count with it in the visitor's order of interest (T-670).
+            breadcrumb {
+              id
+            }
           }
         }
         # The line's picture when its variant has none of its own (B-359).
