@@ -99,6 +99,7 @@ export default function Homepage() {
         placeholders={HOME_RECOMMENDED}
         className="mx-auto max-w-page px-gutter pb-14 md:px-gutter-md"
       />
+      <Trending products={data.products} />
       <Analytics.HomeView />
     </div>
   );
@@ -106,6 +107,32 @@ export default function Homepage() {
 
 /** How many products "Recommended for you" shows: two rows of four (the `PERSONALIZED` list, `/recommendations`). */
 const HOME_RECOMMENDED = 8;
+
+/**
+ * "Trending": the store's products rising in the last 7 days against their 30 (`TRENDING` without a fallback, T-669),
+ * from the same answer as the grids above, the same for every visitor. Nothing while it loads or when none rises.
+ */
+function Trending({products}: {products: Promise<HomeProductsQuery | null>}) {
+  const {t} = useTranslation();
+
+  return (
+    <Suspense fallback={null}>
+      <Await resolve={products}>
+        {(response) =>
+          response ? (
+            <ReviewDisplayProvider value={response.productReviewSettings}>
+              <ProductGrid
+                title={t('home.trending')}
+                products={response.trending}
+                className="mx-auto max-w-page px-gutter pb-14 md:px-gutter-md"
+              />
+            </ReviewDisplayProvider>
+          ) : null
+        }
+      </Await>
+    </Suspense>
+  );
+}
 
 function ProductGrids({products}: {products: Promise<HomeProductsQuery | null>}) {
   const {t} = useTranslation();
@@ -182,6 +209,9 @@ const HOME_PRODUCTS_QUERY = `#graphql
       nodes {
         ...ProductItem
       }
+    }
+    trending: productRecommendations(intent: TRENDING, first: 8, fallback: false) {
+      ...ProductItem
     }
   }
   ${PRODUCT_ITEM_FRAGMENT}

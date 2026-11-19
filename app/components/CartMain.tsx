@@ -10,6 +10,7 @@ import {ADD_TO_CART_FETCHER_KEY} from '~/lib/cart';
 import {CartSummary} from './CartSummary';
 import {EmptyState} from '~/components/ui/EmptyState';
 import {CartIcon} from '~/components/ui/icons';
+import {CartPanelRecommendations} from '~/components/CartPanelRecommendations';
 
 export type CartLayout = 'page' | 'aside';
 
@@ -35,15 +36,12 @@ export function CartMain({layout, cart: originalCart, signedIn}: CartMainProps) 
   const cart = useOptimisticCart(originalCart);
   const lines = cart?.lines?.nodes ?? [];
   const page = layout === 'page';
+  const cartProductIds = [...new Set(lines.map((line) => line.merchandise.product.id))];
 
   const list = lines.length > 0 && (
     <ul
       aria-label={t('cart.lines')}
-      className={
-        page
-          ? 'divide-y divide-border border-y border-border'
-          : 'min-h-0 flex-1 divide-y divide-border overflow-y-auto px-5'
-      }
+      className={page ? 'divide-y divide-border border-y border-border' : 'divide-y divide-border px-5'}
     >
       {groupBundles(lines).map((group, index) => {
         // The cart page's first lines are its first screen: their pictures load at once (B-443). The panel's load when
@@ -69,7 +67,15 @@ export function CartMain({layout, cart: originalCart, signedIn}: CartMainProps) 
       // `group/cart`: while a line's change is on its way, the totals shimmer (`CartSummary`).
       <div className="group/cart flex h-full flex-col">
         <CartAddRefusal layout={layout} />
-        {list || <CartEmpty layout={layout} />}
+        {list ? (
+          // The lines and, under them, the recommendations scroll together above the summary (T-669).
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {list}
+            <CartPanelRecommendations key={cartProductIds.join(',')} cartProductIds={cartProductIds} />
+          </div>
+        ) : (
+          <CartEmpty layout={layout} />
+        )}
         {lines.length > 0 && <CartSummary cart={cart} layout={layout} signedIn={signedIn} />}
       </div>
     );
