@@ -67,6 +67,8 @@ export const CART_QUERY_FRAGMENT = `#graphql
       selectedOptions {
         name
         value
+        # The value's id: a cart add's or removal's size and colour for the visitor's recommendations (T-674).
+        optionValueId
       }
     }
     options {
