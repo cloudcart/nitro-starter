@@ -9,7 +9,7 @@ import {
   useSearchParams,
 } from 'react-router';
 import {type AffinityStrength, type SignalFilterSource, useTranslation} from '@cloudcart/nitrogen';
-import {AffinityWhy, Image, moneyWithFormat, useAffinityFacetOrder} from '@cloudcart/nitrogen-react';
+import {AffinityWhy, AffinityWhyTip, Image, moneyWithFormat, useAffinityFacetOrder} from '@cloudcart/nitrogen-react';
 import type {CurrencyCode} from '@cloudcart/nitrogen/storefront-api-types';
 import type {ListingFilterFragment, MarketingFilterFragment} from 'storefrontapi.generated';
 import {
@@ -575,12 +575,19 @@ function filterOfValue(value: Filter['values'][number]) {
   }
 }
 
-/** A dot by a value of the visitor's, named for screen readers (T-679). */
-function YoursMark({className = ''}: {className?: string}) {
+/**
+ * A dot by a value of the visitor's, named for screen readers (T-679); while the Affinity overlay is on, the pointer
+ * resting on it explains it (T-683).
+ */
+function YoursMark({tip, className = ''}: {tip: FacetTip | null; className?: string}) {
   const {t} = useTranslation();
   return (
     <>
-      <span aria-hidden="true" className={`size-2 shrink-0 rounded-full bg-accent ${className}`} />
+      <AffinityWhyTip value={tip}>
+        {(handlers) => (
+          <span aria-hidden="true" className={`size-2 shrink-0 rounded-full bg-accent ${className}`} {...handlers} />
+        )}
+      </AffinityWhyTip>
       <span className="sr-only">
         {t('format.list')}
         {t('product.yours')}
@@ -595,6 +602,7 @@ function ListValues({filter}: {filter: Filter}) {
   const [expanded, setExpanded] = useState(false);
   // The visitor's values first within the group, marked; the store's order on the server and for a new visitor.
   const {values: ordered, marked, strengths} = useAffinityFacetOrder(filter.values, filterOfValue);
+  const tips = facetTips(ordered, strengths);
   const values = expanded ? ordered : ordered.slice(0, VISIBLE_VALUES);
 
   return (
@@ -607,7 +615,7 @@ function ListValues({filter}: {filter: Filter}) {
             onChange={() => go(toggleFilterParam(searchParams, value.input))}
           />
           <span className="flex-1 truncate">{value.label}</span>
-          {marked.has(value) && <YoursMark />}
+          {marked.has(value) && <YoursMark tip={tips.get(value) ?? null} />}
           {'count' in value && typeof value.count === 'number' && (
             <span className="shrink-0 text-muted text-small tabular-nums">{value.count}</span>
           )}
@@ -630,25 +638,31 @@ function ListValues({filter}: {filter: Filter}) {
         </button>
       )}
       {/* The group's order and the visitor's values in it, while the Affinity overlay is on (T-682). */}
-      <AffinityWhy facet={facetOrder(ordered, strengths)} />
+      <AffinityWhy facet={[...tips.values()]} />
     </div>
   );
 }
 
 type FilterValue = Filter['values'][number];
 
-/** A group's values of the visitor's in the order shown, with their strengths: what the overlay's label lists. */
-function facetOrder(values: readonly FilterValue[], strengths: ReadonlyMap<FilterValue, AffinityStrength>) {
-  return values.flatMap((value) => {
+/** A value of the visitor's as the overlay explains it: its name, strength and place among theirs in the group. */
+type FacetTip = {label: string; strength: AffinityStrength; position: number};
+
+/** A group's values of the visitor's in the order shown, with their strengths and places: what the overlay lists. */
+function facetTips(values: readonly FilterValue[], strengths: ReadonlyMap<FilterValue, AffinityStrength>) {
+  const tips = new Map<FilterValue, FacetTip>();
+  for (const value of values) {
     const strength = strengths.get(value);
-    return strength ? [{label: value.label, strength}] : [];
-  });
+    if (strength) tips.set(value, {label: value.label, strength, position: tips.size + 1});
+  }
+  return tips;
 }
 
 function Swatches({filter}: {filter: Filter}) {
   const {t} = useTranslation();
   const {searchParams, go} = useFilterUrl();
   const {values, marked, strengths} = useAffinityFacetOrder(filter.values, filterOfValue);
+  const tips = facetTips(values, strengths);
 
   return (
     <>
@@ -687,17 +701,22 @@ function Swatches({filter}: {filter: Filter}) {
               )}
             </label>
             {marked.has(value) && (
-              <span
-                aria-hidden="true"
-                className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-accent ring-2 ring-background"
-              />
+              <AffinityWhyTip value={tips.get(value) ?? null}>
+                {(handlers) => (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-accent ring-2 ring-background"
+                    {...handlers}
+                  />
+                )}
+              </AffinityWhyTip>
             )}
           </span>
         ))}
       </div>
       {/* The group's order and the visitor's values in it, while the Affinity overlay is on (T-682); outside the
         swatches' row, so an absent label leaves no gap. */}
-      <AffinityWhy facet={facetOrder(values, strengths)} />
+      <AffinityWhy facet={[...tips.values()]} />
     </>
   );
 }
