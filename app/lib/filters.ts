@@ -278,6 +278,16 @@ export function getSortFromParams(searchParams: URLSearchParams): {sortKey?: Pro
   return option ? {sortKey: option.sortKey, reverse: option.reverse ?? false} : {};
 }
 
+/**
+ * The order the visitor chose for a listing, from its address, or null for the store's own: a listing's analytics
+ * view passes it, so the visitor's signals note a sort by price as the prices they look at.
+ */
+export function useChosenSort(): {key: ProductSortKeys; reverse: boolean} | null {
+  const [searchParams] = useSearchParams();
+  const {sortKey, reverse} = getSortFromParams(searchParams);
+  return useMemo(() => (sortKey ? {key: sortKey, reverse: reverse ?? false} : null), [sortKey, reverse]);
+}
+
 /** A listing's facets, as far as `useChosenFilters` reads them: each value's `input`. */
 type FacetInputs = ReadonlyArray<{values: ReadonlyArray<{input: string}>}> | null | undefined;
 

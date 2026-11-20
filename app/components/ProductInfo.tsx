@@ -1,6 +1,6 @@
 import {type ComponentProps, type ReactNode, useState} from 'react';
 import {Link} from 'react-router';
-import {type MappedProductOptions, useTranslation} from '@cloudcart/nitrogen';
+import {type MappedProductOptions, useAnalytics, useTranslation} from '@cloudcart/nitrogen';
 import {Image} from '@cloudcart/nitrogen-react';
 import type {FormPolicyFragment, ProductFragment, ProductPageSettingsQuery} from 'storefrontapi.generated';
 import {EnergyClass} from '~/components/EnergyClass';
@@ -55,6 +55,7 @@ export function ProductInfo({
   children?: ReactNode;
 }) {
   const {t} = useTranslation();
+  const {publish, shop} = useAnalytics();
   // The quantity chosen in the product form, which the fast order also orders (B-209).
   const [quantity, setQuantity] = useState(1);
   // The variants chosen for the pieces of a quantity tier (T-545, T-547): fast order takes one variant.
@@ -101,7 +102,11 @@ export function ProductInfo({
         </div>
         {product.shortDescription && <p className="text-muted">{product.shortDescription}</p>}
         {reviewSummary && showsRating(reviewSummary, settings.productReviewSettings) && (
-          <a href="#reviews" className="self-start">
+          <a
+            href="#reviews"
+            className="self-start"
+            onClick={() => publish('product_reviews_viewed', {productId: product.id, shop})}
+          >
             <StarRating rating={reviewSummary.averageRating} count={reviewSummary.totalCount} />
           </a>
         )}

@@ -4,7 +4,7 @@ import type {Route} from './+types/search';
 import {metaTranslator, privateMeta} from '~/lib/meta';
 import {ProductListing} from '~/components/ProductListing';
 import {SearchForm} from '~/components/SearchForm';
-import {getFiltersFromParams, getSortFromParams, useChosenFilters} from '~/lib/filters';
+import {getFiltersFromParams, getSortFromParams, useChosenFilters, useChosenSort} from '~/lib/filters';
 import {MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {
   getEmptyPredictiveSearchResult,
@@ -66,6 +66,7 @@ export default function SearchPage() {
   const look = useSearchLook();
   const regular = data.type === 'regular' ? data : null;
   const filters = useChosenFilters(regular && !regular.error ? regular.result.items.products.productFilters : null);
+  const sort = useChosenSort();
   // An Aura search is reported as the web storefront's results page reports it: one impression as it shows, then
   // each product opened from it, with its place (T-645). A failed search is none.
   const report = useSearchReport({
@@ -141,7 +142,13 @@ export default function SearchPage() {
       {/* /search with no term is not a search, nor is one that failed: its page view is reported as OTHER (B-314). */}
       {term && !error ? (
         <Analytics.SearchView
-          data={{searchTerm: term, searchResults: result, products: listedProducts(products?.nodes ?? []), filters}}
+          data={{
+            searchTerm: term,
+            searchResults: result,
+            products: listedProducts(products?.nodes ?? []),
+            filters,
+            sort,
+          }}
         />
       ) : null}
     </div>

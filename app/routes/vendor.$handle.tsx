@@ -6,7 +6,7 @@ import {crumbsJsonLd, listingSeo, metaTranslator, seoMeta, storeName} from '~/li
 import type {Crumb} from '~/components/Breadcrumbs';
 import {ListingHeader} from '~/components/ListingHeader';
 import {ProductListing} from '~/components/ProductListing';
-import {getFiltersFromParams, getSortFromParams, useChosenFilters} from '~/lib/filters';
+import {getFiltersFromParams, getSortFromParams, useChosenFilters, useChosenSort} from '~/lib/filters';
 import {MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {vendorPath} from '~/lib/urls';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT, ReviewDisplayProvider} from '~/components/ReviewDisplay';
@@ -71,6 +71,7 @@ export default function Vendor() {
   const {t} = useTranslation();
   const {vendor, reviewDisplay} = useLoaderData<typeof loader>();
   const filters = useChosenFilters(vendor.products.filters);
+  const sort = useChosenSort();
 
   return (
     <div className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md">
@@ -103,6 +104,7 @@ export default function Vendor() {
           vendor: {id: vendor.id, handle: vendor.handle, title: vendor.title},
           products: listedProducts(vendor.products.nodes),
           filters,
+          sort,
         }}
       />
     </div>

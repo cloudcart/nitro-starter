@@ -1,5 +1,5 @@
 import {type ReactNode, type Ref, useEffect, useLayoutEffect, useRef, useState} from 'react';
-import {useTranslation} from '@cloudcart/nitrogen';
+import {useAnalytics, useTranslation} from '@cloudcart/nitrogen';
 import {Image, MediaFile, type MediaData} from '@cloudcart/nitrogen-react';
 import {Dialog} from '~/components/Dialog';
 import {ChevronLeftIcon, ChevronRightIcon, CloseIcon, PlayIcon} from '~/components/ui/icons';
@@ -48,11 +48,14 @@ const MAX_DOTS = 3;
  * file, and puts no placeholder among them (B-212).
  */
 export function ProductGallery({
+  productId,
   media,
   variant,
   title,
   backdrop,
 }: {
+  /** The product, for the visitor's signals: its other pictures seen. */
+  productId: string;
   media: GalleryMedia[];
   variant: GalleryVariant;
   title: string;
@@ -66,6 +69,7 @@ export function ProductGallery({
   return (
     <Slideshow
       key={shown.map((item) => item.id).join(' ')}
+      productId={productId}
       media={shown}
       variantImage={variant?.image}
       title={title}
@@ -76,11 +80,13 @@ export function ProductGallery({
 
 /** The slideshow of one set of media, bringing the variant's picture forward as it changes. */
 function Slideshow({
+  productId,
   media,
   variantImage,
   title,
   backdrop,
 }: {
+  productId: string;
   media: GalleryMedia[];
   variantImage: {url: string} | null | undefined;
   title: string;
@@ -95,6 +101,29 @@ function Slideshow({
   // The slide whose photograph the full-screen gallery shows, hidden in the page meanwhile so it is not seen twice.
   const [lifted, setLifted] = useState<string | null>(null);
   const total = media.length;
+  // The visitor's own move through the photographs — a swipe, the wheel, a key, an arrow, a thumbnail or the full
+  // screen — is the product's other pictures seen; a slide brought forward by a variant chosen is not.
+  const {publish, shop} = useAnalytics();
+  const movedRef = useRef(false);
+  const reportedRef = useRef(false);
+  const sawMore = () => {
+    if (reportedRef.current) return;
+    reportedRef.current = true;
+    publish('product_media_viewed', {productId, shop});
+  };
+  // The track is no control: it only notes that the visitor's own hand moved it — a pointer, the wheel or a key.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const moved = () => {
+      movedRef.current = true;
+    };
+    const kinds = ['pointerdown', 'wheel', 'keydown'] as const;
+    for (const kind of kinds) track.addEventListener(kind, moved, {passive: true});
+    return () => {
+      for (const kind of kinds) track.removeEventListener(kind, moved);
+    };
+  }, []);
 
   /**
    * Scrolls the slideshow to a slide, down on a phone and across from 750 px; smoothly, unless the visitor asks for
@@ -119,6 +148,7 @@ function Slideshow({
   const shownRef = useRef<number | null>(null);
   useLayoutEffect(() => {
     if (variantIndex < 0 || variantIndex === shownRef.current) return;
+    movedRef.current = false;
     go(variantIndex, shownRef.current === null ? 'instant' : undefined);
     shownRef.current = variantIndex;
   }, [variantIndex]);
@@ -151,11 +181,11 @@ function Slideshow({
           ref={trackRef}
           onScroll={(event) => {
             const track = event.currentTarget;
-            setCurrent(
-              pagesDown(track)
-                ? Math.round(track.scrollTop / Math.max(track.clientHeight, 1))
-                : Math.round(track.scrollLeft / Math.max(track.clientWidth, 1)),
-            );
+            const index = pagesDown(track)
+              ? Math.round(track.scrollTop / Math.max(track.clientHeight, 1))
+              : Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
+            if (index !== current && movedRef.current) sawMore();
+            setCurrent(index);
           }}
           // A phone pages up and down; from 750 px the slideshow pages sideways. A scroller, it says itself that a
           // sideways move is not the browser's: the page's `pan-y` stops at it, and the page's swipe would be cut
@@ -194,7 +224,10 @@ function Slideshow({
                       ? t('gallery.zoomInto', {alt: item.alt ?? item.previewImage?.altText ?? ''})
                       : t('gallery.zoom')
                   }
-                  onOpen={(origin) => setOpened({index: photographs.indexOf(item), origin})}
+                  onOpen={(origin) => {
+                    sawMore();
+                    setOpened({index: photographs.indexOf(item), origin});
+                  }}
                 />
               ) : (
                 // A video or a spin first is the page's largest paint as a photograph is (B-443).
@@ -218,10 +251,24 @@ function Slideshow({
                 On a phone they are the keyboard's and a screen reader's way through the photographs, seen only with the
                 focus on them, pointing up and down as the photographs page. */}
             <div className="pointer-events-none absolute inset-x-3 top-1/2 flex -translate-y-1/2 justify-between opacity-100 transition-opacity max-md:not-focus-within:sr-only lg:opacity-0 lg:group-focus-within/stage:opacity-100 lg:group-hover/stage:opacity-100">
-              <RoundButton label={t('gallery.previous')} disabled={current === 0} onClick={() => go(current - 1)}>
+              <RoundButton
+                label={t('gallery.previous')}
+                disabled={current === 0}
+                onClick={() => {
+                  sawMore();
+                  go(current - 1);
+                }}
+              >
                 <ChevronLeftIcon className="size-5 max-md:rotate-90" />
               </RoundButton>
-              <RoundButton label={t('gallery.next')} disabled={current === total - 1} onClick={() => go(current + 1)}>
+              <RoundButton
+                label={t('gallery.next')}
+                disabled={current === total - 1}
+                onClick={() => {
+                  sawMore();
+                  go(current + 1);
+                }}
+              >
                 <ChevronRightIcon className="size-5 max-md:rotate-90" />
               </RoundButton>
             </div>
@@ -252,7 +299,10 @@ function Slideshow({
         <Thumbnails
           media={media}
           current={current}
-          onPick={(index) => go(index)}
+          onPick={(index) => {
+            if (index !== current) sawMore();
+            go(index);
+          }}
           onLoaded={(id, src) => setThumbnails((shown) => (shown[id] === src ? shown : {...shown, [id]: src}))}
           className="hidden md:flex lg:max-h-sticky-height lg:flex-col"
         />

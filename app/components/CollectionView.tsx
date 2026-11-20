@@ -7,7 +7,7 @@ import {ProductListing} from './ProductListing';
 import {ReviewDisplayProvider} from './ReviewDisplay';
 import {ListingDescription} from './ListingDescription';
 import {listedProducts} from '~/lib/analytics';
-import {useChosenFilters} from '~/lib/filters';
+import {useChosenFilters, useChosenSort} from '~/lib/filters';
 
 type Collection = NonNullable<CollectionQuery['collection']>;
 
@@ -31,6 +31,7 @@ export function CollectionView({
   reviewDisplay: ProductReviewDisplayFragment | null;
 }) {
   const filters = useChosenFilters(collection.products.filters);
+  const sort = useChosenSort();
   const {t} = useTranslation();
   // Every child, as the platform's category page lists them: it does not hide one without products (B-212).
   const children = collection.children.nodes;
@@ -59,6 +60,7 @@ export function CollectionView({
           },
           products: listedProducts(collection.products.nodes),
           filters,
+          sort,
         }}
       />
     </div>

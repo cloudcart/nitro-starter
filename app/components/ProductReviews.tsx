@@ -1,6 +1,6 @@
-import {Fragment, Suspense, useState} from 'react';
+import {Fragment, Suspense, useEffect, useRef, useState} from 'react';
 import {Await, Link, useFetcher, useLocation, useSearchParams} from 'react-router';
-import {Pagination, useTranslation} from '@cloudcart/nitrogen';
+import {Pagination, useAnalytics, useTranslation} from '@cloudcart/nitrogen';
 import type {
   ProductReviewItemFragment,
   ProductReviewsQuery,
@@ -77,9 +77,30 @@ export function ProductReviews({
   const canAnswer = isLoggedIn && display.customersCanAnswer;
   const [writing, setWriting] = useState(false);
   const write = () => setWriting(true);
+  // The section is marked for the visitor's signals: on screen for a few seconds, its reviews were read; a star filter
+  // or a page of them followed (its links) says so at once.
+  const {publish, shop} = useAnalytics();
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const followed = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest('a[href]')) {
+        publish('product_reviews_viewed', {productId, shop});
+      }
+    };
+    section.addEventListener('click', followed);
+    return () => section.removeEventListener('click', followed);
+  }, [publish, productId, shop]);
 
   return (
-    <section id="reviews" aria-labelledby="reviews-heading" className="scroll-mt-8 border-t border-border pt-12">
+    <section
+      ref={sectionRef}
+      id="reviews"
+      aria-labelledby="reviews-heading"
+      data-nitrogen-reviews={productId}
+      className="scroll-mt-8 border-t border-border pt-12"
+    >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 id="reviews-heading" className="text-heading">
           {t('reviews.title')}

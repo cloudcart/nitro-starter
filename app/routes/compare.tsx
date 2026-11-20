@@ -1,6 +1,6 @@
 import {useEffect} from 'react';
 import {Link, useLoaderData, useNavigate} from 'react-router';
-import {useTranslation} from '@cloudcart/nitrogen';
+import {useAnalytics, useTranslation} from '@cloudcart/nitrogen';
 import {Image} from '@cloudcart/nitrogen-react';
 import {Price} from '~/components/ui/Price';
 import type {Route} from './+types/compare';
@@ -36,6 +36,7 @@ export default function Compare() {
   const {t} = useTranslation();
   const {ids, comparison} = useLoaderData<typeof loader>();
   const list = useProductList(COMPARE);
+  const {publish, shop} = useAnalytics();
   const navigate = useNavigate();
 
   // Opened without products in the address: show the ones the browser kept.
@@ -97,6 +98,7 @@ export default function Compare() {
                       className="mt-2 min-h-9 text-small text-muted underline hover:text-foreground"
                       onClick={() => {
                         list.remove(product.id);
+                        publish('product_removed_from_comparison', {productId: product.id, shop});
                         void navigate(comparePath(ids.filter((id) => id !== product.id)), {replace: true});
                       }}
                     >

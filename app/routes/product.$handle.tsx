@@ -462,6 +462,7 @@ function ProductTop({
       <ProductColumns
         gallery={
           <ProductGallery
+            productId={product.id}
             media={product.media}
             variant={pieceVariant ?? selectedVariant}
             title={product.title}
