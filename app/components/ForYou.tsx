@@ -1,16 +1,17 @@
-import {type AffinityCart, mergeAffinityLists, useTranslation} from '@cloudcart/nitrogen';
+import {type AffinityCart, pickAffinityProducts, useTranslation} from '@cloudcart/nitrogen';
 import {useAffinityProducts, type UseAffinityProductsResult} from '@cloudcart/nitrogen-react';
 import {ProductGrid, ProductGridPlaceholder} from '~/components/ProductGrid';
 import {ReviewDisplayProvider} from '~/components/ReviewDisplay';
-import {askForYou} from '~/lib/affinity';
+import {askForYou, describeProductItem} from '~/lib/affinity';
 import type {AffinityProductsAnswer} from '~/routes/affinity-products';
 
 /** How many products "For you" shows: two rows of four. */
 export const FOR_YOU_SHOWN = 8;
 
 /**
- * "For you" from an answer a page already asked for (`useAffinityProducts`): the visitor's lists merged strongest
- * first, without what they saw, bought or have in the cart. Placeholders while it is asked for a visitor the browser
+ * "For you" from an answer a page already asked for (`useAffinityProducts`): the visitor's lists' products ordered by
+ * what of the visitor each matches — category, brand and price first (`pickAffinityProducts`) — without what they saw,
+ * bought or have in the cart. Placeholders while it is asked for a visitor the browser
  * knows; nothing for one it does not know, nothing on the server, and nothing when no product is left.
  */
 export function ForYouGrid({
@@ -39,10 +40,13 @@ export function ForYouGrid({
   );
 }
 
-/** "For you"'s products from an answer: the lists merged strongest first, without those left out; none before. */
+/** "For you"'s products from an answer: ordered for the visitor, without those left out; none before. */
 export function forYouProducts(affinity: UseAffinityProductsResult<AffinityProductsAnswer>, shown: number) {
-  return affinity.state === 'ready' && affinity.answer
-    ? mergeAffinityLists(affinity.answer.forYou, {leaveOut: affinity.leaveOut, first: shown})
+  return affinity.state === 'ready' && affinity.answer && affinity.input
+    ? pickAffinityProducts(affinity.answer.forYou, affinity.input, describeProductItem, {
+        leaveOut: affinity.leaveOut,
+        first: shown,
+      })
     : [];
 }
 

@@ -62,7 +62,8 @@ async function ask(
 }
 
 // One request: up to four lists for "For you", the same up to four newest first for "New". The listing engine
-// answers every first page together (one search), and the cards' data loads once for all of them.
+// answers every first page together (one search), and the cards' data loads once for all of them. Each product's
+// categories come too: the browser orders the products by what of the visitor they match.
 const AFFINITY_PRODUCTS_QUERY = `#graphql
   query AffinityProducts(
     $f1: [ProductFilter!]
@@ -83,45 +84,61 @@ const AFFINITY_PRODUCTS_QUERY = `#graphql
     f1: products(first: $first, filters: $f1) @include(if: $u1) {
       nodes {
         ...ProductItem
+        ...AffinityProductCategories
       }
     }
     f2: products(first: $first, filters: $f2) @include(if: $u2) {
       nodes {
         ...ProductItem
+        ...AffinityProductCategories
       }
     }
     f3: products(first: $first, filters: $f3) @include(if: $u3) {
       nodes {
         ...ProductItem
+        ...AffinityProductCategories
       }
     }
     f4: products(first: $first, filters: $f4) @include(if: $u4) {
       nodes {
         ...ProductItem
+        ...AffinityProductCategories
       }
     }
     n1: products(first: $first, filters: $f1, sortKey: CREATED_AT, reverse: true) @include(if: $n1) {
       nodes {
         ...ProductItem
+        ...AffinityProductCategories
       }
     }
     n2: products(first: $first, filters: $f2, sortKey: CREATED_AT, reverse: true) @include(if: $n2) {
       nodes {
         ...ProductItem
+        ...AffinityProductCategories
       }
     }
     n3: products(first: $first, filters: $f3, sortKey: CREATED_AT, reverse: true) @include(if: $n3) {
       nodes {
         ...ProductItem
+        ...AffinityProductCategories
       }
     }
     n4: products(first: $first, filters: $f4, sortKey: CREATED_AT, reverse: true) @include(if: $n4) {
       nodes {
         ...ProductItem
+        ...AffinityProductCategories
       }
     }
     productReviewSettings {
       ...ProductReviewDisplay
+    }
+  }
+  # The categories a product is in: the lists' products are ordered by the visitor's (pickAffinityProducts).
+  fragment AffinityProductCategories on Product {
+    collections(first: 5) {
+      nodes {
+        id
+      }
     }
   }
   ${PRODUCT_ITEM_FRAGMENT}
