@@ -641,11 +641,13 @@ function Swatches({filter}: {filter: Filter}) {
   return (
     <div className="flex max-w-64 flex-wrap gap-2">
       {values.map((value) => (
-        <span key={value.id} className="relative">
+        // The swatch and, outside its round clip, the visitor's mark: the wrapper is the flex item, so the label inside
+        // is a block of its own size (an inline label lost its width and height, B-621).
+        <span key={value.id} className="relative block">
           {/* A box under the swatch, so the form carries it without JavaScript (T-600). */}
           <label
             title={value.label}
-            className="relative size-10 cursor-pointer overflow-hidden rounded-full border-2 border-control p-0.5 hover:border-muted has-checked:border-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
+            className="relative block size-10 cursor-pointer overflow-hidden rounded-full border-2 border-control p-0.5 hover:border-muted has-checked:border-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
           >
             <input
               type="checkbox"
