@@ -1,3 +1,5 @@
+import {useMemo} from 'react';
+import {useSearchParams} from 'react-router';
 import type {ProductFilter, ProductSortKeys} from '@cloudcart/nitrogen/storefront-api-types';
 
 /*
@@ -274,4 +276,14 @@ export type SortLabel =
 export function getSortFromParams(searchParams: URLSearchParams): {sortKey?: ProductSortKeys; reverse?: boolean} {
   const option = SORT_OPTIONS.find(({value}) => value && value === searchParams.get('sort'));
   return option ? {sortKey: option.sortKey, reverse: option.reverse ?? false} : {};
+}
+
+/**
+ * The listing's chosen filters, read from its address: a listing's analytics view passes them, so the visitor's
+ * signals note the brands, options, prices and sales they filter by (T-674).
+ */
+export function useChosenFilters(): ProductFilter[] {
+  const [searchParams] = useSearchParams();
+  const key = searchParams.toString();
+  return useMemo(() => getFiltersFromParams(new URLSearchParams(key)), [key]);
 }

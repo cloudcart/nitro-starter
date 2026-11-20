@@ -34,7 +34,6 @@ import {
   SubscribePopups,
   type RecommendationsAheadRequest,
   type SubscribePopupsProps,
-  useCartSignals,
   useCustomerSignals,
   useFrameFocusVisible,
   useKeptPages,
@@ -316,7 +315,7 @@ function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>
 }
 
 /**
- * What the visitor's browser keeps for their recommendations (T-667): the cart's adds and removals, a signed-in
+ * What the visitor's browser keeps for their recommendations (T-667) beside what `Analytics.Provider` notes (T-674): a signed-in
  * customer's products (asked once a session, forgotten at sign-out), and the home page's and the cart's lists made
  * ahead while the browser is idle.
  */
@@ -327,8 +326,6 @@ function VisitorSignals({
   isLoggedIn: Streamed<boolean>;
   cart: Streamed<CartApiQueryFragment | null>;
 }) {
-  useCartSignals();
-
   return (
     <Suspense fallback={null}>
       <Await resolve={isLoggedIn} errorElement={null}>

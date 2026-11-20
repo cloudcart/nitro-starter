@@ -1,6 +1,5 @@
-import {useEffect} from 'react';
 import {useLoaderData} from 'react-router';
-import {categoryAncestorsOf, generateCollectionJsonLd, recordListingView} from '@cloudcart/nitrogen';
+import {generateCollectionJsonLd} from '@cloudcart/nitrogen';
 import {keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/category.$handle';
 import {listingSeo, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
@@ -50,10 +49,5 @@ export async function loader(args: Route.LoaderArgs) {
 
 export default function Category() {
   const {collection, reviewDisplay} = useLoaderData<typeof loader>();
-  // The category opened: a listing view for the visitor's recommendations (T-667), with its ancestors (T-670).
-  useEffect(
-    () => recordListingView({categoryIds: [collection.id], categoryAncestors: categoryAncestorsOf([collection])}),
-    [collection],
-  );
   return <CollectionView collection={collection} reviewDisplay={reviewDisplay} />;
 }

@@ -1,6 +1,6 @@
 import {type ComponentProps, type ReactNode, useState} from 'react';
 import {Link} from 'react-router';
-import {type MappedProductOptions, signalProductOf, useTranslation} from '@cloudcart/nitrogen';
+import {type MappedProductOptions, useTranslation} from '@cloudcart/nitrogen';
 import {Image} from '@cloudcart/nitrogen-react';
 import type {FormPolicyFragment, ProductFragment, ProductPageSettingsQuery} from 'storefrontapi.generated';
 import {EnergyClass} from '~/components/EnergyClass';
@@ -97,11 +97,7 @@ export function ProductInfo({
         )}
         <div className="flex items-start justify-between gap-4">
           <h1 className={PRODUCT_TITLE}>{product.title}</h1>
-          <WishlistButton
-            productId={product.id}
-            place="page"
-            signal={signalProductOf(product, selectedVariant?.selectedOptions)}
-          />
+          <WishlistButton productId={product.id} place="page" />
         </div>
         {product.shortDescription && <p className="text-muted">{product.shortDescription}</p>}
         {reviewSummary && showsRating(reviewSummary, settings.productReviewSettings) && (

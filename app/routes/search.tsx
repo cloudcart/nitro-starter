@@ -4,7 +4,7 @@ import type {Route} from './+types/search';
 import {metaTranslator, privateMeta} from '~/lib/meta';
 import {ProductListing} from '~/components/ProductListing';
 import {SearchForm} from '~/components/SearchForm';
-import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
+import {getFiltersFromParams, getSortFromParams, useChosenFilters} from '~/lib/filters';
 import {MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {
   getEmptyPredictiveSearchResult,
@@ -63,6 +63,7 @@ export function clientLoader({serverLoader, request}: Route.ClientLoaderArgs) {
 export default function SearchPage() {
   const {t} = useTranslation();
   const data = useLoaderData<typeof loader>();
+  const filters = useChosenFilters();
   const look = useSearchLook();
   const regular = data.type === 'regular' ? data : null;
   // An Aura search is reported as the web storefront's results page reports it: one impression as it shows, then
@@ -140,7 +141,7 @@ export default function SearchPage() {
       {/* /search with no term is not a search, nor is one that failed: its page view is reported as OTHER (B-314). */}
       {term && !error ? (
         <Analytics.SearchView
-          data={{searchTerm: term, searchResults: result, products: listedProducts(products?.nodes ?? [])}}
+          data={{searchTerm: term, searchResults: result, products: listedProducts(products?.nodes ?? []), filters}}
         />
       ) : null}
     </div>

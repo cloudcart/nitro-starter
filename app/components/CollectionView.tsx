@@ -1,4 +1,4 @@
-import {Analytics, useTranslation} from '@cloudcart/nitrogen';
+import {Analytics, categoryAncestorsOf, useTranslation} from '@cloudcart/nitrogen';
 import type {CollectionQuery, ProductReviewDisplayFragment} from 'storefrontapi.generated';
 import {collectionPath} from '~/lib/urls';
 import type {Crumb} from './Breadcrumbs';
@@ -7,6 +7,7 @@ import {ProductListing} from './ProductListing';
 import {ReviewDisplayProvider} from './ReviewDisplay';
 import {ListingDescription} from './ListingDescription';
 import {listedProducts} from '~/lib/analytics';
+import {useChosenFilters} from '~/lib/filters';
 
 type Collection = NonNullable<CollectionQuery['collection']>;
 
@@ -29,6 +30,7 @@ export function CollectionView({
   collection: Collection;
   reviewDisplay: ProductReviewDisplayFragment | null;
 }) {
+  const filters = useChosenFilters();
   const {t} = useTranslation();
   // Every child, as the platform's category page lists them: it does not hide one without products (B-212).
   const children = collection.children.nodes;
@@ -49,8 +51,14 @@ export function CollectionView({
       </ReviewDisplayProvider>
       <Analytics.CollectionView
         data={{
-          collection: {id: collection.id, handle: collection.handle, title: collection.title},
+          collection: {
+            id: collection.id,
+            handle: collection.handle,
+            title: collection.title,
+            ancestors: categoryAncestorsOf([collection])[collection.id],
+          },
           products: listedProducts(collection.products.nodes),
+          filters,
         }}
       />
     </div>

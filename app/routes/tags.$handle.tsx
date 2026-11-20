@@ -5,7 +5,7 @@ import type {Route} from './+types/tags.$handle';
 import {crumbsJsonLd, listingSeo, metaTranslator, seoMeta, storeName} from '~/lib/meta';
 import {ListingHeader} from '~/components/ListingHeader';
 import {ProductListing} from '~/components/ProductListing';
-import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
+import {getFiltersFromParams, getSortFromParams, useChosenFilters} from '~/lib/filters';
 import {MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {productTagPath} from '~/lib/urls';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT, ReviewDisplayProvider} from '~/components/ReviewDisplay';
@@ -66,6 +66,7 @@ export async function loader({context, params, request, url}: Route.LoaderArgs) 
 
 export default function ProductTag() {
   const {tag, reviewDisplay} = useLoaderData<typeof loader>();
+  const filters = useChosenFilters();
 
   return (
     <div className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md">
@@ -77,7 +78,11 @@ export default function ProductTag() {
         />
       </ReviewDisplayProvider>
       <Analytics.TagView
-        data={{tag: {id: tag.id, handle: tag.handle, title: tag.title}, products: listedProducts(tag.products.nodes)}}
+        data={{
+          tag: {id: tag.id, handle: tag.handle, title: tag.title},
+          products: listedProducts(tag.products.nodes),
+          filters,
+        }}
       />
     </div>
   );

@@ -1,19 +1,12 @@
-import {useEffect} from 'react';
 import {useLoaderData} from 'react-router';
-import {
-  Analytics,
-  getPaginationVariables,
-  recordListingView,
-  useTranslation,
-  type Translate,
-} from '@cloudcart/nitrogen';
+import {Analytics, getPaginationVariables, useTranslation, type Translate} from '@cloudcart/nitrogen';
 import {Image, keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/vendor.$handle';
 import {crumbsJsonLd, listingSeo, metaTranslator, seoMeta, storeName} from '~/lib/meta';
 import type {Crumb} from '~/components/Breadcrumbs';
 import {ListingHeader} from '~/components/ListingHeader';
 import {ProductListing} from '~/components/ProductListing';
-import {getFiltersFromParams, getSortFromParams} from '~/lib/filters';
+import {getFiltersFromParams, getSortFromParams, useChosenFilters} from '~/lib/filters';
 import {MARKETING_FILTER_FRAGMENT, PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {vendorPath} from '~/lib/urls';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT, ReviewDisplayProvider} from '~/components/ReviewDisplay';
@@ -77,8 +70,7 @@ export async function loader({context, params, request, url}: Route.LoaderArgs) 
 export default function Vendor() {
   const {t} = useTranslation();
   const {vendor, reviewDisplay} = useLoaderData<typeof loader>();
-  // The brand opened: a listing view for the visitor's recommendations (T-667).
-  useEffect(() => recordListingView({vendorId: vendor.id}), [vendor.id]);
+  const filters = useChosenFilters();
 
   return (
     <div className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md">
@@ -110,6 +102,7 @@ export default function Vendor() {
         data={{
           vendor: {id: vendor.id, handle: vendor.handle, title: vendor.title},
           products: listedProducts(vendor.products.nodes),
+          filters,
         }}
       />
     </div>

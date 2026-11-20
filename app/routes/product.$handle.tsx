@@ -1,4 +1,4 @@
-import {type ComponentProps, type ReactNode, useEffect, useEffectEvent, useState} from 'react';
+import {type ComponentProps, type ReactNode, useState} from 'react';
 import {data, type ShouldRevalidateFunction, useLoaderData, useLocation, useRouteLoaderData} from 'react-router';
 import {
   Analytics,
@@ -14,7 +14,7 @@ import {
   useSelectedOptionInUrlParam,
 } from '@cloudcart/nitrogen';
 import type {ProductFragment} from 'storefrontapi.generated';
-import {keptPageLoader, useVisitorSignals} from '@cloudcart/nitrogen-react';
+import {keptPageLoader} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/product.$handle';
 import type {loader as reviewsLoader} from './product';
 import {errorMeta, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
@@ -363,14 +363,6 @@ export default function Product() {
   // Puts the chosen options in the URL without a navigation, when the URL has none.
   useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
 
-  // The visitor's signals for their recommendations (T-667): this product viewed, with the variant shown first; a
-  // variant chosen on the page is not another view.
-  const {record} = useVisitorSignals();
-  const recordView = useEffectEvent(() =>
-    record('productView', [signalProductOf(product, selectedVariant.selectedOptions)]),
-  );
-  useEffect(() => recordView(), [product.id]);
-
   // The products before and after this one in the listing it was opened from: on a phone the page is swiped to them.
   const neighbours = useListingNeighbours(productPath(product.handle));
   const location = useLocation();
@@ -426,6 +418,9 @@ export default function Product() {
                 sku: selectedVariant?.sku,
                 barcode: selectedVariant?.barcode,
                 quantity: 1,
+                // The visitor's signals for their recommendations: Nitrogen notes the view, with the variant shown
+                // first, and the time on the page (T-674); a variant chosen on the page is not another view.
+                signal: signalProductOf(product, selectedVariant?.selectedOptions, selectedVariant),
               },
             ],
           }}
