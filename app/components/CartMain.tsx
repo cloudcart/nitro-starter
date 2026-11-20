@@ -37,7 +37,8 @@ export function CartMain({layout, cart: originalCart, signedIn}: CartMainProps) 
   const cart = useOptimisticCart(originalCart);
   const lines = cart?.lines?.nodes ?? [];
   const page = layout === 'page';
-  const forCart = cartForAffinity(lines);
+  // From the lines the cart answered with: one just added has only its merchandise until it comes back (B-622).
+  const forCart = cartForAffinity(lines.filter((line) => !line.isOptimistic));
 
   const list = lines.length > 0 && (
     <ul

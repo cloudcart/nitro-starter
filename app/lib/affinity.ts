@@ -141,7 +141,8 @@ type CartLineProduct = {
       id: string;
       vendor?: string | null;
       vendorDetails?: {handle: string} | null;
-      collections: {nodes: Array<{id: string}>};
+      /** A line just added, before the cart comes back, has none (B-622). */
+      collections?: {nodes: Array<{id: string}>} | null;
     };
   };
 };
@@ -152,7 +153,7 @@ export function cartForAffinity(lines: readonly CartLineProduct[]): AffinityCart
   return {
     productIds: [...new Set(products.map((product) => product.id))],
     categoryIds: [
-      ...new Set(products.flatMap((product) => product.collections.nodes.map((collection) => collection.id))),
+      ...new Set(products.flatMap((product) => (product.collections?.nodes ?? []).map((collection) => collection.id))),
     ],
     vendors: [...new Set(products.flatMap((product) => product.vendorDetails?.handle || product.vendor || []))],
   };
