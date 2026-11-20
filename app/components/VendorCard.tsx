@@ -1,5 +1,5 @@
 import {useId} from 'react';
-import {Image, KeptLink, useOrderByInterest} from '@cloudcart/nitrogen-react';
+import {AffinityWhy, AffinityWhyProvider, Image, KeptLink, useOrderByInterest} from '@cloudcart/nitrogen-react';
 import type {VendorCardFragment} from 'storefrontapi.generated';
 import {SectionHeading} from '~/components/SectionHeading';
 import {vendorPath} from '~/lib/urls';
@@ -74,13 +74,17 @@ export function VendorGrid({
   return (
     <section aria-labelledby={titleId} className={className}>
       <SectionHeading id={titleId} title={title} to={to} />
-      <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {ordered.slice(0, MAX_VENDORS).map((vendor) => (
-          <li key={vendor.id}>
-            <VendorCard vendor={vendor} />
-          </li>
-        ))}
-      </ul>
+      {/* Ordered by the visitor's interest: each brand's place and why, while the Affinity overlay is on (T-682). */}
+      <AffinityWhyProvider value={{interest: {dimension: 'vendor', ids: ordered.map(vendorId)}}}>
+        <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {ordered.slice(0, MAX_VENDORS).map((vendor) => (
+            <li key={vendor.id}>
+              <VendorCard vendor={vendor} />
+              <AffinityWhy entry={vendor.id} />
+            </li>
+          ))}
+        </ul>
+      </AffinityWhyProvider>
     </section>
   );
 }

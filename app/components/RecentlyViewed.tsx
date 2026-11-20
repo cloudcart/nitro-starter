@@ -1,7 +1,7 @@
 import {useId, useRef} from 'react';
 import {useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {useAutoLoad, useAffinity} from '@cloudcart/nitrogen-react';
+import {AffinityWhyProvider, useAutoLoad, useAffinity} from '@cloudcart/nitrogen-react';
 import type {loader} from '~/routes/recently-viewed';
 import {PRODUCT_GRID_CLASSES, ProductGrid} from './ProductGrid';
 import {ProductItemPlaceholder} from './ProductItem';
@@ -28,7 +28,13 @@ export function RecentlyViewed({productId}: {productId: string}) {
   });
 
   if (!query) return null;
-  if (fetcher.data) return <ProductGrid title={t('product.recentlyViewed')} products={fetcher.data.products ?? []} />;
+  if (fetcher.data)
+    return (
+      // Each card's place, views and when, while the Affinity overlay is on (T-682).
+      <AffinityWhyProvider value={{viewed: others}}>
+        <ProductGrid title={t('product.recentlyViewed')} products={fetcher.data.products ?? []} />
+      </AffinityWhyProvider>
+    );
 
   return (
     <section ref={sectionRef} aria-labelledby={titleId} aria-busy="true">

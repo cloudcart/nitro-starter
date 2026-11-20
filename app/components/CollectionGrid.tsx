@@ -1,5 +1,5 @@
 import {useId} from 'react';
-import {Image, KeptLink} from '@cloudcart/nitrogen-react';
+import {AffinityWhy, Image, KeptLink} from '@cloudcart/nitrogen-react';
 import type {CollectionCardFragment} from 'storefrontapi.generated';
 import {SectionHeading} from '~/components/SectionHeading';
 import {collectionPath} from '~/lib/urls';
@@ -87,6 +87,8 @@ export function CollectionGrid({
         {collections.slice(0, MAX_COLLECTIONS).map((collection, index) => (
           <li key={collection.id}>
             <CollectionCard collection={collection} loading={index < 4 ? 'eager' : 'lazy'} />
+            {/* In a grid ordered by the visitor's interest, its place and why, while the Affinity overlay is on (T-682). */}
+            <AffinityWhy entry={collection.id} />
           </li>
         ))}
       </ul>

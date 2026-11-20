@@ -8,8 +8,8 @@ import {
   useRouteLoaderData,
   useSearchParams,
 } from 'react-router';
-import {type SignalFilterSource, useTranslation} from '@cloudcart/nitrogen';
-import {Image, moneyWithFormat, useAffinityFacetOrder} from '@cloudcart/nitrogen-react';
+import {type AffinityStrength, type SignalFilterSource, useTranslation} from '@cloudcart/nitrogen';
+import {AffinityWhy, Image, moneyWithFormat, useAffinityFacetOrder} from '@cloudcart/nitrogen-react';
 import type {CurrencyCode} from '@cloudcart/nitrogen/storefront-api-types';
 import type {ListingFilterFragment, MarketingFilterFragment} from 'storefrontapi.generated';
 import {
@@ -594,7 +594,7 @@ function ListValues({filter}: {filter: Filter}) {
   const {searchParams, go} = useFilterUrl();
   const [expanded, setExpanded] = useState(false);
   // The visitor's values first within the group, marked; the store's order on the server and for a new visitor.
-  const {values: ordered, marked} = useAffinityFacetOrder(filter.values, filterOfValue);
+  const {values: ordered, marked, strengths} = useAffinityFacetOrder(filter.values, filterOfValue);
   const values = expanded ? ordered : ordered.slice(0, VISIBLE_VALUES);
 
   return (
@@ -629,59 +629,76 @@ function ListValues({filter}: {filter: Filter}) {
           {expanded ? t('filters.showLess') : t('filters.showAll', {count: filter.values.length})}
         </button>
       )}
+      {/* The group's order and the visitor's values in it, while the Affinity overlay is on (T-682). */}
+      <AffinityWhy facet={facetOrder(ordered, strengths)} />
     </div>
   );
+}
+
+type FilterValue = Filter['values'][number];
+
+/** A group's values of the visitor's in the order shown, with their strengths: what the overlay's label lists. */
+function facetOrder(values: readonly FilterValue[], strengths: ReadonlyMap<FilterValue, AffinityStrength>) {
+  return values.flatMap((value) => {
+    const strength = strengths.get(value);
+    return strength ? [{label: value.label, strength}] : [];
+  });
 }
 
 function Swatches({filter}: {filter: Filter}) {
   const {t} = useTranslation();
   const {searchParams, go} = useFilterUrl();
-  const {values, marked} = useAffinityFacetOrder(filter.values, filterOfValue);
+  const {values, marked, strengths} = useAffinityFacetOrder(filter.values, filterOfValue);
 
   return (
-    <div className="flex max-w-64 flex-wrap gap-2">
-      {values.map((value) => (
-        // The swatch and, outside its round clip, the visitor's mark: the wrapper is the flex item, so the label inside
-        // is a block of its own size (an inline label lost its width and height, B-621).
-        <span key={value.id} className="relative block">
-          {/* A box under the swatch, so the form carries it without JavaScript (T-600). */}
-          <label
-            title={value.label}
-            className="relative block size-10 cursor-pointer overflow-hidden rounded-full border-2 border-control p-0.5 hover:border-muted has-checked:border-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
-          >
-            <input
-              type="checkbox"
-              {...fieldOf(value.input)}
-              aria-label={marked.has(value) ? `${value.label}${t('format.list')}${t('product.yours')}` : value.label}
-              checked={isFilterActive(searchParams, value.input)}
-              onChange={() => go(toggleFilterParam(searchParams, value.input))}
-              className="sr-only"
-            />
-            {value.swatchImage ? (
-              <Image
-                src={value.swatchImage}
-                alt=""
-                width={32}
-                aspectRatio="1/1"
-                className="size-full rounded-full object-cover"
+    <>
+      <div className="flex max-w-64 flex-wrap gap-2">
+        {values.map((value) => (
+          // The swatch and, outside its round clip, the visitor's mark: the wrapper is the flex item, so the label inside
+          // is a block of its own size (an inline label lost its width and height, B-621).
+          <span key={value.id} className="relative block">
+            {/* A box under the swatch, so the form carries it without JavaScript (T-600). */}
+            <label
+              title={value.label}
+              className="relative block size-10 cursor-pointer overflow-hidden rounded-full border-2 border-control p-0.5 hover:border-muted has-checked:border-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
+            >
+              <input
+                type="checkbox"
+                {...fieldOf(value.input)}
+                aria-label={marked.has(value) ? `${value.label}${t('format.list')}${t('product.yours')}` : value.label}
+                checked={isFilterActive(searchParams, value.input)}
+                onChange={() => go(toggleFilterParam(searchParams, value.input))}
+                className="sr-only"
               />
-            ) : (
-              // The merchant's colour for the value.
+              {value.swatchImage ? (
+                <Image
+                  src={value.swatchImage}
+                  alt=""
+                  width={32}
+                  aspectRatio="1/1"
+                  className="size-full rounded-full object-cover"
+                />
+              ) : (
+                // The merchant's colour for the value.
+                <span
+                  className="block size-full rounded-full"
+                  style={{backgroundColor: value.swatchColor ?? 'var(--color-border)'}}
+                />
+              )}
+            </label>
+            {marked.has(value) && (
               <span
-                className="block size-full rounded-full"
-                style={{backgroundColor: value.swatchColor ?? 'var(--color-border)'}}
+                aria-hidden="true"
+                className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-accent ring-2 ring-background"
               />
             )}
-          </label>
-          {marked.has(value) && (
-            <span
-              aria-hidden="true"
-              className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-accent ring-2 ring-background"
-            />
-          )}
-        </span>
-      ))}
-    </div>
+          </span>
+        ))}
+      </div>
+      {/* The group's order and the visitor's values in it, while the Affinity overlay is on (T-682); outside the
+        swatches' row, so an absent label leaves no gap. */}
+      <AffinityWhy facet={facetOrder(values, strengths)} />
+    </>
   );
 }
 

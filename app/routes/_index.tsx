@@ -117,12 +117,15 @@ function HomeCategories({collections}: {collections: CollectionCardFragment[]}) 
   const ordered = useOrderByInterest(collections, 'category', collectionId);
 
   return (
-    <CollectionGrid
-      title={t('home.collections')}
-      collections={[...ordered]}
-      to="/categories"
-      className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md"
-    />
+    // Each category's place and why, while the Affinity overlay is on (T-682).
+    <AffinityWhyProvider value={{interest: {dimension: 'category', ids: ordered.map(collectionId)}}}>
+      <CollectionGrid
+        title={t('home.collections')}
+        collections={[...ordered]}
+        to="/categories"
+        className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md"
+      />
+    </AffinityWhyProvider>
   );
 }
 
