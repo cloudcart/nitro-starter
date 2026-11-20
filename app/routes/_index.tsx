@@ -3,6 +3,7 @@ import {Await, useLoaderData, useRouteLoaderData} from 'react-router';
 import {Analytics, generateOrganizationJsonLd, mergeAffinityLists, useTranslation} from '@cloudcart/nitrogen';
 import {
   keptPageLoader,
+  AffinityWhyProvider,
   useAffinityProducts,
   useOrderByInterest,
   type UseAffinityProductsResult,
@@ -165,14 +166,24 @@ function ProductGrids({
               <div className="mx-auto flex max-w-page flex-col gap-16 px-gutter py-14 md:px-gutter-md">
                 {/* "Shop by brand", in the visitor's order of interest (T-670); none for a store without brands. */}
                 <VendorGrid title={t('home.vendors')} vendors={response.vendors.nodes} to="/vendors" />
-                {HOME_PRODUCT_GRIDS.map(({list, title, to}) => (
-                  <ProductGrid
-                    key={list}
-                    title={t(title)}
-                    products={listFor(list, response[list].nodes, affinity)}
-                    to={to}
-                  />
-                ))}
+                {HOME_PRODUCT_GRIDS.map(({list, title, to}) => {
+                  const grid = (
+                    <ProductGrid
+                      key={list}
+                      title={t(title)}
+                      products={listFor(list, response[list].nodes, affinity)}
+                      to={to}
+                    />
+                  );
+                  // "New" in the visitor's order: each card says why while the Affinity overlay is on (T-681).
+                  return list === 'newest' && affinity.state === 'ready' ? (
+                    <AffinityWhyProvider key={list} value={{input: affinity.input}}>
+                      {grid}
+                    </AffinityWhyProvider>
+                  ) : (
+                    grid
+                  );
+                })}
               </div>
             </ReviewDisplayProvider>
           ) : null

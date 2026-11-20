@@ -1,10 +1,10 @@
 import {useId, useRef, useState} from 'react';
 import {type AffinityCart, useTranslation} from '@cloudcart/nitrogen';
-import {useAffinityProducts, useAutoLoad} from '@cloudcart/nitrogen-react';
+import {AffinityWhy, AffinityWhyProvider, useAffinityProducts, useAutoLoad} from '@cloudcart/nitrogen-react';
 import {useAside} from '~/components/Aside';
 import {forYouProducts} from '~/components/ForYou';
 import {ProductRow} from '~/components/ProductRow';
-import {askForYou} from '~/lib/affinity';
+import {askForYou, describeProductItem} from '~/lib/affinity';
 
 /** How many products the panel shows under the cart's lines. */
 const SHOWN = 4;
@@ -33,13 +33,17 @@ export function CartPanelRecommendations({cart}: {cart: AffinityCart}) {
           <h2 id={titleId} className="mb-3 text-subheading">
             {t('cart.alsoLike')}
           </h2>
-          <ul className="flex flex-col gap-3">
-            {products.map((product) => (
-              <li key={product.id}>
-                <ProductRow product={product} onOpen={close} />
-              </li>
-            ))}
-          </ul>
+          {/* Each row says why it is here while the Affinity overlay is on (T-681). */}
+          <AffinityWhyProvider value={{input: affinity.input}}>
+            <ul className="flex flex-col gap-3">
+              {products.map((product) => (
+                <li key={product.id}>
+                  <ProductRow product={product} onOpen={close} />
+                  <AffinityWhy product={product} describe={describeProductItem} />
+                </li>
+              ))}
+            </ul>
+          </AffinityWhyProvider>
         </>
       )}
     </section>

@@ -1,5 +1,5 @@
 import {type AffinityCart, pickAffinityProducts, useTranslation} from '@cloudcart/nitrogen';
-import {useAffinityProducts, type UseAffinityProductsResult} from '@cloudcart/nitrogen-react';
+import {AffinityWhyProvider, useAffinityProducts, type UseAffinityProductsResult} from '@cloudcart/nitrogen-react';
 import {ProductGrid, ProductGridPlaceholder} from '~/components/ProductGrid';
 import {ReviewDisplayProvider} from '~/components/ReviewDisplay';
 import {askForYou, describeProductItem} from '~/lib/affinity';
@@ -35,7 +35,10 @@ export function ForYouGrid({
   if (!affinity.answer || products.length === 0) return null;
   return (
     <ReviewDisplayProvider value={affinity.answer.reviewDisplay}>
-      <ProductGrid title={heading} products={products} className={className} />
+      {/* Each card says why it is here while the Affinity overlay is on (T-681). */}
+      <AffinityWhyProvider value={{input: affinity.input}}>
+        <ProductGrid title={heading} products={products} className={className} />
+      </AffinityWhyProvider>
     </ReviewDisplayProvider>
   );
 }

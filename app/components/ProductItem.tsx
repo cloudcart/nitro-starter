@@ -1,6 +1,13 @@
 import {type ReactNode, type RefObject, useCallback, useMemo, useRef, useState} from 'react';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {AddToCartButton, cloudcartLoader, Image, KeptLink, useAffinityInput} from '@cloudcart/nitrogen-react';
+import {
+  AddToCartButton,
+  AffinityWhy,
+  cloudcartLoader,
+  Image,
+  KeptLink,
+  useAffinityInput,
+} from '@cloudcart/nitrogen-react';
 import type {ProductItemFragment} from 'storefrontapi.generated';
 import {Badge} from '~/components/ui/Badge';
 import {ChevronLeftIcon, ChevronRightIcon} from '~/components/ui/icons';
@@ -9,7 +16,7 @@ import {buttonClass, ButtonLink} from '~/components/ui/Button';
 import {ADD_TO_CART_FETCHER_KEY} from '~/lib/cart';
 import {quickAddOf} from '~/lib/quick-add';
 import {noteProduct} from '~/lib/opening';
-import {visitorsCardValues} from '~/lib/affinity';
+import {describeProductItem, visitorsCardValues} from '~/lib/affinity';
 import {shownCompareAtPrice, useVariantUrl} from '~/lib/variants';
 import {CardPrice} from './CardPrice';
 import {useCardRating, useEveryCardRated} from './ReviewDisplay';
@@ -178,6 +185,9 @@ export function ProductItem({
         </div>
         <QuickAdd product={product} variant={variant} chosenOption={chosen ? swatches : null} productUrl={variantUrl} />
       </div>
+      {/* While the Affinity overlay is on: why a block chose the card, and the colour Affinity chose on it (T-681). */}
+      <AffinityWhy product={product} describe={describeProductItem} />
+      {choice === undefined && visitors.swatch && <AffinityWhy chosen={[visitors.swatch.id]} />}
     </div>
   );
 }

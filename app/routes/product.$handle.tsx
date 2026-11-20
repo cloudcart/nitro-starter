@@ -22,7 +22,7 @@ import {
   visitorOptionValues,
 } from '@cloudcart/nitrogen';
 import type {ProductFragment} from 'storefrontapi.generated';
-import {keptPageLoader, useAffinityChoice, useAffinityInput} from '@cloudcart/nitrogen-react';
+import {AffinityWhy, keptPageLoader, useAffinityChoice, useAffinityInput} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/product.$handle';
 import type {loader as reviewsLoader} from './product';
 import {errorMeta, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
@@ -375,7 +375,7 @@ export default function Product() {
   // The products before and after this one in the listing it was opened from: on a phone the page is swiped to them.
   const neighbours = useListingNeighbours(productPath(product.handle));
   const location = useLocation();
-  const yours = useVisitorsVariant(product, wholeVariants, selectedVariant.id, location.search);
+  const {yours, chosen} = useVisitorsVariant(product, wholeVariants, selectedVariant.id, location.search);
   // Streamed with a document; else asked as the page opens, and for each variant chosen — by the shown variant's
   // options, not the address's: the page writes them into its address after it opens, so the address it is shown at
   // again (a step back or forward) asks what it asked before (B-556).
@@ -399,6 +399,8 @@ export default function Product() {
             selectedVariant={selectedVariant}
             backdrop={openedPicture(location.pathname)}
           >
+            {/* While the Affinity overlay is on: the visitor's values that chose the variant shown (T-681). */}
+            {chosen && <AffinityWhy chosen={chosen} />}
             <LinkedProducts key={product.handle} handle={product.handle} />
           </ProductTop>
         </YoursContext>
@@ -453,14 +455,15 @@ export default function Product() {
 /**
  * The visitor's own variant (T-679): on a product opened with none chosen in its address, the variant in stock with
  * their size or colour of medium or strong interest is shown, once, as Affinity's choice — never counted as theirs
- * (`useAffinityChoice`). Gives their option values on the page, as `yoursKey`s, for the options to mark.
+ * (`useAffinityChoice`). Gives their option values on the page, as `yoursKey`s, for the options to mark, and the values
+ * that chose the variant while the page shows Affinity's choice.
  */
 function useVisitorsVariant(
   product: ProductPageData['product'],
   wholeVariants: ProductPageData['product']['adjacentVariants'],
   shownVariantId: string,
   search: string,
-): ReadonlySet<string> {
+): {yours: ReadonlySet<string>; chosen: readonly string[] | null} {
   const navigate = useNavigate();
   const variants = useMemo(() => productAffinityVariants(product.options, wholeVariants), [product, wholeVariants]);
   const choice = useAffinityChoice(product.id, variants);
@@ -481,7 +484,7 @@ function useVisitorsVariant(
   }, [choice, product, search, shownVariantId, wholeVariants, navigate]);
 
   const input = useAffinityInput();
-  return useMemo(() => {
+  const yours = useMemo(() => {
     if (!input) return new Set<string>();
     const own = new Set(
       visitorOptionValues(
@@ -495,6 +498,8 @@ function useVisitorsVariant(
       ),
     );
   }, [input, product]);
+  // Affinity's choice while the page shows it: the overlay's label names the values that chose it.
+  return {yours, chosen: choice && choice.variant.id === shownVariantId ? choice.optionValueIds : null};
 }
 
 /**

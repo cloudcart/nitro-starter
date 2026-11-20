@@ -1,7 +1,7 @@
 import {type ReactNode, Suspense, useEffect, useId, useRef, useState} from 'react';
 import {Await, Link, useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {Image, Money, useAffinityOrder, useAutoLoad} from '@cloudcart/nitrogen-react';
+import {AffinityWhyProvider, Image, Money, useAffinityOrder, useAutoLoad} from '@cloudcart/nitrogen-react';
 import type {ProductExtrasQuery} from 'storefrontapi.generated';
 import {PRODUCT_GRID_CLASSES} from '~/components/ProductGrid';
 import {ProductItem, ProductItemPlaceholder} from '~/components/ProductItem';
@@ -196,20 +196,23 @@ export function RelatedProducts({
   return (
     <section ref={sectionRef} aria-labelledby={titleId} aria-busy={busy || undefined}>
       <SectionHeading id={titleId} title={t(instead ? 'product.related.instead' : 'product.related.alsoLike')} />
-      <ul ref={gridRef} className={`grid gap-x-4 gap-y-8 ${PRODUCT_GRID_CLASSES}`}>
-        {answered
-          ? products.map((product) => (
-              <li key={product.id}>
-                <ProductItem product={product} loading="lazy" />
-              </li>
-            ))
-          : PLACEHOLDERS.map((shown, index) => (
-              // eslint-disable-next-line @eslint-react/no-array-index-key -- placeholders: a place each, nothing else
-              <li key={index} aria-hidden="true" className={shown}>
-                <ProductItemPlaceholder />
-              </li>
-            ))}
-      </ul>
+      {/* Ordered for the visitor: each card says why while the Affinity overlay is on (T-681). */}
+      <AffinityWhyProvider value={{price}}>
+        <ul ref={gridRef} className={`grid gap-x-4 gap-y-8 ${PRODUCT_GRID_CLASSES}`}>
+          {answered
+            ? products.map((product) => (
+                <li key={product.id}>
+                  <ProductItem product={product} loading="lazy" />
+                </li>
+              ))
+            : PLACEHOLDERS.map((shown, index) => (
+                // eslint-disable-next-line @eslint-react/no-array-index-key -- placeholders: a place each, nothing else
+                <li key={index} aria-hidden="true" className={shown}>
+                  <ProductItemPlaceholder />
+                </li>
+              ))}
+        </ul>
+      </AffinityWhyProvider>
       {hasMore && (
         <div className="mt-10 flex justify-center">
           <Button
