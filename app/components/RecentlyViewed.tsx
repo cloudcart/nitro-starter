@@ -1,21 +1,21 @@
 import {useId, useRef} from 'react';
 import {useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {useAutoLoad, useVisitorSignals} from '@cloudcart/nitrogen-react';
+import {useAutoLoad, useAffinity} from '@cloudcart/nitrogen-react';
 import type {loader} from '~/routes/recently-viewed';
 import {PRODUCT_GRID_CLASSES, ProductGrid} from './ProductGrid';
 import {ProductItemPlaceholder} from './ProductItem';
 import {SectionHeading} from './SectionHeading';
 
 /**
- * The products the visitor viewed before this one, from the list their browser keeps (`useVisitorSignals`; the product
+ * The products the visitor viewed before this one, from the list their browser keeps (`useAffinity`; the product
  * page records its view).
  * They are asked for only as the visitor nears the section (T-550): until then a card placeholder each holds its place.
  */
 export function RecentlyViewed({productId}: {productId: string}) {
   const {t} = useTranslation();
   const titleId = useId();
-  const {viewedProductIds: ids} = useVisitorSignals();
+  const {viewedProductIds: ids} = useAffinity();
   const fetcher = useFetcher<typeof loader>();
   const others = ids.filter((id) => id !== productId).slice(0, 8);
   const query = others.join(',');

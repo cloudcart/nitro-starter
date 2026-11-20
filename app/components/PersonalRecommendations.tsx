@@ -1,5 +1,5 @@
 import {type RefObject, useEffect, useRef, useState} from 'react';
-import {useAutoLoad, useKeptRecommendations, useVisitorSignals} from '@cloudcart/nitrogen-react';
+import {useAutoLoad, useKeptRecommendations, useAffinity} from '@cloudcart/nitrogen-react';
 import {ProductGrid, ProductGridPlaceholder} from '~/components/ProductGrid';
 import {ReviewDisplayProvider} from '~/components/ReviewDisplay';
 import type {RecommendationsAnswer} from '~/routes/recommendations';
@@ -17,7 +17,7 @@ export function usePersonalRecommendations<T extends HTMLElement>(
   cartProductIds?: readonly string[],
 ): {answer: RecommendationsAnswer | null; viewedProductIds: string[]; ref: RefObject<T | null>} {
   const kept = useKeptRecommendations<RecommendationsAnswer>(intent);
-  const {viewedProductIds, context} = useVisitorSignals();
+  const {viewedProductIds, context} = useAffinity();
   const [fresh, setFresh] = useState<RecommendationsAnswer | null>(null);
   const [asked, setAsked] = useState(false);
   const requestRef = useRef<AbortController | null>(null);

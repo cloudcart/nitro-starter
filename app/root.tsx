@@ -308,7 +308,7 @@ function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>
         <StorePopups forms={data.subscribeForms} consent={data.cookieConsent} />
         <PolicyConsentRequest />
         <StoreValidityMessages />
-        <VisitorSignals isLoggedIn={data.isLoggedIn} cart={cart} />
+        <AffinitySetup isLoggedIn={data.isLoggedIn} cart={cart} />
       </Analytics.Provider>
     </TranslationsProvider>
   );
@@ -319,7 +319,7 @@ function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>
  * customer's products (asked once a session, forgotten at sign-out), and the home page's and the cart's lists made
  * ahead while the browser is idle.
  */
-function VisitorSignals({
+function AffinitySetup({
   isLoggedIn,
   cart,
 }: {

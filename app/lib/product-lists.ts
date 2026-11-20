@@ -1,5 +1,5 @@
 import {useCallback, useMemo, useSyncExternalStore} from 'react';
-import {PRODUCT_LIST_EVENT, RECENTLY_VIEWED_KEY, VISITOR_SIGNALS_LIMITS} from '@cloudcart/nitrogen';
+import {PRODUCT_LIST_EVENT, RECENTLY_VIEWED_KEY, AFFINITY_LIMITS} from '@cloudcart/nitrogen';
 
 /*
  * Lists the visitor keeps in their own browser, as Shopify storefronts do:
@@ -8,7 +8,7 @@ import {PRODUCT_LIST_EVENT, RECENTLY_VIEWED_KEY, VISITOR_SIGNALS_LIMITS} from '@
  */
 
 /** The viewed products: Nitrogen's visitor signals keep them (the product page records a view), the search panel lists them. */
-export const RECENTLY_VIEWED = {key: RECENTLY_VIEWED_KEY, max: VISITOR_SIGNALS_LIMITS.viewed};
+export const RECENTLY_VIEWED = {key: RECENTLY_VIEWED_KEY, max: AFFINITY_LIMITS.viewed};
 export const COMPARE = {key: 'nitrogen:compare', max: 3};
 
 type ListConfig = {key: string; max: number};

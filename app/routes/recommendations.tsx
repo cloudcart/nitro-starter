@@ -18,7 +18,7 @@ const PRIVATE = {'Cache-Control': 'private, no-store'};
 
 /**
  * POST /recommendations — a personal list for a block, from what the visitor's browser keeps (T-667): `{intent, context}`
- * as JSON, the context `visitorSignalsContext()` gave — posted, so a customer's bought products never stand in an
+ * as JSON, the context `affinityContext()` gave — posted, so a customer's bought products never stand in an
  * address. `PERSONALIZED` (the home page; the store's best sellers when the browser knows nothing) and `CART` (the cart
  * page). Asked for from the browser only: a block as the visitor nears it, and `usePrepareRecommendations` ahead.
  */
