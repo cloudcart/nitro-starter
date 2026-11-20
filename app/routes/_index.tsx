@@ -1,17 +1,24 @@
 import {Suspense} from 'react';
 import {Await, useLoaderData, useRouteLoaderData} from 'react-router';
-import {Analytics, generateOrganizationJsonLd, useTranslation} from '@cloudcart/nitrogen';
-import {keptPageLoader, useOrderByInterest} from '@cloudcart/nitrogen-react';
+import {Analytics, generateOrganizationJsonLd, mergeAffinityLists, useTranslation} from '@cloudcart/nitrogen';
+import {
+  keptPageLoader,
+  useAffinityProducts,
+  useOrderByInterest,
+  type UseAffinityProductsResult,
+} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/_index';
 import {metaTranslator, rootData, seoMeta, storeOrigin} from '~/lib/meta';
-import type {CollectionCardFragment, HomeProductsQuery} from 'storefrontapi.generated';
+import type {CollectionCardFragment, HomeProductsQuery, ProductItemFragment} from 'storefrontapi.generated';
 import {COLLECTION_CARD_FRAGMENT, CollectionGrid} from '~/components/CollectionGrid';
 import {Hero} from '~/components/Hero';
-import {PersonalRecommendations} from '~/components/PersonalRecommendations';
+import {FOR_YOU_SHOWN, ForYouGrid} from '~/components/ForYou';
 import {ProductGrid, ProductGridPlaceholder} from '~/components/ProductGrid';
 import {VENDOR_CARD_FRAGMENT, VendorGrid} from '~/components/VendorCard';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
-import {HOME_PRODUCT_GRIDS} from '~/lib/home';
+import {HOME_PRODUCT_GRIDS, type HomeProductList} from '~/lib/home';
+import {askHomeLists} from '~/lib/affinity';
+import type {AffinityProductsAnswer} from '~/routes/affinity-products';
 import type {RootLoader} from '~/root';
 import {PRODUCT_REVIEW_DISPLAY_FRAGMENT, ReviewDisplayProvider} from '~/components/ReviewDisplay';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
@@ -79,30 +86,23 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Homepage() {
-  const {t} = useTranslation();
   const data = useLoaderData<typeof loader>();
   const root = useRouteLoaderData<RootLoader>('root');
   const shop = root?.header.shop;
+  // The visitor's lists, built in their browser (T-679): "For you" and "New" in their order, one request.
+  const affinity = useAffinityProducts({shown: FOR_YOU_SHOWN, request: askHomeLists});
 
   return (
     <div>
       <Hero shopName={shop?.name ?? ''} />
-      {/* The visitor's own list first, under the hero (T-670): the store's best sellers while nothing is known. */}
-      <PersonalRecommendations
-        intent="PERSONALIZED"
-        title={(personal) => t(personal ? 'home.forYou' : 'home.bestSellers')}
-        placeholders={HOME_RECOMMENDED}
-        className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md"
-      />
+      {/* The visitor's own list first, under the hero: nothing while the browser knows none of their interests. */}
+      <ForYouGrid affinity={affinity} className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md" />
       <HomeCategories collections={data.collections} />
-      <ProductGrids products={data.products} />
+      <ProductGrids products={data.products} affinity={affinity} />
       <Analytics.HomeView />
     </div>
   );
 }
-
-/** How many products "Recommended for you" shows: two rows of four (the `PERSONALIZED` list, `/recommendations`). */
-const HOME_RECOMMENDED = 8;
 
 const collectionId = (collection: {id: string}) => collection.id;
 
@@ -125,7 +125,26 @@ function HomeCategories({collections}: {collections: CollectionCardFragment[]}) 
   );
 }
 
-function ProductGrids({products}: {products: Promise<HomeProductsQuery | null>}) {
+/**
+ * A home list in the visitor's order: "New" from their own lists newest first — the strongest list's first — then the
+ * store's newest after them; the store's own list for a visitor the browser knows nothing about (T-679).
+ */
+function listFor(
+  list: HomeProductList,
+  store: ProductItemFragment[],
+  affinity: UseAffinityProductsResult<AffinityProductsAnswer>,
+): ProductItemFragment[] {
+  if (list !== 'newest' || affinity.state !== 'ready' || !affinity.answer) return store;
+  return mergeAffinityLists([...affinity.answer.newest, store], {leaveOut: affinity.leaveOut, first: store.length});
+}
+
+function ProductGrids({
+  products,
+  affinity,
+}: {
+  products: Promise<HomeProductsQuery | null>;
+  affinity: UseAffinityProductsResult<AffinityProductsAnswer>;
+}) {
   const {t} = useTranslation();
 
   return (
@@ -147,7 +166,12 @@ function ProductGrids({products}: {products: Promise<HomeProductsQuery | null>})
                 {/* "Shop by brand", in the visitor's order of interest (T-670); none for a store without brands. */}
                 <VendorGrid title={t('home.vendors')} vendors={response.vendors.nodes} to="/vendors" />
                 {HOME_PRODUCT_GRIDS.map(({list, title, to}) => (
-                  <ProductGrid key={list} title={t(title)} products={response[list].nodes} to={to} />
+                  <ProductGrid
+                    key={list}
+                    title={t(title)}
+                    products={listFor(list, response[list].nodes, affinity)}
+                    to={to}
+                  />
                 ))}
               </div>
             </ReviewDisplayProvider>

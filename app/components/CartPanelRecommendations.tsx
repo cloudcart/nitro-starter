@@ -1,21 +1,30 @@
-import {useId} from 'react';
-import {useTranslation} from '@cloudcart/nitrogen';
+import {useId, useRef, useState} from 'react';
+import {type AffinityCart, useTranslation} from '@cloudcart/nitrogen';
+import {useAffinityProducts, useAutoLoad} from '@cloudcart/nitrogen-react';
 import {useAside} from '~/components/Aside';
-import {usePersonalRecommendations} from '~/components/PersonalRecommendations';
+import {forYouProducts} from '~/components/ForYou';
 import {ProductRow} from '~/components/ProductRow';
+import {askForYou} from '~/lib/affinity';
+
+/** How many products the panel shows under the cart's lines. */
+const SHOWN = 4;
 
 /**
- * The cart panel's recommendations (T-669): up to four products for this cart (`CART`, the cart page's list), one row
- * each under the cart's lines — picture, title, price and a round add, as the product page's linked products — loaded
- * as the panel shows them, at once when made ahead. Following one closes the panel. Nothing until there is an answer,
- * and nothing when it is empty. Give it the cart's products as its `key`, so a changed cart is asked again.
+ * The cart panel's recommendations (T-669, T-679): up to four products for this cart from Affinity's lists — the
+ * cart's categories and brands, and the visitor's — one row each under the cart's lines: picture, title, price and a
+ * round add, as the product page's linked products. Asked as the panel shows them. Following one closes the panel.
+ * Nothing until there is an answer, and nothing when it is empty. Give it the cart's products as its `key`, so a
+ * changed cart is asked again.
  */
-export function CartPanelRecommendations({cartProductIds}: {cartProductIds: readonly string[]}) {
+export function CartPanelRecommendations({cart}: {cart: AffinityCart}) {
   const {t} = useTranslation();
   const titleId = useId();
   const {close} = useAside();
-  const {answer, ref} = usePersonalRecommendations<HTMLElement>('CART', cartProductIds);
-  const products = answer?.products ?? [];
+  const ref = useRef<HTMLElement>(null);
+  const [near, setNear] = useState(false);
+  useAutoLoad(ref, {load: () => setNear(true), limit: 1, paused: near});
+  const affinity = useAffinityProducts({shown: SHOWN, cart, request: askForYou, paused: !near});
+  const products = forYouProducts(affinity, SHOWN);
 
   return (
     <section ref={ref} aria-labelledby={products.length > 0 ? titleId : undefined} className="px-5 pb-5">

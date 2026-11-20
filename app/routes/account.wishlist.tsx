@@ -16,6 +16,7 @@ import {EmptyState} from '~/components/ui/EmptyState';
 import {ButtonLink} from '~/components/ui/Button';
 import {HeartIcon} from '~/components/ui/icons';
 import {missingResource} from '~/lib/missing';
+import {ForYou} from '~/components/ForYou';
 
 /**
  * A card's picture in the wishlist: two columns, three from 990 px beside the account menu (14rem and a 3rem gap),
@@ -99,15 +100,19 @@ export default function Wishlist() {
           </PaginatedResourceSection>
         </ReviewDisplayProvider>
       ) : (
-        <EmptyState
-          icon={HeartIcon}
-          text={t('account.wishlist.none')}
-          action={
-            <ButtonLink to="/categories" variant="secondary">
-              {t('account.wishlist.browse')}
-            </ButtonLink>
-          }
-        />
+        <>
+          <EmptyState
+            icon={HeartIcon}
+            text={t('account.wishlist.none')}
+            action={
+              <ButtonLink to="/categories" variant="secondary">
+                {t('account.wishlist.browse')}
+              </ButtonLink>
+            }
+          />
+          {/* An empty wishlist: the visitor's products, as their browser knows them (T-679). */}
+          <ForYou className="mt-16" />
+        </>
       )}
     </AccountSection>
   );

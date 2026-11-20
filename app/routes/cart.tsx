@@ -11,7 +11,8 @@ import type {Route} from './+types/cart';
 import {errorMeta, metaTranslator, privateMeta} from '~/lib/meta';
 import {CartCrossSell} from '~/components/CartCrossSell';
 import {CartMain} from '~/components/CartMain';
-import {PersonalRecommendations} from '~/components/PersonalRecommendations';
+import {ForYou} from '~/components/ForYou';
+import {cartForAffinity} from '~/lib/affinity';
 import {RouteErrorBoundary} from '~/components/RouteError';
 
 /**
@@ -119,28 +120,30 @@ export async function loader({context}: Route.LoaderArgs) {
   return {cart: await cart.get(), isLoggedIn: await customerAccount.isLoggedIn()};
 }
 
-/** How many products "You may also like" shows: the `CART` list the browser asks for (T-667). */
+/** How many products the cart's "You may also like" shows: Affinity's lists for the cart (T-679). */
 const RECOMMENDED = 4;
 
 export default function Cart() {
   const {t} = useTranslation();
   const {cart, isLoggedIn} = useLoaderData<typeof loader>();
-  const cartProductIds = [...new Set(cart?.lines.nodes.map((line) => line.merchandise.product.id) ?? [])];
+  const forCart = cartForAffinity(cart?.lines.nodes ?? []);
 
   return (
     <div className="mx-auto max-w-page px-gutter py-10 md:px-gutter-md">
       <h1 className="mb-8 text-title">{t('cart.title')}</h1>
       <CartMain layout="page" cart={cart} signedIn={isLoggedIn} />
       <CartCrossSell hasLines={Boolean(cart?.totalQuantity)} />
-      {cartProductIds.length > 0 && (
-        <PersonalRecommendations
-          key={cartProductIds.join(',')}
-          intent="CART"
-          cartProductIds={cartProductIds}
-          title={() => t('cart.alsoLike')}
-          placeholders={RECOMMENDED}
+      {/* After the store's own offer: the cart's categories and brands, and the visitor's; "For you" when it is empty. */}
+      {forCart.productIds.length > 0 ? (
+        <ForYou
+          key={forCart.productIds.join(',')}
+          cart={forCart}
+          shown={RECOMMENDED}
+          title={t('cart.alsoLike')}
           className="mt-16"
         />
+      ) : (
+        <ForYou className="mt-16" />
       )}
       <Analytics.CartView />
     </div>

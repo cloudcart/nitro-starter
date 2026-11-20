@@ -14,7 +14,8 @@ export function shouldRevalidate() {
 }
 
 /**
- * A product's "You may also like" (`<RelatedProducts>`): `?handle=…`. The products nearest to it by the meaning of its
+ * A product's "You may also like" (`<RelatedProducts>`): `?handle=…`, and `&instead=1` for a sold-out product's
+ * "Instead of this" (`ALTERNATIVE`). The products nearest to it by the meaning of its
  * text (`SIMILAR`, T-667), at most `RELATED_MAX`, without its linked products, which the info column's carousel shows;
  * a product without a text vector gets its category's, as `relatedProducts(linked: false)` lists them. One answer for
  * every visitor: the grid loads it with `useFetcher().load()` as the visitor nears it and shows it two rows at a time.
@@ -34,9 +35,11 @@ export function clientLoader(args: Route.ClientLoaderArgs) {
 async function load({url, context}: Route.LoaderArgs) {
   const handle = url.searchParams.get('handle');
   if (!handle) return {related: null};
+  // A sold-out product's "Instead of this" (T-679): products that can take its place.
+  const intent = url.searchParams.get('instead') === '1' ? 'ALTERNATIVE' : 'SIMILAR';
 
   const {productRecommendations} = await context.storefront.query(RELATED_PRODUCTS_QUERY, {
-    variables: {handle, first: RELATED_MAX, buyer: await context.customerAccount.getBuyer()},
+    variables: {handle, intent, first: RELATED_MAX, buyer: await context.customerAccount.getBuyer()},
     cache: context.storefront.CacheShort(),
   });
 
@@ -44,9 +47,20 @@ async function load({url, context}: Route.LoaderArgs) {
 }
 
 const RELATED_PRODUCTS_QUERY = `#graphql
-  query RelatedProducts($handle: String!, $first: Int!, $buyer: BuyerInput) @inContext(buyer: $buyer) {
-    productRecommendations(productHandle: $handle, intent: SIMILAR, first: $first) {
+  query RelatedProducts(
+    $handle: String!
+    $intent: ProductRecommendationIntent!
+    $first: Int!
+    $buyer: BuyerInput
+  ) @inContext(buyer: $buyer) {
+    productRecommendations(productHandle: $handle, intent: $intent, first: $first) {
       ...ProductItem
+      # Its categories: the browser orders the list by the visitor's (T-679).
+      collections(first: 3) {
+        nodes {
+          id
+        }
+      }
     }
   }
   ${PRODUCT_ITEM_FRAGMENT}

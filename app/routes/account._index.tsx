@@ -9,6 +9,7 @@ import {Button} from '~/components/ui/Button';
 import {AccountRouteErrorBoundary} from '~/components/RouteError';
 import {API_ERROR, formFields, payloadOf, useSubmission} from '~/lib/action';
 import {CUSTOMER_USER_ERROR_FRAGMENT} from '~/lib/fragments';
+import {ForYou} from '~/components/ForYou';
 
 /** An error shows in the account's column, under its heading, translated (B-201, B-433). */
 export const ErrorBoundary = AccountRouteErrorBoundary;
@@ -93,6 +94,8 @@ export default function Profile() {
           {t('form.save')}
         </Button>
       </Form>
+      {/* The visitor's products, as their browser knows them (T-679). */}
+      <ForYou className="mt-16" />
     </AccountSection>
   );
 }

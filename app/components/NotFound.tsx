@@ -1,6 +1,9 @@
 import {useEffect} from 'react';
 import {useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
+import {useAffinityProducts} from '@cloudcart/nitrogen-react';
+import {ForYouGrid} from '~/components/ForYou';
+import {askForYou} from '~/lib/affinity';
 import {MENU_PRODUCTS} from '~/components/MegaMenu';
 import {ProductGrid, ProductGridPlaceholder} from '~/components/ProductGrid';
 import {ReviewDisplayProvider} from '~/components/ReviewDisplay';
@@ -8,19 +11,23 @@ import {ButtonLink} from '~/components/ui/Button';
 import type {loader as menuProductsLoader} from '~/routes/menu-products';
 
 /**
- * The page for an address the store does not have: the message, "Continue shopping", and four of the store's
- * featured products. An error boundary has no loader of its own, so the products are loaded once the page is in the
- * browser, from the same route the mega menu uses.
+ * The page for an address the store does not have: the message, "Continue shopping", and products — the visitor's
+ * "For you" when their browser knows them (T-679), else four of the store's featured products. An error boundary has
+ * no loader of its own, so the products are loaded once the page is in the browser, the store's from the same route the
+ * mega menu uses.
  */
 export function NotFound() {
   const {t} = useTranslation();
   const products = useFetcher<typeof menuProductsLoader>();
+  const affinity = useAffinityProducts({shown: MENU_PRODUCTS, request: askForYou});
+  // The store's products only when the visitor's are not coming: none known, or none answered.
+  const storeOwn = affinity.state === 'none' || (affinity.state === 'ready' && affinity.answer === null);
 
   // `fetcher` is a new object on every render, but its `load` stays the same.
   const {load} = products;
   useEffect(() => {
-    void load('/menu-products');
-  }, [load]);
+    if (storeOwn) void load('/menu-products');
+  }, [load, storeOwn]);
 
   return (
     <div className="mx-auto max-w-page px-gutter py-16 md:px-gutter-md">
@@ -36,7 +43,9 @@ export function NotFound() {
         </ButtonLink>
       </div>
       {/* While the products load, their places: the page does not grow under the visitor (B-436). */}
-      {products.data ? (
+      {!storeOwn ? (
+        <ForYouGrid affinity={affinity} shown={MENU_PRODUCTS} className="mt-16" />
+      ) : products.data ? (
         <ReviewDisplayProvider value={products.data.reviewDisplay}>
           <ProductGrid title={t('notFound.products')} products={products.data.products} className="mt-16" />
         </ReviewDisplayProvider>

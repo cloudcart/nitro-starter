@@ -1,5 +1,12 @@
-import {type ComponentProps, type ReactNode, useState} from 'react';
-import {data, type ShouldRevalidateFunction, useLoaderData, useLocation, useRouteLoaderData} from 'react-router';
+import {type ComponentProps, type ReactNode, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  data,
+  type ShouldRevalidateFunction,
+  useLoaderData,
+  useLocation,
+  useNavigate,
+  useRouteLoaderData,
+} from 'react-router';
 import {
   Analytics,
   analyticsInputFromRequest,
@@ -12,9 +19,10 @@ import {
   signalProductOf,
   useOptimisticVariant,
   useSelectedOptionInUrlParam,
+  visitorOptionValues,
 } from '@cloudcart/nitrogen';
 import type {ProductFragment} from 'storefrontapi.generated';
-import {keptPageLoader} from '@cloudcart/nitrogen-react';
+import {keptPageLoader, useAffinityChoice, useAffinityInput} from '@cloudcart/nitrogen-react';
 import type {Route} from './+types/product.$handle';
 import type {loader as reviewsLoader} from './product';
 import {errorMeta, metaTranslator, seoMeta, storeName, storeOrigin} from '~/lib/meta';
@@ -41,6 +49,7 @@ import {loadProductPageSettings, loadSelectedOptions} from '~/lib/product-page';
 import {productAsShown, variantsWhole} from '~/lib/product-variants';
 import {useListingNeighbours} from '~/lib/listing-context';
 import {openedPicture} from '~/lib/opening';
+import {productAffinityVariants, YoursContext, yoursKey} from '~/lib/affinity';
 import {missingResource} from '~/lib/missing';
 import {SHARED_PAGE} from '~/lib/page-cache';
 
@@ -366,6 +375,7 @@ export default function Product() {
   // The products before and after this one in the listing it was opened from: on a phone the page is swiped to them.
   const neighbours = useListingNeighbours(productPath(product.handle));
   const location = useLocation();
+  const yours = useVisitorsVariant(product, wholeVariants, selectedVariant.id, location.search);
   // Streamed with a document; else asked as the page opens, and for each variant chosen — by the shown variant's
   // options, not the address's: the page writes them into its address after it opens, so the address it is shown at
   // again (a step back or forward) asks what it asked before (B-556).
@@ -383,13 +393,15 @@ export default function Product() {
         preview={(ahead, picture) => <ProductPreview data={ahead as ProductPageData} backdrop={picture} />}
         className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md"
       >
-        <ProductTop
-          data={{...data, product: shownProduct, extras}}
-          selectedVariant={selectedVariant}
-          backdrop={openedPicture(location.pathname)}
-        >
-          <LinkedProducts key={product.handle} handle={product.handle} />
-        </ProductTop>
+        <YoursContext value={yours}>
+          <ProductTop
+            data={{...data, product: shownProduct, extras}}
+            selectedVariant={selectedVariant}
+            backdrop={openedPicture(location.pathname)}
+          >
+            <LinkedProducts key={product.handle} handle={product.handle} />
+          </ProductTop>
+        </YoursContext>
 
         <div className="mt-16 flex flex-col gap-16">
           {settings.productReviewSettings && reviews && (
@@ -401,7 +413,15 @@ export default function Product() {
             />
           )}
           {/* The category's products: none for a product without a category. */}
-          {product.collections.nodes.length > 0 && <RelatedProducts key={product.handle} handle={product.handle} />}
+          {/* A sold-out product's: what can take its place (T-679). */}
+          {product.collections.nodes.length > 0 && (
+            <RelatedProducts
+              key={product.handle}
+              handle={product.handle}
+              price={Number(selectedVariant.price.amount)}
+              instead={!product.availableForSale}
+            />
+          )}
           <RecentlyViewed productId={product.id} />
         </div>
 
@@ -428,6 +448,53 @@ export default function Product() {
       </SwipeablePage>
     </ReviewDisplayProvider>
   );
+}
+
+/**
+ * The visitor's own variant (T-679): on a product opened with none chosen in its address, the variant in stock with
+ * their size or colour of medium or strong interest is shown, once, as Affinity's choice — never counted as theirs
+ * (`useAffinityChoice`). Gives their option values on the page, as `yoursKey`s, for the options to mark.
+ */
+function useVisitorsVariant(
+  product: ProductPageData['product'],
+  wholeVariants: ProductPageData['product']['adjacentVariants'],
+  shownVariantId: string,
+  search: string,
+): ReadonlySet<string> {
+  const navigate = useNavigate();
+  const variants = useMemo(() => productAffinityVariants(product.options, wholeVariants), [product, wholeVariants]);
+  const choice = useAffinityChoice(product.id, variants);
+  const chosenForRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!choice || chosenForRef.current === product.id) return;
+    chosenForRef.current = product.id;
+    // An address that names options is the visitor's own choice (a link, a step back): it stays.
+    const params = new URLSearchParams(search);
+    if (product.options.some((option) => params.has(option.name)) || choice.variant.id === shownVariantId) return;
+    void navigate(`?${new URLSearchParams(mapSelectedProductOptionToObject(choice.variant.selectedOptions))}`, {
+      replace: true,
+      preventScrollReset: true,
+      // A variant the page has whole is shown with no request (T-597).
+      ...(wholeVariants.some((variant) => variant.id === choice.variant.id) && {defaultShouldRevalidate: false}),
+    });
+  }, [choice, product, search, shownVariantId, wholeVariants, navigate]);
+
+  const input = useAffinityInput();
+  return useMemo(() => {
+    if (!input) return new Set<string>();
+    const own = new Set(
+      visitorOptionValues(
+        product.options.flatMap((option) => option.optionValues.map((value) => value.id)),
+        input,
+      ),
+    );
+    return new Set(
+      product.options.flatMap((option) =>
+        option.optionValues.filter((value) => own.has(value.id)).map((value) => yoursKey(option.name, value.name)),
+      ),
+    );
+  }, [input, product]);
 }
 
 /**
@@ -589,6 +656,8 @@ const PRODUCT_FRAGMENT = `#graphql
     title
     vendor
     handle
+    # Sold out as a whole: "Instead of this" takes the place of "You may also like" (T-679).
+    availableForSale
     # The main category, for the breadcrumb.
     collections(first: 1) {
       nodes {

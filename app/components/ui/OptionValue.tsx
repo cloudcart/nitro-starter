@@ -32,6 +32,7 @@ export function OptionValue({
   exists,
   to,
   onSelect,
+  yours = false,
 }: {
   name: string;
   swatch?: OptionSwatch;
@@ -42,6 +43,8 @@ export function OptionValue({
   to?: string;
   /** Chooses this value on this product. */
   onSelect?: () => void;
+  /** The visitor's own size or colour, as their browser knows it (T-679): a dot in its corner says so. */
+  yours?: boolean;
 }) {
   const {t} = useTranslation();
   const color = swatch?.color;
@@ -51,7 +54,7 @@ export function OptionValue({
   // A swatch is drawn at 34 px and touched at 44 (B-401): its `after` reaches 5 px past it, over half of the 8 px gap.
   const className = isSwatch
     ? `relative grid size-8.5 place-items-center rounded-full ring-offset-2 ring-offset-background after:absolute after:-inset-1.25 ${selected ? 'ring-1 ring-accent' : 'hover:ring-1 hover:ring-border'} disabled:cursor-not-allowed disabled:opacity-40`
-    : `inline-flex h-11 min-w-11 items-center justify-center rounded-button border px-4 hover:no-underline ${selected ? 'border-accent' : 'border-border hover:border-foreground'} ${available ? '' : 'text-muted line-through'} disabled:cursor-not-allowed disabled:border-dashed`;
+    : `relative inline-flex h-11 min-w-11 items-center justify-center rounded-button border px-4 hover:no-underline ${selected ? 'border-accent' : 'border-border hover:border-foreground'} ${available ? '' : 'text-muted line-through'} disabled:cursor-not-allowed disabled:border-dashed`;
 
   // The stroke or the struck-through name says it to the eye; this says it to a screen reader (B-198).
   const soldOut = !available && (
@@ -61,6 +64,19 @@ export function OptionValue({
     </span>
   );
 
+  const mark = yours && (
+    <>
+      <span
+        aria-hidden="true"
+        className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-accent ring-2 ring-background"
+      />
+      <span className="sr-only">
+        {t('format.list')}
+        {t('product.yours')}
+      </span>
+    </>
+  );
+
   const content = isSwatch ? (
     <>
       <SwatchDot swatch={swatch} px={32} className="size-full" />
@@ -68,11 +84,13 @@ export function OptionValue({
       {!available && <span aria-hidden="true" className="absolute h-px w-full rotate-45 bg-foreground" />}
       <span className="sr-only">{name}</span>
       {soldOut}
+      {mark}
     </>
   ) : (
     <>
       {name}
       {soldOut}
+      {mark}
     </>
   );
 

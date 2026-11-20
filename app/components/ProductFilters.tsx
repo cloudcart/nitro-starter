@@ -8,8 +8,8 @@ import {
   useRouteLoaderData,
   useSearchParams,
 } from 'react-router';
-import {useTranslation} from '@cloudcart/nitrogen';
-import {Image, moneyWithFormat} from '@cloudcart/nitrogen-react';
+import {type SignalFilterSource, useTranslation} from '@cloudcart/nitrogen';
+import {Image, moneyWithFormat, useAffinityFacetOrder} from '@cloudcart/nitrogen-react';
 import type {CurrencyCode} from '@cloudcart/nitrogen/storefront-api-types';
 import type {ListingFilterFragment, MarketingFilterFragment} from 'storefrontapi.generated';
 import {
@@ -566,11 +566,36 @@ function FilterValues({filter}: {filter: Filter}) {
   );
 }
 
+/** A filter value's filter, as Affinity reads it: its `input`, the API's own JSON. */
+function filterOfValue(value: Filter['values'][number]) {
+  try {
+    return JSON.parse(value.input) as SignalFilterSource & {category?: {id?: string | null} | null};
+  } catch {
+    return null;
+  }
+}
+
+/** A dot by a value of the visitor's, named for screen readers (T-679). */
+function YoursMark({className = ''}: {className?: string}) {
+  const {t} = useTranslation();
+  return (
+    <>
+      <span aria-hidden="true" className={`size-2 shrink-0 rounded-full bg-accent ${className}`} />
+      <span className="sr-only">
+        {t('format.list')}
+        {t('product.yours')}
+      </span>
+    </>
+  );
+}
+
 function ListValues({filter}: {filter: Filter}) {
   const {t} = useTranslation();
   const {searchParams, go} = useFilterUrl();
   const [expanded, setExpanded] = useState(false);
-  const values = expanded ? filter.values : filter.values.slice(0, VISIBLE_VALUES);
+  // The visitor's values first within the group, marked; the store's order on the server and for a new visitor.
+  const {values: ordered, marked} = useAffinityFacetOrder(filter.values, filterOfValue);
+  const values = expanded ? ordered : ordered.slice(0, VISIBLE_VALUES);
 
   return (
     <div className="flex flex-col">
@@ -582,6 +607,7 @@ function ListValues({filter}: {filter: Filter}) {
             onChange={() => go(toggleFilterParam(searchParams, value.input))}
           />
           <span className="flex-1 truncate">{value.label}</span>
+          {marked.has(value) && <YoursMark />}
           {'count' in value && typeof value.count === 'number' && (
             <span className="shrink-0 text-muted text-small tabular-nums">{value.count}</span>
           )}
@@ -589,7 +615,7 @@ function ListValues({filter}: {filter: Filter}) {
       ))}
       {/* A chosen value out of sight goes with the form all the same. */}
       {!expanded &&
-        filter.values
+        ordered
           .slice(VISIBLE_VALUES)
           .filter((value) => isFilterActive(searchParams, value.input))
           .map((value) => <input key={value.id} type="hidden" {...fieldOf(value.input)} />)}
@@ -608,41 +634,50 @@ function ListValues({filter}: {filter: Filter}) {
 }
 
 function Swatches({filter}: {filter: Filter}) {
+  const {t} = useTranslation();
   const {searchParams, go} = useFilterUrl();
+  const {values, marked} = useAffinityFacetOrder(filter.values, filterOfValue);
 
   return (
     <div className="flex max-w-64 flex-wrap gap-2">
-      {filter.values.map((value) => (
-        // A box under the swatch, so the form carries it without JavaScript (T-600).
-        <label
-          key={value.id}
-          title={value.label}
-          className="relative size-10 cursor-pointer overflow-hidden rounded-full border-2 border-control p-0.5 hover:border-muted has-checked:border-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
-        >
-          <input
-            type="checkbox"
-            {...fieldOf(value.input)}
-            aria-label={value.label}
-            checked={isFilterActive(searchParams, value.input)}
-            onChange={() => go(toggleFilterParam(searchParams, value.input))}
-            className="sr-only"
-          />
-          {value.swatchImage ? (
-            <Image
-              src={value.swatchImage}
-              alt=""
-              width={32}
-              aspectRatio="1/1"
-              className="size-full rounded-full object-cover"
+      {values.map((value) => (
+        <span key={value.id} className="relative">
+          {/* A box under the swatch, so the form carries it without JavaScript (T-600). */}
+          <label
+            title={value.label}
+            className="relative size-10 cursor-pointer overflow-hidden rounded-full border-2 border-control p-0.5 hover:border-muted has-checked:border-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
+          >
+            <input
+              type="checkbox"
+              {...fieldOf(value.input)}
+              aria-label={marked.has(value) ? `${value.label}${t('format.list')}${t('product.yours')}` : value.label}
+              checked={isFilterActive(searchParams, value.input)}
+              onChange={() => go(toggleFilterParam(searchParams, value.input))}
+              className="sr-only"
             />
-          ) : (
-            // The merchant's colour for the value.
+            {value.swatchImage ? (
+              <Image
+                src={value.swatchImage}
+                alt=""
+                width={32}
+                aspectRatio="1/1"
+                className="size-full rounded-full object-cover"
+              />
+            ) : (
+              // The merchant's colour for the value.
+              <span
+                className="block size-full rounded-full"
+                style={{backgroundColor: value.swatchColor ?? 'var(--color-border)'}}
+              />
+            )}
+          </label>
+          {marked.has(value) && (
             <span
-              className="block size-full rounded-full"
-              style={{backgroundColor: value.swatchColor ?? 'var(--color-border)'}}
+              aria-hidden="true"
+              className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-accent ring-2 ring-background"
             />
           )}
-        </label>
+        </span>
       ))}
     </div>
   );

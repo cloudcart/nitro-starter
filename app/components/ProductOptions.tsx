@@ -1,8 +1,9 @@
-import {useId} from 'react';
+import {use, useId} from 'react';
 import {type MappedProductOptions, useTranslation} from '@cloudcart/nitrogen';
 import {useNavigate} from 'react-router';
 import {OptionSelect} from '~/components/ui/OptionSelect';
 import {OptionValue} from '~/components/ui/OptionValue';
+import {YoursContext, yoursKey} from '~/lib/affinity';
 import {productPath} from '~/lib/urls';
 
 type OptionValueChoice = MappedProductOptions['optionValues'][number];
@@ -20,6 +21,7 @@ export function shownOptions(options: MappedProductOptions[]) {
  */
 export function ProductOptions({options}: {options: MappedProductOptions[]}) {
   const navigate = useNavigate();
+  const yours = use(YoursContext);
   // A variant the page has whole (`resolved`) is shown without the loader; another product's, or one the page lacks,
   // comes through it.
   const choose = (value: OptionValueChoice) =>
@@ -51,6 +53,7 @@ export function ProductOptions({options}: {options: MappedProductOptions[]}) {
               exists={value.exists}
               to={value.isDifferentProduct ? `${productPath(value.handle)}?${value.variantUriQuery}` : undefined}
               onSelect={() => choose(value)}
+              yours={yours.has(yoursKey(option.name, value.name))}
             />
           ))}
         </div>

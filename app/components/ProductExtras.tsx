@@ -1,12 +1,13 @@
 import {type ReactNode, Suspense, useEffect, useId, useRef, useState} from 'react';
 import {Await, Link, useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {Image, Money, useAutoLoad} from '@cloudcart/nitrogen-react';
+import {Image, Money, useAffinityOrder, useAutoLoad} from '@cloudcart/nitrogen-react';
 import type {ProductExtrasQuery} from 'storefrontapi.generated';
 import {PRODUCT_GRID_CLASSES} from '~/components/ProductGrid';
 import {ProductItem, ProductItemPlaceholder} from '~/components/ProductItem';
 import {SectionHeading} from '~/components/SectionHeading';
 import {Button} from '~/components/ui/Button';
+import {describeProductItem} from '~/lib/affinity';
 import {storePath} from '~/lib/urls';
 import type {clientLoader as productExtrasLoader} from '~/routes/product-extras.$handle';
 import type {loader as relatedProductsLoader} from '~/routes/related-products';
@@ -133,6 +134,9 @@ export const RELATED_MAX = 32;
 /** How many times "You may also like" shows two more rows by itself, before "Load more" waits for a click. */
 const RELATED_AUTO_PAGES = 3;
 
+/** No products: one array, so the order of an empty answer is not worked out again. */
+const NONE: never[] = [];
+
 /** Two rows of card placeholders at any width: the 5th and 6th from three a row, the 7th and 8th from four. */
 const PLACEHOLDERS = ['', '', '', '', 'hidden md:block', 'hidden md:block', 'hidden lg:block', 'hidden lg:block'];
 
@@ -144,13 +148,25 @@ const PLACEHOLDERS = ['', '', '', '', 'hidden md:block', 'hidden md:block', 'hid
  * shown two rows at a time, as many as the grid lays out: three more steps by themselves as the visitor nears the end,
  * then "Load more" waits for a click, so the footer can be reached. Nothing when there is no product to show.
  */
-export function RelatedProducts({handle}: {handle: string}) {
+export function RelatedProducts({
+  handle,
+  price,
+  instead = false,
+}: {
+  handle: string;
+  /** The product's own price: the list is ordered around it, ±30 %, for the visitor (T-679). */
+  price: number;
+  /** A sold-out product's: "Instead of this", products that can take its place (`ALTERNATIVE`). */
+  instead?: boolean;
+}) {
   const {t} = useTranslation();
   const titleId = useId();
   const fetcher = useFetcher<typeof relatedProductsLoader>();
   const [rows, setRows] = useState(0);
   const answered = fetcher.data !== undefined;
-  const all = fetcher.data?.related ?? [];
+  // One list for every visitor, in this visitor's order once the page has hydrated: their categories, brand and price
+  // first, their size first within each (T-679).
+  const all = useAffinityOrder(fetcher.data?.related ?? NONE, describeProductItem, {price});
   const gridRef = useRef<HTMLUListElement>(null);
   // Two more rows at the columns the grid has at this width.
   const showMore = () => {
@@ -167,7 +183,7 @@ export function RelatedProducts({handle}: {handle: string}) {
   useAutoLoad(sectionRef, {
     load: () => {
       showMore();
-      void fetcher.load(`/related-products?${new URLSearchParams({handle})}`);
+      void fetcher.load(`/related-products?${new URLSearchParams({handle, ...(instead && {instead: '1'})})}`);
     },
     limit: 1,
     paused: answered || busy,
@@ -179,7 +195,7 @@ export function RelatedProducts({handle}: {handle: string}) {
 
   return (
     <section ref={sectionRef} aria-labelledby={titleId} aria-busy={busy || undefined}>
-      <SectionHeading id={titleId} title={t('product.related.alsoLike')} />
+      <SectionHeading id={titleId} title={t(instead ? 'product.related.instead' : 'product.related.alsoLike')} />
       <ul ref={gridRef} className={`grid gap-x-4 gap-y-8 ${PRODUCT_GRID_CLASSES}`}>
         {answered
           ? products.map((product) => (

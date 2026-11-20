@@ -1,4 +1,4 @@
-import {Suspense, useMemo} from 'react';
+import {Suspense} from 'react';
 import {
   Await,
   isRouteErrorResponse,
@@ -32,12 +32,10 @@ import {
   PrivacyBanner,
   PrivacyBannerScript,
   SubscribePopups,
-  type RecommendationsAheadRequest,
   type SubscribePopupsProps,
   useCustomerSignals,
   useFrameFocusVisible,
   useKeptPages,
-  usePrepareRecommendations,
   useValidityMessages,
   VisitorDataScript,
 } from '@cloudcart/nitrogen-react';
@@ -62,7 +60,6 @@ import fontCyrillic from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans
 import fontLatin from '@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url';
 import {ifSignedIn} from '~/lib/customer';
 import {rootWithVisitorData, type Streamed, useRootWithVisitorData, VISITOR_PATH} from '~/lib/visitor';
-import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {loadVisitorData, noVisitorData} from '~/lib/visitor.server';
 import {validityMessage} from '~/lib/validity';
 
@@ -308,35 +305,21 @@ function AppShell({data: root, children}: {data: Awaited<ReturnType<RootLoader>>
         <StorePopups forms={data.subscribeForms} consent={data.cookieConsent} />
         <PolicyConsentRequest />
         <StoreValidityMessages />
-        <AffinitySetup isLoggedIn={data.isLoggedIn} cart={cart} />
+        <AffinitySetup isLoggedIn={data.isLoggedIn} />
       </Analytics.Provider>
     </TranslationsProvider>
   );
 }
 
 /**
- * What the visitor's browser keeps for their recommendations (T-667) beside what `Analytics.Provider` notes (T-674): a signed-in
- * customer's products (asked once a session, forgotten at sign-out), and the home page's and the cart's lists made
- * ahead while the browser is idle.
+ * What the visitor's browser keeps for Affinity (T-667) beside what `Analytics.Provider` notes (T-674): a signed-in
+ * customer's products, asked once a session and forgotten at sign-out.
  */
-function AffinitySetup({
-  isLoggedIn,
-  cart,
-}: {
-  isLoggedIn: Streamed<boolean>;
-  cart: Streamed<CartApiQueryFragment | null>;
-}) {
+function AffinitySetup({isLoggedIn}: {isLoggedIn: Streamed<boolean>}) {
   return (
     <Suspense fallback={null}>
       <Await resolve={isLoggedIn} errorElement={null}>
         {(signedIn) => <CustomerSignals signedIn={signedIn} />}
-      </Await>
-      <Await resolve={cart} errorElement={null}>
-        {(current) => (
-          <RecommendationsAhead
-            cartProductIds={current?.lines.nodes.map((line) => line.merchandise.product.id) ?? []}
-          />
-        )}
       </Await>
     </Suspense>
   );
@@ -344,21 +327,6 @@ function AffinitySetup({
 
 function CustomerSignals({signedIn}: {signedIn: boolean}) {
   useCustomerSignals({signedIn, url: '/recommendation-signals'});
-  return null;
-}
-
-const PERSONALIZED_AHEAD: RecommendationsAheadRequest = {kind: 'PERSONALIZED', url: '/recommendations'};
-
-function RecommendationsAhead({cartProductIds}: {cartProductIds: string[]}) {
-  const cartKey = [...new Set(cartProductIds)].join(',');
-  const requests = useMemo<RecommendationsAheadRequest[]>(
-    () => [
-      PERSONALIZED_AHEAD,
-      ...(cartKey ? [{kind: 'CART', url: '/recommendations', cartProductIds: cartKey.split(',')}] : []),
-    ],
-    [cartKey],
-  );
-  usePrepareRecommendations(requests);
   return null;
 }
 

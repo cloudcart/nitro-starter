@@ -212,6 +212,8 @@ export const PRODUCT_ITEM_FRAGMENT = `#graphql
       type
       values
       optionValues {
+        # The visitor's size or colour is chosen and marked on the card by it (T-679).
+        id
         name
         swatch {
           color

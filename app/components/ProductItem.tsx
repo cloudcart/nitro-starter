@@ -1,6 +1,6 @@
 import {type ReactNode, type RefObject, useCallback, useMemo, useRef, useState} from 'react';
 import {useTranslation} from '@cloudcart/nitrogen';
-import {AddToCartButton, cloudcartLoader, Image, KeptLink} from '@cloudcart/nitrogen-react';
+import {AddToCartButton, cloudcartLoader, Image, KeptLink, useAffinityInput} from '@cloudcart/nitrogen-react';
 import type {ProductItemFragment} from 'storefrontapi.generated';
 import {Badge} from '~/components/ui/Badge';
 import {ChevronLeftIcon, ChevronRightIcon} from '~/components/ui/icons';
@@ -9,6 +9,7 @@ import {buttonClass, ButtonLink} from '~/components/ui/Button';
 import {ADD_TO_CART_FETCHER_KEY} from '~/lib/cart';
 import {quickAddOf} from '~/lib/quick-add';
 import {noteProduct} from '~/lib/opening';
+import {visitorsCardValues} from '~/lib/affinity';
 import {shownCompareAtPrice, useVariantUrl} from '~/lib/variants';
 import {CardPrice} from './CardPrice';
 import {useCardRating, useEveryCardRated} from './ReviewDisplay';
@@ -61,7 +62,15 @@ export function ProductItem({
 }) {
   const {t} = useTranslation();
   const swatches = swatchOption(product);
-  const [chosen, setChosen] = useState<CardValue | null>(null);
+  // The visitor's colour shown chosen once the page has hydrated, and "your size" (T-679); the store's own before.
+  const input = useAffinityInput();
+  const visitors = useMemo(
+    () => visitorsCardValues(product.options, swatches?.name ?? null, input),
+    [product, swatches, input],
+  );
+  // Undefined until the visitor chooses on the card: their own choice, or none, then stays.
+  const [choice, setChoice] = useState<CardValue | null | undefined>(undefined);
+  const chosen = choice === undefined ? visitors.swatch : choice;
   const [pointed, setPointed] = useState<CardValue | null>(null);
   // The value whose picture the card shows: the last pointed at, which stays when the pointer moves on, or the chosen.
   const shown = pointed ?? chosen;
@@ -131,6 +140,12 @@ export function ProductItem({
               <ProductLabel key={label.name} label={label} />
             ))}
           </div>
+          {/* Over the picture, so a card that gets it after the page hydrates moves nothing. */}
+          {visitors.hasYours && (
+            <div className="absolute bottom-2 left-2">
+              <Badge variant="accent">{t('product.hasYours')}</Badge>
+            </div>
+          )}
         </div>
         <div className="mt-3 flex flex-col gap-1">
           {product.vendor && <p className="text-small text-muted">{product.vendor}</p>}
@@ -151,7 +166,7 @@ export function ProductItem({
           option={swatches}
           chosen={chosen}
           onPoint={setPointed}
-          onChoose={(value) => setChosen(value === chosen ? null : value)}
+          onChoose={(value) => setChoice(value === chosen ? null : value)}
         />
       )}
       {/* Over the picture, outside the link: a button in a link is not allowed. */}

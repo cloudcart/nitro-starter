@@ -191,6 +191,8 @@
   },
   "product": {
     "soldOut": "Sold out",
+    "yours": "Your usual choice",
+    "hasYours": "In your size",
     "valueSoldOut": "{value} — sold out",
     "addToCart": "Add to cart",
     "chooseOptions": "Choose options",
@@ -262,6 +264,7 @@
     },
     "related": {
       "alsoLike": "You may also like",
+      "instead": "Instead of this",
       "complementary": "Complementary products",
       "previous": "Previous product",
       "next": "Next product"

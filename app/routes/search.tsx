@@ -25,6 +25,7 @@ import {SEARCH_PRODUCT_FRAGMENT} from '~/components/SearchProductCard';
 import {listedProducts} from '~/lib/analytics';
 import {skipCartAndWishlistRevalidation} from '~/lib/cart';
 import {inBackground} from '~/lib/background';
+import {ForYou} from '~/components/ForYou';
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const term = data && 'term' in data ? data.term : '';
@@ -120,7 +121,10 @@ export default function SearchPage() {
           }
           className="mt-10"
         />
-      ) : (
+      ) : null}
+      {/* Nothing found: the visitor's products, as their browser knows them (T-679). */}
+      {term && !error && !result.total && <ForYou className="mt-16" />}
+      {!term || error || !result.total ? null : (
         <div className="mt-10 flex flex-col gap-12">
           <SearchOtherResults
             pages={result.items.pages.nodes.flatMap((node) => (node.__typename === 'Page' ? [node] : []))}

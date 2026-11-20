@@ -11,6 +11,7 @@ import {CartSummary} from './CartSummary';
 import {EmptyState} from '~/components/ui/EmptyState';
 import {CartIcon} from '~/components/ui/icons';
 import {CartPanelRecommendations} from '~/components/CartPanelRecommendations';
+import {cartForAffinity} from '~/lib/affinity';
 
 export type CartLayout = 'page' | 'aside';
 
@@ -36,7 +37,7 @@ export function CartMain({layout, cart: originalCart, signedIn}: CartMainProps) 
   const cart = useOptimisticCart(originalCart);
   const lines = cart?.lines?.nodes ?? [];
   const page = layout === 'page';
-  const cartProductIds = [...new Set(lines.map((line) => line.merchandise.product.id))];
+  const forCart = cartForAffinity(lines);
 
   const list = lines.length > 0 && (
     <ul
@@ -71,7 +72,7 @@ export function CartMain({layout, cart: originalCart, signedIn}: CartMainProps) 
           // The lines and, under them, the recommendations scroll together above the summary (T-669).
           <div className="min-h-0 flex-1 overflow-y-auto">
             {list}
-            <CartPanelRecommendations key={cartProductIds.join(',')} cartProductIds={cartProductIds} />
+            <CartPanelRecommendations key={forCart.productIds.join(',')} cart={forCart} />
           </div>
         ) : (
           <CartEmpty layout={layout} />
