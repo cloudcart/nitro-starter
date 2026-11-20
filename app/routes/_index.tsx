@@ -96,7 +96,6 @@ export default function Homepage() {
       />
       <HomeCategories collections={data.collections} />
       <ProductGrids products={data.products} />
-      <Trending products={data.products} />
       <Analytics.HomeView />
     </div>
   );
@@ -123,32 +122,6 @@ function HomeCategories({collections}: {collections: CollectionCardFragment[]}) 
       to="/categories"
       className="mx-auto max-w-page px-gutter pt-14 md:px-gutter-md"
     />
-  );
-}
-
-/**
- * "Trending": the store's products rising in the last 7 days against their 30 (`TRENDING` without a fallback, T-669),
- * from the same answer as the grids above, the same for every visitor. Nothing while it loads or when none rises.
- */
-function Trending({products}: {products: Promise<HomeProductsQuery | null>}) {
-  const {t} = useTranslation();
-
-  return (
-    <Suspense fallback={null}>
-      <Await resolve={products}>
-        {(response) =>
-          response ? (
-            <ReviewDisplayProvider value={response.productReviewSettings}>
-              <ProductGrid
-                title={t('home.trending')}
-                products={response.trending}
-                className="mx-auto max-w-page px-gutter pb-14 md:px-gutter-md"
-              />
-            </ReviewDisplayProvider>
-          ) : null
-        }
-      </Await>
-    </Suspense>
   );
 }
 
@@ -230,9 +203,6 @@ const HOME_PRODUCTS_QUERY = `#graphql
       nodes {
         ...ProductItem
       }
-    }
-    trending: productRecommendations(intent: TRENDING, first: 8, fallback: false) {
-      ...ProductItem
     }
     # The brands, ordered in the browser by the visitor's interest (T-670): one page for every visitor.
     vendors: vendorsConnection(first: 100) {

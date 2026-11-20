@@ -264,8 +264,7 @@
       "alsoLike": "You may also like",
       "complementary": "Complementary products",
       "previous": "Previous product",
-      "next": "Next product",
-      "boughtTogether": "Frequently bought together"
+      "next": "Next product"
     },
     "backInStock": {
       "title": "Tell me when it is back in stock",
@@ -416,7 +415,6 @@
     "collections": "Shop by category",
     "forYou": "Recommended for you",
     "bestSellers": "Best sellers",
-    "trending": "Trending now",
     "vendors": "Shop by brand"
   },
   "content": {

@@ -3,7 +3,7 @@ import {Await, Link, useFetcher} from 'react-router';
 import {useTranslation} from '@cloudcart/nitrogen';
 import {Image, Money, useAutoLoad} from '@cloudcart/nitrogen-react';
 import type {ProductExtrasQuery} from 'storefrontapi.generated';
-import {PRODUCT_GRID_CLASSES, ProductGrid} from '~/components/ProductGrid';
+import {PRODUCT_GRID_CLASSES} from '~/components/ProductGrid';
 import {ProductItem, ProductItemPlaceholder} from '~/components/ProductItem';
 import {SectionHeading} from '~/components/SectionHeading';
 import {Button} from '~/components/ui/Button';
@@ -130,9 +130,6 @@ export function StoreAvailability({extras}: {extras: Extras}) {
 /** The most products "You may also like" shows: four steps of two rows of four, a desktop's (T-667). */
 export const RELATED_MAX = 32;
 
-/** The most products "Bought together" shows: one row of four on a desktop (T-669). */
-export const BOUGHT_TOGETHER_MAX = 4;
-
 /** How many times "You may also like" shows two more rows by itself, before "Load more" waits for a click. */
 const RELATED_AUTO_PAGES = 3;
 
@@ -154,7 +151,6 @@ export function RelatedProducts({handle}: {handle: string}) {
   const [rows, setRows] = useState(0);
   const answered = fetcher.data !== undefined;
   const all = fetcher.data?.related ?? [];
-  const together = fetcher.data?.together ?? [];
   const gridRef = useRef<HTMLUListElement>(null);
   // Two more rows at the columns the grid has at this width.
   const showMore = () => {
@@ -179,45 +175,39 @@ export function RelatedProducts({handle}: {handle: string}) {
   const moreRef = useRef<HTMLButtonElement>(null);
   const {restart} = useAutoLoad(moreRef, {load: showMore, limit: RELATED_AUTO_PAGES, paused: !hasMore});
 
-  if (answered && !products.length && !together.length) return null;
+  if (answered && !products.length) return null;
 
   return (
-    <>
-      {/* The products most often bought with this one, from the same answer (T-669): none when there are none. */}
-      <ProductGrid title={t('product.related.boughtTogether')} products={together} />
-      {(!answered || products.length > 0) && (
-        <section ref={sectionRef} aria-labelledby={titleId} aria-busy={busy || undefined}>
-          <SectionHeading id={titleId} title={t('product.related.alsoLike')} />
-          <ul ref={gridRef} className={`grid gap-x-4 gap-y-8 ${PRODUCT_GRID_CLASSES}`}>
-            {answered
-              ? products.map((product) => (
-                  <li key={product.id}>
-                    <ProductItem product={product} loading="lazy" />
-                  </li>
-                ))
-              : PLACEHOLDERS.map((shown, index) => (
-                  // eslint-disable-next-line @eslint-react/no-array-index-key -- placeholders: a place each, nothing else
-                  <li key={index} aria-hidden="true" className={shown}>
-                    <ProductItemPlaceholder />
-                  </li>
-                ))}
-          </ul>
-          {hasMore && (
-            <div className="mt-10 flex justify-center">
-              <Button
-                ref={moreRef}
-                variant="secondary"
-                onClick={() => {
-                  restart();
-                  showMore();
-                }}
-              >
-                {t('listing.loadMore')}
-              </Button>
-            </div>
-          )}
-        </section>
+    <section ref={sectionRef} aria-labelledby={titleId} aria-busy={busy || undefined}>
+      <SectionHeading id={titleId} title={t('product.related.alsoLike')} />
+      <ul ref={gridRef} className={`grid gap-x-4 gap-y-8 ${PRODUCT_GRID_CLASSES}`}>
+        {answered
+          ? products.map((product) => (
+              <li key={product.id}>
+                <ProductItem product={product} loading="lazy" />
+              </li>
+            ))
+          : PLACEHOLDERS.map((shown, index) => (
+              // eslint-disable-next-line @eslint-react/no-array-index-key -- placeholders: a place each, nothing else
+              <li key={index} aria-hidden="true" className={shown}>
+                <ProductItemPlaceholder />
+              </li>
+            ))}
+      </ul>
+      {hasMore && (
+        <div className="mt-10 flex justify-center">
+          <Button
+            ref={moreRef}
+            variant="secondary"
+            onClick={() => {
+              restart();
+              showMore();
+            }}
+          >
+            {t('listing.loadMore')}
+          </Button>
+        </div>
       )}
-    </>
+    </section>
   );
 }
