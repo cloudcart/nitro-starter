@@ -46,6 +46,7 @@ export const CART_QUERY_FRAGMENT = `#graphql
         # A cart add's signal for the visitor's recommendations: the product's categories and brand (T-667).
         vendorDetails {
           id
+          handle
         }
         collections(first: 5) {
           nodes {
@@ -200,6 +201,10 @@ export const PRODUCT_ITEM_FRAGMENT = `#graphql
     handle
     title
     vendor
+    vendorDetails {
+      id
+      handle
+    }
     availableForSale
     productType
     options {

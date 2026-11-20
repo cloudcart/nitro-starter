@@ -70,7 +70,7 @@ export async function loader({context, params, request, url}: Route.LoaderArgs) 
 export default function Vendor() {
   const {t} = useTranslation();
   const {vendor, reviewDisplay} = useLoaderData<typeof loader>();
-  const filters = useChosenFilters();
+  const filters = useChosenFilters(vendor.products.filters);
 
   return (
     <div className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md">

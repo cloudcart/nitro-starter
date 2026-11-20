@@ -278,12 +278,27 @@ export function getSortFromParams(searchParams: URLSearchParams): {sortKey?: Pro
   return option ? {sortKey: option.sortKey, reverse: option.reverse ?? false} : {};
 }
 
+/** A listing's facets, as far as `useChosenFilters` reads them: each value's `input`. */
+type FacetInputs = ReadonlyArray<{values: ReadonlyArray<{input: string}>}> | null | undefined;
+
 /**
  * The listing's chosen filters, read from its address: a listing's analytics view passes them, so the visitor's
- * signals note the brands, options, prices and sales they filter by (T-674).
+ * signals note the brands, options, prices and sales they filter by (T-674). An option value is the facet's own
+ * `input`, which names the value by id (`variantOption.optionId`): the address names it by its text only.
  */
-export function useChosenFilters(): ProductFilter[] {
+export function useChosenFilters(facets?: FacetInputs): ProductFilter[] {
   const [searchParams] = useSearchParams();
   const key = searchParams.toString();
-  return useMemo(() => getFiltersFromParams(new URLSearchParams(key)), [key]);
+  return useMemo(() => {
+    const options = new Map<string, ProductFilter>();
+    for (const value of (facets ?? []).flatMap((facet) => facet.values)) {
+      const input = rawFilter(value.input);
+      const option = input?.variantOption;
+      if (input && option?.optionId) options.set(`${option.name}\u0000${option.value}`, input);
+    }
+    return getFiltersFromParams(new URLSearchParams(key)).map((filter) => {
+      const option = filter.variantOption;
+      return (option && !option.optionId && options.get(`${option.name}\u0000${option.value}`)) || filter;
+    });
+  }, [key, facets]);
 }

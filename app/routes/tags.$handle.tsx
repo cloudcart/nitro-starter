@@ -66,7 +66,7 @@ export async function loader({context, params, request, url}: Route.LoaderArgs) 
 
 export default function ProductTag() {
   const {tag, reviewDisplay} = useLoaderData<typeof loader>();
-  const filters = useChosenFilters();
+  const filters = useChosenFilters(tag.products.filters);
 
   return (
     <div className="mx-auto max-w-page px-gutter py-8 md:px-gutter-md">

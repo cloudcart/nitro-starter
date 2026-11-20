@@ -13,6 +13,17 @@ export function listedProducts(products: ProductItemFragment[]): ListProductPayl
       title: product.title,
       price: (variant?.price ?? product.priceRange.minVariantPrice).amount,
       vendor: product.vendor,
+      // The brand's id beside its name and handle: a brand chosen in the listing's filter, by its handle, is known at once.
+      ...(product.vendorDetails?.id
+        ? {
+            signal: {
+              id: product.id,
+              vendorId: product.vendorDetails.id,
+              vendorName: product.vendor,
+              vendorHandle: product.vendorDetails.handle,
+            },
+          }
+        : {}),
       variantId: variant?.id,
       sku: variant?.sku,
       barcode: variant?.barcode,

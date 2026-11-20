@@ -63,9 +63,9 @@ export function clientLoader({serverLoader, request}: Route.ClientLoaderArgs) {
 export default function SearchPage() {
   const {t} = useTranslation();
   const data = useLoaderData<typeof loader>();
-  const filters = useChosenFilters();
   const look = useSearchLook();
   const regular = data.type === 'regular' ? data : null;
+  const filters = useChosenFilters(regular && !regular.error ? regular.result.items.products.productFilters : null);
   // An Aura search is reported as the web storefront's results page reports it: one impression as it shows, then
   // each product opened from it, with its place (T-645). A failed search is none.
   const report = useSearchReport({

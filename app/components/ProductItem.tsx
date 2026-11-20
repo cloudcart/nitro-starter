@@ -86,8 +86,14 @@ export function ProductItem({
   const pictures = useCardPictures(product, trackRef);
 
   return (
-    // Marked for the visitor's signals: a card shown and not opened is a product passed over (T-674).
-    <div className="group relative" data-nitrogen-product={product.id} onPointerEnter={() => pictures.interested()}>
+    // Marked for the visitor's signals: a card shown and not opened is a product passed over, and its brand loses a
+    // point (T-674).
+    <div
+      className="group relative"
+      data-nitrogen-product={product.id}
+      data-nitrogen-vendor={product.vendorDetails?.id}
+      onPointerEnter={() => pictures.interested()}
+    >
       <KeptLink
         className="block hover:no-underline"
         to={variantUrl}

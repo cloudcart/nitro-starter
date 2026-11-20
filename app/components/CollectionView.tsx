@@ -30,7 +30,7 @@ export function CollectionView({
   collection: Collection;
   reviewDisplay: ProductReviewDisplayFragment | null;
 }) {
-  const filters = useChosenFilters();
+  const filters = useChosenFilters(collection.products.filters);
   const {t} = useTranslation();
   // Every child, as the platform's category page lists them: it does not hide one without products (B-212).
   const children = collection.children.nodes;
