@@ -13,7 +13,7 @@ import {metaTranslator, rootData, seoMeta, storeOrigin} from '~/lib/meta';
 import type {CollectionCardFragment, HomeProductsQuery, ProductItemFragment} from 'storefrontapi.generated';
 import {COLLECTION_CARD_FRAGMENT, CollectionGrid} from '~/components/CollectionGrid';
 import {Hero} from '~/components/Hero';
-import {FOR_YOU_SHOWN, ForYouGrid} from '~/components/ForYou';
+import {FOR_YOU_SHOWN, ForYouGrid, forYouShown} from '~/components/ForYou';
 import {ProductGrid, ProductGridPlaceholder} from '~/components/ProductGrid';
 import {VENDOR_CARD_FRAGMENT, VendorGrid} from '~/components/VendorCard';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
@@ -150,13 +150,17 @@ function ProductGrids({
   affinity: UseAffinityProductsResult<AffinityProductsAnswer>;
 }) {
   const {t} = useTranslation();
+  // The merchant's "Featured" only while "For you" shows nothing: one or the other, never both (T-684).
+  const grids = forYouShown(affinity, FOR_YOU_SHOWN)
+    ? HOME_PRODUCT_GRIDS.filter(({list}) => list !== 'featured')
+    : HOME_PRODUCT_GRIDS;
 
   return (
     <Suspense
       fallback={
         // The grids' places while they load (B-410).
         <div className="mx-auto flex max-w-page flex-col gap-16 px-gutter py-14 md:px-gutter-md">
-          {HOME_PRODUCT_GRIDS.map(({list, title, to}) => (
+          {grids.map(({list, title, to}) => (
             <ProductGridPlaceholder key={list} title={t(title)} to={to} />
           ))}
         </div>
@@ -169,7 +173,7 @@ function ProductGrids({
               <div className="mx-auto flex max-w-page flex-col gap-16 px-gutter py-14 md:px-gutter-md">
                 {/* "Shop by brand", in the visitor's order of interest (T-670); none for a store without brands. */}
                 <VendorGrid title={t('home.vendors')} vendors={response.vendors.nodes} to="/vendors" />
-                {HOME_PRODUCT_GRIDS.map(({list, title, to}) => {
+                {grids.map(({list, title, to}) => {
                   const grid = (
                     <ProductGrid
                       key={list}

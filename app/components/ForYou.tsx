@@ -28,11 +28,11 @@ export function ForYouGrid({
 }) {
   const {t} = useTranslation();
   const heading = title ?? t('home.forYou');
-  const {state, lists} = affinity;
-  if (state === 'pending')
-    return lists.length > 0 ? <ProductGridPlaceholder title={heading} count={shown} className={className} /> : null;
+  if (!forYouShown(affinity, shown)) return null;
+  if (affinity.state === 'pending')
+    return <ProductGridPlaceholder title={heading} count={shown} className={className} />;
   const products = forYouProducts(affinity, shown);
-  if (!affinity.answer || products.length === 0) return null;
+  if (!affinity.answer) return null;
   return (
     <ReviewDisplayProvider value={affinity.answer.reviewDisplay}>
       {/* Each card says why it is here while the Affinity overlay is on (T-681). */}
@@ -41,6 +41,15 @@ export function ForYouGrid({
       </AffinityWhyProvider>
     </ReviewDisplayProvider>
   );
+}
+
+/**
+ * Whether "For you" shows anything: its placeholders while it is asked for a visitor the browser knows, or its
+ * products once answered. The home page shows the merchant's "Featured" only when it does not (T-684).
+ */
+export function forYouShown(affinity: UseAffinityProductsResult<AffinityProductsAnswer>, shown: number) {
+  if (affinity.state === 'pending') return affinity.lists.length > 0;
+  return forYouProducts(affinity, shown).length > 0;
 }
 
 /** "For you"'s products from an answer: ordered for the visitor, without those left out; none before. */
